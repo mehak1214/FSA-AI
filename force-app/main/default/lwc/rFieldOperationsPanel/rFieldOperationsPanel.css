@@ -1,0 +1,51 @@
+:host {
+    display: block;
+}
+
+.visit-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.task-tab {
+    border: 1px solid #dbe4f0;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 12px;
+    padding: 9px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a6b80;
+}
+
+.task-tab.active {
+    background: #17396e;
+    color: #ffffff;
+    border-color: #17396e;
+}
+
+.visit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.empty {
+    border: 1px dashed #d2d9e4;
+    background: #ffffff;
+    border-radius: 16px;
+    text-align: center;
+    padding: 34px 16px;
+    box-shadow: 0 7px 18px rgba(33, 56, 90, 0.08);
+}
+
+.empty p {
+    margin: 0 0 6px;
+    font-weight: 700;
+}
+
+.empty span {
+    font-size: 13px;
+    color: #5f6e82;
+}

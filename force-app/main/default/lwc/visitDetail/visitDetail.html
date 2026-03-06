@@ -1,0 +1,332 @@
+<template>
+    <section class="page" role="dialog" aria-modal="true">
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="large" variant="brand"></lightning-spinner>
+        </template>
+
+        <div class="sheet">
+            <!-- Hero / Header -->
+            <div class="hero">
+                <div class="hero-top">
+
+                    <button class="back-btn" onclick={handleClose}>&larr;</button>
+
+
+                  <!--   <button class="icon-pill" onclick={handleClose} type="button" title="Back">
+                        <lightning-icon icon-name="utility:chevronleft" size="x-small"></lightning-icon>
+                        <span>Back</span>
+                    </button> -->
+
+
+                    <div class="hero-top-right">
+                        <div class="hero-badges">
+                            <span class="badge-label">Visit Status</span>
+                            <span class={statusBadgeClass}>{visitStatus}</span>
+                        </div>
+                        <template if:true={hasOutletPhoto}>
+                            <div class="hero-thumb">
+                                <img src={outletPhotoUrl} alt="Outlet photo" />
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="hero-body">
+                    <div class="hero-text">
+                        <p class="eyebrow">
+                            <span class="eyebrow-name">{visitName}</span>
+                            <template if:true={sequenceLabel}> · Visit #{sequenceLabel}</template>
+                        </p>
+                        <h2 class="title">
+                            <button type="button" class="outlet-link" onclick={handleOpenOutlet360}
+                                disabled={outletLinkDisabled} title="Open Outlet 360">
+                                {outletName}
+                            </button>
+                        </h2>
+                        <p class="address">{outletAddress}</p>
+
+                        <div class="hero-actions">
+                            <button class="map-mini-btn" onclick={navigateToMap} type="button" disabled={mapDisabled}
+                                title="Directions">
+                                <lightning-icon icon-name="utility:location" size="x-small"></lightning-icon>
+                                <span class="map-mini-label">Directions</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Visit Timing -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title">Timing</span>
+                    </div>
+                    <div class="detail-grid">
+                        <div class="detail">
+                            <p class="label">Planned Window</p>
+                            <p class="value">{plannedStart} - {plannedEnd}</p>
+                        </div>
+                        <div class="detail">
+                            <p class="label">Check-in / out</p>
+                            <p class="value">{checkInTime} - {checkOutTime}</p>
+                        </div>
+                        <div class="detail">
+                            <p class="label">Duration</p>
+                            <p class="value">{duration}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-title">Actions</span>
+                    </div>
+                    <div class="action-grid">
+                        <template if:true={actionInFlight}>
+                            <div class="action-helper">Grabbing GPS...</div>
+                        </template>
+                        <template if:true={showCheckIn}>
+                            <button class="btn success action-main" onclick={handleCheckIn} type="button"
+                                disabled={actionInFlight}>
+                                <span>Check In</span>
+                            </button>
+                        </template>
+
+                        <template if:true={showCheckOut}>
+                            <button class="btn danger action-main" onclick={handleCheckOut} type="button"
+                                disabled={actionInFlight}>
+                                <span>Check Out</span>
+                            </button>
+                        </template>
+
+                        <template if:true={showDayCompletedMessage}>
+                            <div class="day-completed-message">
+                                Day already completed.
+                            </div>
+                        </template>
+
+                        <template if:true={showStartDayMessage}>
+                            <div class="start-day-message">
+                                To check-in, start your day first.
+                            </div>
+                        </template>
+
+                        <template if:true={hasVisitPhoto}>
+                            <button class="btn secondary action-photo" onclick={handleOpenPhotoModal} type="button"
+                                title="Preview Visit Photo">
+                                <span>Preview Photo</span>
+                            </button>
+                        </template>
+
+                        <template if:false={hasVisitPhoto}>
+                            <button class="btn primary action-photo" onclick={handleTakePhoto} type="button">
+                                <span>Take Photo</span>
+                            </button>
+                        </template>
+
+                        <button class="btn primary action-order" onclick={handleToggleOrderPanel} type="button">
+                            <span>{orderToggleLabel}</span>
+                        </button>
+
+                        <button class="btn secondary action-orders" onclick={handleOpenOrdersModal} type="button">
+                            <span>View Order</span>
+                        </button>
+
+                        <button class="btn secondary action-orders" onclick={handleOpenSchemesModal} type="button">
+                            <span>Schemes</span>
+                        </button>
+
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head with-actions">
+                        <span class="card-title">Meeting Notes</span>
+                        <button class="btn secondary notes-save-btn" onclick={handleSaveMeetingNotes} type="button"
+                            disabled={meetingNotesSaving}>
+                            Save Notes
+                        </button>
+                    </div>
+                    <lightning-textarea label="Visit Discussion" value={meetingNotes}
+                        onchange={handleMeetingNotesChange}
+                        placeholder="Add meeting summary, commitments, next steps...">
+                    </lightning-textarea>
+
+                    <div class="notes-upload">
+                        <lightning-file-upload label="Attach files to this visit" record-id={currentVisitId} multiple
+                            onuploadfinished={handleVisitFileUploadFinished}>
+                        </lightning-file-upload>
+                    </div>
+                </div>
+
+                <!-- Rating & Feedback -->
+                <template if:true={showRatingFeedback}>
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="card-title">Rating &amp; Feedback</span>
+                            <template if:true={ratingFeedbackSaved}>
+                                <span class="pill success">&#10003; Saved</span>
+                            </template>
+                        </div>
+
+                        <!-- 5-Star Rating -->
+                        <div class="rating-row">
+                            <p class="label">Rate this visit</p>
+                            <div class="star-group">
+                                <template for:each={starList} for:item="star">
+                                    <button
+                                        key={star.value}
+                                        type="button"
+                                        class={star.cssClass}
+                                        data-value={star.value}
+                                        onclick={handleStarClick}
+                                        title={star.label}
+                                        aria-label={star.label}>
+                                        &#9733;
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Text Area -->
+                        <div class="rating-feedback-area">
+                            <lightning-textarea
+                                label="Feedback"
+                                value={visitFeedback}
+                                onchange={handleFeedbackChange}
+                                placeholder="Share your feedback about this visit...">
+                            </lightning-textarea>
+                        </div>
+
+                        <div class="rating-actions">
+                            <template if:false={ratingFeedbackSaved}>
+                                <p class="checkout-warning">&#9888; Save rating &amp; feedback to enable Check Out.</p>
+                            </template>
+                            <button
+                                class="btn primary notes-save-btn"
+                                onclick={handleSaveRatingFeedback}
+                                type="button"
+                                disabled={ratingFeedbackSaving}>
+                                <lightning-icon icon-name="utility:save" size="x-small"></lightning-icon>
+                                <template if:true={ratingFeedbackSaving}>
+                                    <span>Saving...</span>
+                                </template>
+                                <template if:false={ratingFeedbackSaving}>
+                                    <span>Save Rating &amp; Feedback</span>
+                                </template>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+
+        </div>
+        <!-- END .sheet — modals are intentionally outside the scrollable sheet
+             so they stay fixed to the viewport on mobile -->
+
+        <!-- Photo modal -->
+        <template if:true={isPhotoModalOpen}>
+            <div class="modal-layer">
+                <div class="modal-backdrop" onclick={handleClosePhotoModal}></div>
+                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitPhotoModalHeading"
+                    class="modal-dialog">
+                    <div class="slds-modal__container">
+                        <div class="slds-modal__content slds-p-around_medium" id="visitPhotoModalContent">
+                            <template if:true={hasVisitPhoto}>
+                                <img src={imageUrl} alt="Visit Photo" class="photo-preview" />
+                            </template>
+                            <template if:false={hasVisitPhoto}>
+                                <p>No photo available.</p>
+                            </template>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <button class="btn danger" onclick={handleDeletePhoto} type="button">
+                                Delete Photo
+                            </button>
+                            <button class="btn secondary" onclick={handleClosePhotoModal} type="button">Close</button>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <!-- Schemes modal -->
+        <template if:true={isSchemesModalOpen}>
+            <div class="modal-layer">
+                <div class="modal-backdrop" onclick={handleCloseSchemesModal}></div>
+                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitSchemesModalHeading"
+                    class="modal-dialog">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <h2 id="visitSchemesModalHeading" class="slds-text-heading_medium">Schemes</h2>
+                        </header>
+                        <div class="slds-modal__content slds-p-around_medium schemes-modal-content"
+                            id="visitSchemesModalContent">
+                            <c-view-schemes></c-view-schemes>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <button class="btn secondary" onclick={handleCloseSchemesModal} type="button">Close</button>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <!-- Order modal -->
+        <template if:true={showOrderPanel}>
+            <div class="modal-layer">
+                <div class="modal-backdrop" onclick={handleToggleOrderPanel}></div>
+                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitOrderModalHeading"
+                    class="modal-dialog">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <h2 id="visitOrderModalHeading" class="slds-text-heading_medium">Create Order</h2>
+                        </header>
+                        <div class="slds-modal__content slds-p-around_medium order-modal-content"
+                            id="visitOrderModalContent">
+                            <c-place-order franchise-id={visitFranchiseId} onordercreated={handleOrderCreated}>
+                            </c-place-order>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <button class="btn secondary" onclick={handleToggleOrderPanel} type="button">Close</button>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <!-- Orders View modal -->
+        <template if:true={isOrdersModalOpen}>
+            <div class="modal-layer">
+                <div class="modal-backdrop" onclick={handleCloseOrdersModal}></div>
+                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitOrdersModalHeading"
+                    class="modal-dialog">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <!-- <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close" onclick={handleCloseOrdersModal}>
+                                <lightning-icon icon-name="utility:close" alternative-text="close" variant="brand"
+                                    size="small"></lightning-icon>
+                                <span class="slds-assistive-text">Close</span>
+                            </button> -->
+                            <h2 id="visitOrdersModalHeading" class="slds-text-heading_medium">My Orders</h2>
+                        </header>
+                        <div class="slds-modal__content slds-p-around_medium orders-modal-content"
+                            id="visitOrdersModalContent">
+                            <c-orders-by-user visit-franchise-id={visitFranchiseId}></c-orders-by-user>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <button class="btn secondary" onclick={handleCloseOrdersModal} type="button">Close</button>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+    </section>
+</template>

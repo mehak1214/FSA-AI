@@ -1,0 +1,96 @@
+<template>
+    <lightning-card title="New Sample Order">
+
+        <!-- Header -->
+        <div class="slds-grid slds-wrap slds-gutters slds-p-around_small">
+
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-combobox
+                    label="Purpose"
+                    options={purposeOptions}
+                    value={order.Purpose__c}
+                    data-field="Purpose__c"
+                    onchange={handleHeaderChange}>
+                </lightning-combobox>
+            </div>
+
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                    type="date"
+                    label="Requested Date"
+                    value={order.RequestedDate__c}
+                    data-field="RequestedDate__c"
+                    onchange={handleHeaderChange}>
+                </lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1">
+                <lightning-textarea
+                    label="Shipping Address"
+                    value={order.ShippingAddress__c}
+                    data-field="ShippingAddress__c"
+                    onchange={handleHeaderChange}>
+                </lightning-textarea>
+            </div>
+        </div>
+
+        <!-- Lines -->
+        <lightning-card title="Sample Products">
+            <div class="slds-p-around_small">
+                <lightning-button label="Add Product" onclick={addLine}></lightning-button>
+            </div>
+
+            <template for:each={lines} for:item="line" for:index="index">
+                <div key={line.uid} class="slds-grid slds-gutters slds-p-around_x-small">
+
+                    <div class="slds-col slds-size_5-of-12">
+                        <lightning-combobox
+                            label="Product"
+                            options={products}
+                            value={line.ProductSample__c}
+                            data-index={index}
+                            data-field="ProductSample__c"
+                            onchange={handleLineChange}>
+                        </lightning-combobox>
+                    </div>
+
+                    <div class="slds-col slds-size_2-of-12">
+                        <lightning-input
+                            type="number"
+                            label="Quantity"
+                            value={line.Quantity__c}
+                            data-index={index}
+                            data-field="Quantity__c"
+                            onchange={handleLineChange}>
+                        </lightning-input>
+                    </div>
+
+                    <div class="slds-col slds-size_3-of-12">
+                        <lightning-combobox
+                            label="Unit"
+                            options={unitOptions}
+                            value={line.UnitOfMeasure__c}
+                            data-index={index}
+                            data-field="UnitOfMeasure__c"
+                            onchange={handleLineChange}>
+                        </lightning-combobox>
+                    </div>
+
+                    <div class="slds-col slds-size_1-of-12 slds-align_absolute-center">
+                        <lightning-button-icon
+                            icon-name="utility:delete"
+                            data-index={index}
+                            onclick={removeLine}>
+                        </lightning-button-icon>
+                    </div>
+
+                </div>
+            </template>
+        </lightning-card>
+
+        <div class="slds-align_absolute-center slds-p-around_medium">
+            <lightning-button variant="brand" label="Save" onclick={save}></lightning-button>
+        </div>
+
+    </lightning-card>
+</template>

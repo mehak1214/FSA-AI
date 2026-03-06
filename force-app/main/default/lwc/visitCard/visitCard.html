@@ -1,0 +1,37 @@
+<template>
+    <div class="visit-card" onclick={handleViewDetail}>
+        <div class="card-header">
+            <span class="visit-id">#{visit.Name}</span>
+            <span class={statusClass}>{statusLabel}</span>
+        </div>
+
+        <div class="outlet-info">
+            <h3 class="outlet-name">{outletName}</h3>
+            <div class="meta-row">
+                <lightning-icon icon-name="utility:checkin" size="xx-small" class="margin-right"></lightning-icon>
+                <span>{outletAddress}</span>
+            </div>
+        </div>
+
+        <div class="card-actions" onclick={handleButtonContainerClick}>
+            <template if:true={showCheckIn}>
+                <button class="btn btn-checkin" onclick={handleCheckIn}>
+                    Check In
+                </button>
+            </template>
+
+            <template if:true={showCheckOut}>
+                <button class="btn btn-checkout" onclick={handleCheckOut}>
+                    Check Out
+                </button>
+            </template>
+            
+            <template if:true={isCompleted}>
+                <div class="completed-badge">
+                    <lightning-icon icon-name="utility:success" size="xx-small" variant="success"></lightning-icon>
+                    Visit Completed
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

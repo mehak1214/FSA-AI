@@ -1,0 +1,697 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   beatPlanWeekly.css
+
+   Card color variants map to approval/visit statuses:
+     .bp-card--planned     before approval submission            (grey)
+     .bp-card--draft       Draft / Pending Approval              (yellow)
+     .bp-card--completed   Approved / Completed                  (green)
+     .bp-card--inprogress  In Progress                           (blue)
+     .bp-card--missed      Missed                                (red)
+
+   Beat badge variants map to ibfsa__Beat__c.ibfsa__Status__c:
+     .bp-beat-badge--active     Active
+     .bp-beat-badge--submitted  Submitted
+     .bp-beat-badge--approved   Approved
+     .bp-beat-badge--rejected   Rejected
+     .bp-beat-badge--inactive   Inactive
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Shell ────────────────────────────────────────────────────────────── */
+.bp-shell {
+    font-family: 'Salesforce Sans', Arial, sans-serif;
+    font-size: 12px;
+    background: #f4f6f9;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Required: scopes inline overlay to this container */
+}
+
+/* ── Week Navigation ──────────────────────────────────────────────────── */
+.bp-weeknav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-bottom: 1px solid #d8dde6;
+    padding: 8px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 6px;
+}
+
+.bp-navbtn {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: #0070d2;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.bp-navbtn:hover       { background: #e8f0fe; }
+.bp-navbtn--right      { flex-direction: row-reverse; }
+
+.bp-weeklabel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.bp-weektext {
+    font-size: 12px;
+    font-weight: 700;
+    color: #16325c;
+    white-space: nowrap;
+}
+
+.bp-beat-name {
+    font-size: 10px;
+    color: #54698d;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+/* Beat status badges — ibfsa__Beat__c.ibfsa__Status__c */
+.bp-beat-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+}
+.bp-beat-badge--active    { background: #cff4d2; color: #1a5e34; }
+.bp-beat-badge--submitted { background: #fff3cd; color: #7a4700; }
+.bp-beat-badge--approved  { background: #d4edda; color: #155724; }
+.bp-beat-badge--rejected  { background: #fde8e8; color: #8c0000; }
+.bp-beat-badge--inactive  { background: #f0f0f0; color: #9faab5; }
+
+/* ── Stats Banner ─────────────────────────────────────────────────────── */
+.bp-stats {
+    display: flex;
+    align-items: stretch;
+    background: #fff;
+    border-bottom: 1px solid #e0e5ee;
+}
+
+.bp-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 9px 14px;
+    gap: 2px;
+    flex: 1;
+}
+
+.bp-stat__num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #16325c;
+    line-height: 1;
+}
+
+.bp-stat__lbl {
+    font-size: 9px;
+    color: #9faab5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bp-stat--done .bp-stat__num { color: #2e844a; }
+.bp-stat--pend .bp-stat__num { color: #e8a201; }
+.bp-stat--miss .bp-stat__num { color: #c23934; }
+
+.bp-stat-sep {
+    width: 1px;
+    background: #e0e5ee;
+    align-self: stretch;
+    margin: 6px 0;
+}
+
+/* ── Action Buttons ───────────────────────────────────────────────────── */
+.bp-actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    border-bottom: 1px solid #e0e5ee;
+}
+
+.bp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+    transition: filter 0.15s, transform 0.1s;
+    white-space: nowrap;
+}
+.bp-btn:active { transform: scale(0.97); }
+
+.bp-btn--add              { background: #0070d2; color: #fff; }
+.bp-btn--add:hover        { filter: brightness(1.1); }
+
+.bp-btn--submit           { background: #e8a201; color: #fff; flex: 1.4; }
+.bp-btn--submit:hover     { filter: brightness(1.08); }
+.bp-btn--submit:disabled  { background: #c9c9c9; cursor: not-allowed; filter: none; }
+
+/* ── Loading ──────────────────────────────────────────────────────────── */
+.bp-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 52px 0;
+}
+
+/* ── No Beat Message ──────────────────────────────────────────────────── */
+.bp-nobeat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 24px;
+    color: #9faab5;
+    text-align: center;
+    background: #fff;
+    margin: 16px 12px;
+    border-radius: 8px;
+    border: 1px dashed #d8dde6;
+}
+.bp-nobeat p    { font-size: 14px; font-weight: 600; color: #54698d; }
+.bp-nobeat span { font-size: 11px; color: #9faab5; }
+
+/* ── Calendar ─────────────────────────────────────────────────────────── */
+.bp-calendar {
+    flex: 1;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Day column headers */
+.bp-dayheads {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #fff;
+    border-bottom: 2px solid #d8dde6;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    min-width: 380px;
+}
+
+.bp-dh {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 2px 4px;
+    border-right: 1px solid #e8edf3;
+    cursor: pointer;
+    gap: 2px;
+    transition: background 0.15s;
+}
+.bp-dh:last-child { border-right: none; }
+.bp-dh:hover      { background: #f0f4ff; }
+
+.bp-dh__abbr {
+    font-size: 9px;
+    font-weight: 700;
+    color: #9faab5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bp-dh__num {
+    font-size: 13px;
+    font-weight: 700;
+    color: #16325c;
+}
+
+/* Today circle */
+.bp-dh--today .bp-dh__num {
+    background: #0070d2;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* Visit rows */
+.bp-visitrows { min-width: 380px; }
+
+.bp-visitrow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid #e8edf3;
+    min-height: 112px;
+}
+
+.bp-visitcell {
+    padding: 3px 2px;
+    border-right: 1px solid #e8edf3;
+}
+.bp-visitcell:last-child { border-right: none; }
+
+/* ── Visit Cards ──────────────────────────────────────────────────────── */
+.bp-card {
+    border-radius: 4px;
+    padding: 4px 5px 4px;
+    min-height: 98px;
+    height: auto;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+.bp-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    z-index: 5;
+}
+.bp-card:focus-visible {
+    outline: 2px solid #0070d2;
+    outline-offset: 2px;
+}
+
+/* Color variants keyed to approval/visit status mapping */
+.bp-card--completed  { background: #2e844a; }   /* Approved / Completed */
+.bp-card--inprogress { background: #0070d2; }   /* In Progress */
+.bp-card--missed     { background: #c23934; }   /* Missed */
+.bp-card--planned    { background: #8d99a6; }   /* Before submit (Planned) */
+.bp-card--draft      { background: #e8a201; }   /* Draft/Pending Approval */
+
+/* Sequence number bubble (ibfsa__Sequence__c) */
+.bp-card__seq {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    background: rgba(255,255,255,0.28);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* Outlet name (ibfsa__Outlet1__r.Name) */
+.bp-card__outlet {
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+    word-break: break-word;
+    padding-right: 16px; /* avoid seq bubble overlap */
+}
+
+.bp-card__time {
+    font-size: 8px;
+    color: rgba(255,255,255,0.82);
+}
+
+/* Visit status badge on card */
+.bp-card__badge {
+    display: inline-block;
+    font-size: 7px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: rgba(255,255,255,0.22);
+    color: #fff;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-top: auto;
+    align-self: flex-start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ── Empty State ──────────────────────────────────────────────────────── */
+.bp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 52px 24px;
+    text-align: center;
+}
+.bp-empty p { font-size: 13px; color: #54698d; font-weight: 500; }
+.bp-empty .bp-btn--add { flex: 0; padding: 8px 20px; }
+
+/* ── Success Toast ────────────────────────────────────────────────────── */
+.bp-toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #2e844a;
+    color: #fff;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 4px;
+    margin: 8px 12px 0;
+    animation: bp-in 0.3s ease, bp-out 0.4s 3.1s ease forwards;
+}
+@keyframes bp-in  { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+@keyframes bp-out { to   { opacity:0; transform:translateY(-4px); } }
+
+/* ── Inline Overlay (replaces slds-modal for nested use) ─────────────── */
+/*
+   These replace slds-modal / slds-backdrop which use position:fixed and
+   break when beatPlanWeekly is rendered inside another modal (r_fieldDayHome).
+   The overlay is absolutely positioned inside .bp-shell (position:relative).
+*/
+.bp-inline-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bp-inline-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.50);
+    cursor: pointer;
+}
+
+.bp-inline-dialog {
+    position: relative; /* sits above backdrop */
+    z-index: 1;
+    width: 92%;
+    max-width: 520px;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────── */
+.bp-modal { border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; max-height: 100%; }
+
+.bp-modal__body--scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+}
+
+.bp-modal__header {
+    background: #16325c;
+    padding: 13px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+}
+.bp-modal__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    padding-right: 28px;
+}
+.bp-modal__subtitle { font-size: 10px; color: rgba(255,255,255,0.6); }
+
+.bp-modal__close {
+    position: absolute;
+    top: 12px; right: 14px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: background 0.15s;
+}
+.bp-modal__close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+.bp-modal__body {
+    padding: 10px 18px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+.bp-mrow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f2f5;
+    gap: 12px;
+}
+.bp-mrow:last-child  { border-bottom: none; }
+.bp-mrow--full       { flex-direction: column; gap: 4px; }
+
+.bp-mrow__lbl {
+    font-size: 10px;
+    font-weight: 600;
+    color: #9faab5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.bp-mrow__val {
+    font-size: 12px;
+    font-weight: 600;
+    color: #16325c;
+    text-align: right;
+}
+.bp-mrow__val--wrap {
+    text-align: left;
+    font-weight: 400;
+    color: #54698d;
+    line-height: 1.5;
+}
+
+.bp-modal__footer {
+    background: #f4f6f9;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* ── Status pills (modal rows) ────────────────────────────────────────── */
+.bp-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: capitalize;
+}
+.bp-pill--planned     { background: #ebe8ff; color: #3a2c9c; }
+.bp-pill--inprogress  { background: #e8f0fe; color: #0050a0; }
+.bp-pill--completed   { background: #cff4d2; color: #1a5e34; }
+.bp-pill--missed      { background: #fde8e8; color: #8c0000; }
+.bp-pill--pending     { background: #fff3cd; color: #7a4700; }
+
+.bp-card--draft .bp-card__outlet,
+.bp-card--draft .bp-card__time {
+    color: #ffffff;
+}
+
+.bp-card--draft .bp-card__badge {
+    background: #ffe58f;
+    color: #725400;
+}
+
+.bp-draft-remove-inline {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+}
+
+.bp-draft-panel {
+    margin: 8px 12px;
+    border: 1px solid #d8e2f0;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 10px;
+}
+
+.bp-draft-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.bp-draft-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #123a6b;
+}
+
+.bp-draft-sub {
+    font-size: 11px;
+    color: #5b708f;
+}
+
+.bp-draft-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bp-draft-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid #d8e2f0;
+    border-radius: 8px;
+    background: #fff;
+    padding: 8px 10px;
+}
+
+.bp-draft-line {
+    font-size: 12px;
+    color: #173d6f;
+    line-height: 1.35;
+}
+
+.bp-draft-notes {
+    color: #54698d;
+}
+
+.bp-draft-remove {
+    border: 1px solid #c9d8ec;
+    background: #f5f8fd;
+    border-radius: 7px;
+    color: #345f95;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    align-self: center;
+}
+
+.bp-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .bp-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* ── Custom form fields (matches lightning-combobox look) ─────────────── */
+.bp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bp-field--full {
+    grid-column: 1 / -1;
+}
+
+.bp-field__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #3e3e3c;
+    line-height: 1.5;
+    font-family: 'Salesforce Sans', Arial, sans-serif;
+}
+
+.bp-field__required {
+    color: #c23934;
+    text-decoration: none;
+    margin-left: 2px;
+}
+
+.bp-field__input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #dddbda;
+    border-radius: 4px;
+    padding: 0 12px;
+    height: 32px;
+    font-size: 0.8125rem;
+    color: #080707;
+    font-family: 'Salesforce Sans', Arial, sans-serif;
+    line-height: 32px;
+    box-sizing: border-box;
+    transition: border 0.1s, box-shadow 0.1s;
+    display: flex;
+    align-items: center;
+}
+
+input.bp-field__input,
+textarea.bp-field__input {
+    display: block;
+    line-height: normal;
+}
+
+.bp-field__input:focus {
+    outline: none;
+    border-color: #1b96ff;
+    box-shadow: 0 0 0 3px #d8edff;
+}
+
+.bp-field__input--disabled {
+    background: #f3f2f2;
+    border-color: #dddbda;
+    color: #706e6b;
+    cursor: not-allowed;
+    user-select: none;
+    line-height: 32px;
+}
+
+.bp-field__textarea {
+    height: auto;
+    min-height: 80px;
+    padding: 8px 12px;
+    resize: vertical;
+    line-height: 1.5;
+}

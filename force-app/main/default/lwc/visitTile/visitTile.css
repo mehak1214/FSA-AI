@@ -1,0 +1,93 @@
+:host {
+    display: block;
+    font-family: "Salesforce Sans", Arial, sans-serif;
+}
+
+.visit-card {
+    background: #ffffff;
+    border-left: 1px solid #e6edf7;
+    border-right: 1px solid #e6edf7;
+    border-top: 0;
+    border-bottom: 1px solid #d5deec;
+    border-radius: 22px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 6px 14px -8px rgba(25, 45, 77, 0.22);
+    margin-bottom: 14px;
+}
+
+.head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.visit-no {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #2e899e;
+}
+
+.outlet-name {
+    display: block;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    color: #1f2d3d;
+    margin-bottom: 5px;
+}
+
+.address-text {
+    margin: 0;
+    color: #4e5f74;
+    font-size: 14px;
+}
+
+.foot-row {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.status-badge {
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid #dbe4f2;
+    background: #f4f7fb;
+    color: #5d6f86;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 700;
+}
+
+.status-badge.completed {
+    background: #dff5e7;
+    color: #237b46;
+}
+
+.status-badge.in-progress {
+    background: #e6edff;
+    color: #324fa8;
+}
+
+.status-badge.approved {
+    background: #fef1d9;
+    color: #8a5a15;
+}
+
+.status-badge.cancelled {
+    background: #fde5e8;
+    color: #9c2e3f;
+}
+
+.dir-btn {
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(120deg, #0d2e69, #154489);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 14px;
+}

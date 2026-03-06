@@ -1,0 +1,15 @@
+.container {
+    padding: 12px;
+}
+
+.hint {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+}

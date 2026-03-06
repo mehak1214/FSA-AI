@@ -1,0 +1,14 @@
+<template>
+    <div class="slds-truncate relativePosition" title={columnHeader.label}>
+        {columnHeader.label}&nbsp;&nbsp;&nbsp;&nbsp;
+        <a onclick={addAllOrderQuantities}>
+            <lightning-icon
+                icon-name="utility:add"
+                alternative-text="Add quantity"
+                size="xx-small"
+                title="Add quantity"
+                class="addAllOrderItems">
+            </lightning-icon>
+        </a>
+    </div>
+</template>

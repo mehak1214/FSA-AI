@@ -1,0 +1,157 @@
+<template>
+    <section class="orders-page">
+
+        <!-- ═══════════════════════════════════════════
+             LIST VIEW
+             Shown when no order is selected
+             ═══════════════════════════════════════════ -->
+        <template if:false={isDetailOpen}>
+
+            <div class="page-panel header-panel">
+                <h1 class="page-title">My Orders</h1>
+                <p class="page-subtitle">Tap an order to view its details.</p>
+            </div>
+
+            <div class="page-panel content-panel">
+                <!-- Tabs -->
+                <div class="orders-tabs" role="tablist" aria-label="Order Type Tabs">
+                    <button class={allTabClass}     data-tab="ALL"     onclick={handleTabChange} type="button">All</button>
+                    <button class={sampleTabClass}  data-tab="SAMPLE"  onclick={handleTabChange} type="button">Sample</button>
+                    <button class={regularTabClass} data-tab="REGULAR" onclick={handleTabChange} type="button">Regular</button>
+                </div>
+
+                <!-- Loading -->
+                <template if:true={isLoading}>
+                    <div class="spinner-wrap">
+                        <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                    </div>
+                </template>
+
+                <!-- Empty state -->
+                <template if:true={noOrdersToDisplay}>
+                    <div class="empty-state">
+                        <p>No orders found for the selected filters.</p>
+                    </div>
+                </template>
+
+                <!-- Order cards -->
+                <template if:true={hasOrders}>
+                    <div class="orders-container">
+                        <template for:each={visibleOrders} for:item="order">
+                            <div key={order.orderId} class="order-card" onclick={handleCardClick} data-order-id={order.orderId}>
+                                <div class="order-header">
+                                    <div class="header-content">
+                                        <h2 class="order-number">Order #{order.orderNumber}</h2>
+                                        <div class="order-meta-line">
+                                            <span class="meta-field">
+                                                <lightning-icon icon-name="utility:currency_input" size="xx-small" class="meta-icon" alternative-text="Amount"></lightning-icon>
+                                                {order.formattedAmount}
+                                            </span>
+                                            <span class="meta-separator">·</span>
+                                            <span class="meta-field">
+                                                <lightning-icon icon-name="utility:event" size="xx-small" class="meta-icon" alternative-text="Date"></lightning-icon>
+                                                {order.formattedOrderDate}
+                                            </span>
+                                            <span class="meta-separator">·</span>
+                                            <span class="meta-field">
+                                                <lightning-icon icon-name="utility:layers" size="xx-small" class="meta-icon" alternative-text="Type"></lightning-icon>
+                                                {order.orderType}
+                                            </span>
+                                            <span class="meta-separator">·</span>
+                                            <span class="meta-field">
+                                                <lightning-icon icon-name="utility:number_input" size="xx-small" class="meta-icon" alternative-text="Items"></lightning-icon>
+                                                {order.productCount} items
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="status-wrapper">
+                                        <span class="status-badge" data-status={order.status}>{order.status}</span>
+                                        <span class="chevron">›</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Error -->
+                <template if:true={errorMessage}>
+                    <div class="error-box">
+                        <p>{errorMessage}</p>
+                    </div>
+                </template>
+            </div>
+
+        </template>
+
+        <!-- ═══════════════════════════════════════════
+             DETAIL VIEW
+             Shown when an order is selected
+             ═══════════════════════════════════════════ -->
+        <template if:true={isDetailOpen}>
+
+            <div class="page-panel detail-header-panel">
+                <button class="back-btn" onclick={handleCloseDetail} type="button">
+                    <lightning-icon icon-name="utility:chevronleft" size="x-small" alternative-text="Back"></lightning-icon>
+                    <span>Back to Orders</span>
+                </button>
+                <h1 class="page-title">Order Details</h1>
+            </div>
+
+            <div class="page-panel content-panel">
+
+                <!-- Loading spinner for detail -->
+                <template if:true={isDetailLoading}>
+                    <div class="spinner-wrap">
+                        <lightning-spinner alternative-text="Loading order details" size="medium"></lightning-spinner>
+                    </div>
+                </template>
+
+                <!-- Detail fields -->
+                <template if:true={selectedOrder}>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Dealer / Distributor</label>
+                            <p>{selectedOrder.dealerName}</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Order By</label>
+                            <p>{selectedOrder.activatedByName}</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Order Start Date</label>
+                            <p>{selectedOrder.formattedOrderStartDate}</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Order Amount</label>
+                            <p>{selectedOrder.formattedAmount}</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Type</label>
+                            <p>{selectedOrder.orderType}</p>
+                        </div>
+                        <div class="detail-item">
+                            <label>Items</label>
+                            <p>{selectedOrder.productCount}</p>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>Billing Address</label>
+                            <p>{selectedOrder.billingAddress}</p>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>Shipping Address</label>
+                            <p>{selectedOrder.shippingAddress}</p>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>Order Description</label>
+                            <p>{selectedOrder.description}</p>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+
+        </template>
+
+    </section>
+</template>

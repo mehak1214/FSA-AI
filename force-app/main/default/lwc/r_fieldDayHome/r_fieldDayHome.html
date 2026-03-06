@@ -1,0 +1,254 @@
+<template>
+    <div class="mobile">
+        <template if:true={isDashboardScreen}>
+            <section class="hero">
+                <div class="hero-avatar">{userInitials}</div>
+                <div class="hero-copy">
+                    <span class="hero-small">FIELD DAY</span>
+                    <h1>Hello, {userName}</h1>
+                    <p>Let's crush your goals today.</p>
+                </div>
+                <div class="hero-action">
+                    <template if:true={showStartDayButton}>
+                        <button class="start-btn" onclick={handleStartDay}>Start Day</button>
+                    </template>
+                    <template if:true={showEndDayButton}>
+                        <button class="end-btn" onclick={handleEndDay}>End Day</button>
+                    </template>
+                    <template if:true={showDayEndedButton}>
+                        <span class="day-ended-tag">Day Completed</span>
+                    </template>
+                </div>
+            </section>
+
+            <section class="dash-actions">
+                <button class="action-btn primary" onclick={handleBeatToggle}>
+                    <span>{beatLabel}</span>
+                    <lightning-icon icon-name="utility:chevrondown" size="x-small" alternative-text="Select Beat"></lightning-icon>
+                </button>
+
+                <template if:true={showBeatDropdown}>
+                    <div class="beat-list">
+                        <template for:each={beatOptions} for:item="beat">
+                            <button key={beat.Id}
+                                    class={beat.rowClass}
+                                    data-id={beat.Id}
+                                    data-name={beat.Name}
+                                    onclick={handleBeatSelect}>
+                                <span>{beat.Name}</span>
+                                <span class="beat-check">{beat.checkMark}</span>
+                            </button>
+                        </template>
+                    </div>
+                </template>
+            </section>
+
+            <section class="focus-sheet">
+                <div class="sheet-head">
+                    <h2>Sales & Incentive</h2>
+                    <span class="month-pill">{currentMonthLabel}</span>
+                </div>
+
+                <div class="sheet-amounts">
+                    <div class="sheet-row">
+                        <label>Actual Sales</label>
+                        <strong>{actualSalesLabel}</strong>
+                    </div>
+                    <div class="sheet-row">
+                        <label>Target</label>
+                        <strong>{targetAmountLabel}</strong>
+                    </div>
+                </div>
+
+                <div class="sheet-progress">
+                    <div class="sheet-progress-fill" style={achievementProgressStyle}></div>
+                </div>
+                <div class="sheet-progress-meta">
+                    <span>{achievementPercentLabel} achieved</span>
+                    <span>Visits {visitProgressLabel}</span>
+                </div>
+
+                <div class="stats-strip">
+                    <article>
+                        <span>Avg Order Value</span>
+                        <strong>{avgOrderValueLabel}</strong>
+                    </article>
+                    <article>
+                        <span>Pending Collection</span>
+                        <strong>{pendingCollectionLabel}</strong>
+                    </article>
+
+                    <article onclick={handleOpenBeatPlanWeekly}>
+                        <span>Weekly Planner</span>
+                        <lightning-icon icon-name="utility:event" size="x-small" alternative-text="Calendar"></lightning-icon>
+                    </article>
+                    <!--<article>
+                        <span>Schemes</span>
+                        <strong>{activeSchemeCountLabel}</strong>
+                    </article>-->
+                </div>
+
+                <div class="sheet-divider"></div>
+
+                <div class="sheet-summary">
+                    <div class="sheet-row">
+                        <label>Monthly Performance</label>
+                        <strong>{monthlyPerformanceLabel}</strong>
+                    </div>
+                    <div class="sheet-row">
+                        <label>Incentive</label>
+                        <strong>{incentiveAmountLabel}</strong>
+                    </div>
+                </div>
+
+                <div class="product-scheme-card">
+                    <div class="card-tabs">
+                        <button class={latestProductsTabClass}
+                                data-tab="products"
+                                onclick={handleTabChange}>
+                            Latest Products
+                        </button>
+                        <button class={schemesTabClass}
+                                data-tab="schemes"
+                                onclick={handleTabChange}>
+                            Schemes
+                        </button>
+                    </div>
+                    <div class="card-content-on-tab">
+                        <template if:true={isLatestProductsTab}>
+                            <c-new-products-card-view></c-new-products-card-view>
+                        </template>
+                        <template if:true={isActiveSchemesTab}>
+                            <c-active-schemes-card-view></c-active-schemes-card-view>
+                        </template>
+                    </div>
+                </div>
+            </section>
+        </template>
+
+        <template if:true={isFieldScreen}>
+            <section class="field-header">
+                <button class="back-btn" onclick={handleBackToDashboard}>&larr;</button>
+                <div>
+                    <span>Current Beat</span>
+                    <h3>{beatLabel}</h3>
+                </div>
+            </section>
+
+            <section class="date-strip">
+                <button class="arrow" onclick={handlePrevWindow}>&lsaquo;</button>
+
+                <template for:each={dateOptions} for:item="d">
+                    <button key={d.value}
+                            class={d.class}
+                            data-date={d.value}
+                            onclick={handleDateChange}>
+                        <span class="day">{d.day}</span>
+                        <span class="num">{d.date}</span>
+                    </button>
+                </template>
+
+                <button class="today" onclick={handleTodayJump}>Today</button>
+                <button class="arrow" onclick={handleNextWindow}>&rsaquo;</button>
+            </section>
+
+            <section class="segment">
+                <button class={operationsTabClass}
+                        data-screen="operations"
+                        onclick={handleScreenChange}>
+                    Operations
+                </button>
+                <button class={travelTabClass}
+                        data-screen="travel"
+                        onclick={handleScreenChange}>
+                    Travel & Expense
+                </button>
+            </section>
+
+            <template if:true={isOperationsScreen}>
+                <c-r-field-operations-panel
+                    visits={visits}
+                    active-tab={activeVisitTab}
+                    day-started={dayStarted}
+                    day-ended={dayEnded}
+                    is-today={isToday}
+                    has-beat-selected={hasBeatSelected}
+                    stay-on-field-no-beat={stayOnFieldNoBeat}
+                    onvisittabchange={handleVisitTabChange}
+                    onopenvisit={handleOpenVisit}
+                    onrefresh={handleRefresh}>
+                </c-r-field-operations-panel>
+            </template>
+
+            <template if:true={isTravelScreen}>
+                <section class="travel-card">
+                    <div class="travel-head">
+                        <span>TRAVEL & EXPENSE</span>
+                        <h3>{selectedDateLabel}</h3>
+                    </div>
+
+                    <div class="travel-box">
+                        <span>DISTANCE</span>
+                        <h4>{todayDistanceKmLabel}</h4>
+                    </div>
+
+                    <div class="travel-box">
+                        <span>ELIGIBLE KM</span>
+                        <h4>{eligibleDistanceKmLabel}</h4>
+                    </div>
+
+                    <div class="travel-box">
+                        <span>EXPENSE</span>
+                        <h4>{estimatedExpenseLabel}</h4>
+                    </div>
+                </section>
+            </template>
+        </template>
+
+        <template if:true={isBeatPlanWeeklyScreen}>
+            <section class="fullscreen-section">
+                <div class="fullscreen-header">
+                    <button class="back-btn" onclick={handleCloseBeatPlanWeekly}>&larr;</button>
+                    <h2 class="fullscreen-title">Weekly Beat Plan</h2>
+                </div>
+                <div class="fullscreen-content">
+                    <c-beat-plan-weekly></c-beat-plan-weekly>
+                </div>
+            </section>
+        </template>
+
+        <!-- <template if:true={showNewProductsModal}>
+                    <section role="dialog" tabindex="-1" aria-modal="true" aria-label="View Schemes" class="slds-modal slds-fade-in-open">
+                        <div class="slds-modal__container">
+                            <header class="slds-modal__header">
+                                <h2 class="slds-text-heading_medium">New Products</h2>
+                            </header>
+                            <div class="slds-modal__content slds-p-around_medium">
+                                <c-new-products></c-new-products>
+                            </div>
+                            <footer class="slds-modal__footer">
+                                <lightning-button variant="neutral" label="Close" onclick={handleCloseNewProductsModal}></lightning-button>
+                            </footer>
+                        </div>
+                    </section>
+                    <div class="slds-backdrop slds-backdrop_open" onclick={handleCloseNewProductsModal}></div>
+        </template>  -->
+
+        <!-- <template if:true={showSchemesModal}>
+                    <section role="dialog" tabindex="-1" aria-modal="true" aria-label="View Schemes" class="slds-modal slds-fade-in-open">
+                        <div class="slds-modal__container">
+                            <header class="slds-modal__header">
+                                <h2 class="slds-text-heading_medium">Available Schemes</h2>
+                            </header>
+                            <div class="slds-modal__content slds-p-around_medium">
+                                <c-view-schemes></c-view-schemes>
+                            </div>
+                            <footer class="slds-modal__footer">
+                                <lightning-button variant="neutral" label="Close" onclick={handleCloseSchemesModal}></lightning-button>
+                            </footer>
+                        </div>
+                    </section>
+                    <div class="slds-backdrop slds-backdrop_open" onclick={handleCloseSchemesModal}></div>
+        </template>  -->
+    </div>
+</template>

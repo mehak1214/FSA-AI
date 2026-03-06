@@ -1,0 +1,81 @@
+<template>
+    <lightning-card title="Order Entry">
+        <div class="slds-p-around_medium">
+
+            <!-- Order Items -->
+            <template for:each={orderItems} for:item="item">
+                <div key={item.id}
+                     class="slds-m-bottom_small slds-box slds-theme_shade">
+
+                <lightning-layout>
+                    <lightning-layout-item size="3" padding="around-small">
+                    <!-- Product Name -->
+                        <lightning-combobox
+                            label="Product Name"
+                            value={item.productName}
+                            options={productOptions}
+                            data-id={item.id}
+                            data-field="productName"
+                            onchange={handleChange}
+                            required>
+                        </lightning-combobox>
+                    </lightning-layout-item>
+                    
+                    <lightning-layout-item size="3" padding="around-small">
+                    <!-- Rate -->
+                        <lightning-input
+                            label="Quantity"
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            data-id={item.id}
+                            data-field="quantity"
+                            onchange={handleChange}
+                            required>
+                        </lightning-input>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="3" padding="around-small">
+                    <!-- Cost -->
+                        <lightning-input
+                            label="Rate"
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            data-id={item.id}
+                            data-field="quantity"
+                            onchange={handleChange}
+                            required>
+                        </lightning-input>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="2" padding="around-small">
+                    <!-- Remove Button -->
+                        <lightning-button-icon
+                            icon-name="utility:delete"
+                            variant="bare"
+                            alternative-text="Remove"
+                            data-id={item.id}
+                            onclick={removeRow}>
+                        </lightning-button-icon>
+                    </lightning-layout-item>
+                </lightning-layout>
+                </div>
+            </template>
+
+            <!-- Actions -->
+            <div class="slds-m-top_medium slds-grid slds-grid_align-spread">
+                <lightning-button
+                    label="Add Product"
+                    icon-name="utility:add"
+                    onclick={addRow}>
+                </lightning-button>
+
+                <lightning-button
+                    label="Submit Order"
+                    variant="brand"
+                    onclick={submitOrder}>
+                </lightning-button>
+            </div>
+
+        </div>
+    </lightning-card>
+</template>

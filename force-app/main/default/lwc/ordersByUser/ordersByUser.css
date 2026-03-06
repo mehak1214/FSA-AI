@@ -1,0 +1,285 @@
+:host {
+    --page-bg:      #e7eef8;
+    --panel-bg:     #f8fbff;
+    --panel-border: #c8d6e8;
+    --text-main:    #102a4c;
+    --text-muted:   #415a78;
+    --brand:        #0a4ea8;
+    --panel-shadow: 0 2px 10px rgba(19, 53, 97, 0.06);
+}
+
+/* ── Page shell ── */
+.orders-page {
+    background: var(--page-bg);
+    padding: 0.45rem;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Shared panel card ── */
+.page-panel {
+    background: linear-gradient(180deg, #fbfdff 0%, var(--panel-bg) 100%);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    margin-bottom: 0.45rem;
+    box-shadow: var(--panel-shadow);
+}
+
+/* ── List header panel ── */
+.header-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+/* ── Detail header panel ── */
+.detail-header-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+/* Back button */
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #17396e;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 12px 6px 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: opacity 120ms ease;
+    --slds-c-icon-color-foreground-default: #ffffff;
+}
+.back-btn:hover { opacity: 0.88; }
+
+/* ── Titles ── */
+.page-title {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.page-subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* ── Content panel ── */
+.content-panel {
+    padding: 0.7rem;
+    margin-bottom: 0;
+}
+
+/* ── Tabs ── */
+.orders-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.65rem;
+    flex-wrap: wrap;
+}
+
+.orders-tab {
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    background: #f3f8ff;
+    color: #2a4f7b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.32rem 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.orders-tab:hover { border-color: #8fb0d8; background: #ebf3ff; }
+
+.orders-tab.active {
+    background: linear-gradient(180deg, #0f5abb 0%, #0a4ea8 100%);
+    border-color: #0a4ea8;
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 66, 131, 0.22);
+}
+
+/* ── Spinner ── */
+.spinner-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    min-height: 100px;
+}
+
+/* ── Empty & error states ── */
+.empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.error-box {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 12px;
+    color: #7f1d1d;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+.error-box p { margin: 0; }
+
+/* ── Order cards (list view) ── */
+.orders-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.order-card {
+    position: relative;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: linear-gradient(180deg, #f7fbff 0%, #f1f6fc 100%);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, #0a4ea8 0%, #5f96da 100%);
+}
+
+.order-card:hover {
+    border-color: #99b2d3;
+    box-shadow: 0 6px 18px rgba(22, 61, 108, 0.12);
+}
+
+.order-header {
+    padding: 0.58rem 0.68rem 0.58rem 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.header-content { flex: 1; min-width: 0; }
+
+.order-number {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--brand);
+    line-height: 1.2;
+}
+
+.order-meta-line {
+    margin-top: 0.25rem;
+    color: #2c4f79;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.2rem;
+}
+
+.meta-separator { margin: 0 0.3rem; color: #6f86a6; }
+
+.meta-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.meta-icon {
+    --slds-c-icon-color-foreground-default: #4e6e97;
+}
+
+.status-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.22rem 0.56rem;
+    border-radius: 999px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    white-space: nowrap;
+}
+
+.status-badge[data-status="Draft"]     { background: #edf1f6; color: #42556f; }
+.status-badge[data-status="Activated"] { background: #d8ebdd; color: #1d5f31; }
+.status-badge[data-status="Completed"] { background: #dae8fb; color: #134e95; }
+.status-badge[data-status="Cancelled"] { background: #f7dedd; color: #8a2a25; }
+
+.chevron {
+    font-size: 1.2rem;
+    color: #8fb0d8;
+    line-height: 1;
+}
+
+/* ── Detail grid (detail view) ── */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.detail-item {
+    border: 1px solid var(--panel-border);
+    border-radius: 9px;
+    background: #f1f7ff;
+    padding: 0.62rem;
+}
+
+.detail-item label {
+    display: block;
+    font-size: 0.69rem;
+    font-weight: 700;
+    color: #4f6480;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.16rem;
+}
+
+.detail-item p {
+    margin: 0;
+    color: #1f3656;
+    line-height: 1.4;
+    word-break: break-word;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.detail-item.full-width { grid-column: 1 / -1; }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+    .orders-page { padding: 0.35rem; }
+
+    .order-header { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+    .status-wrapper { flex-direction: row; align-items: center; gap: 0.5rem; }
+    .chevron { display: none; }
+
+    .detail-grid { grid-template-columns: 1fr; }
+}

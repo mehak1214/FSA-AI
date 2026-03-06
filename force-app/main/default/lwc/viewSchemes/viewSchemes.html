@@ -1,0 +1,138 @@
+<template>
+    <lightning-card title="All Schemes" icon-name="standard-offer">
+        <!-- Filter and Sort Toolbar -->
+        <div class="toolbar-container">
+            <div class="toolbar-controls">
+                <lightning-combobox
+                    name="filter"
+                    label="Filter"
+                    value={filterValue}
+                    options={filterOptions}
+                    onchange={handleFilterChange}
+                    class="control-spacing">
+                </lightning-combobox>
+                <lightning-combobox
+                    name="sort"
+                    label="Sort By"
+                    value={sortValue}
+                    options={sortOptions}
+                    onchange={handleSortChange}
+                    class="control-spacing">
+                </lightning-combobox>
+            </div>
+        </div>
+
+        <template if:false={hasSchemes}>
+            <div class="no-schemes">
+                <p>No schemes found.</p>
+            </div>
+        </template>
+
+        <template if:true={hasSchemes}>
+            <template if:false={hasFilteredSchemes}>
+                <div class="no-schemes">
+                    <p>No schemes match the selected filter.</p>
+                </div>
+            </template>
+
+            <template if:true={hasFilteredSchemes}>
+                <!-- Active Schemes Section -->
+                <template if:true={activeSchemes.length}>
+                    <div class="section-container">
+                        <h2 class="section-title">
+                            <lightning-icon icon-name="utility-success" size="small" class="title-icon"></lightning-icon>
+                            Active Schemes
+                        </h2>
+                        <div class="schemes-grid">
+                            <template for:each={activeSchemes} for:item="scheme">
+                                <div key={scheme.schemeId} class="scheme-card active-scheme">
+                                    <div class="card-header">
+                                        <div class="scheme-name clickable" data-scheme-id={scheme.schemeId} onclick={handleSchemeClick}>
+                                            {scheme.schemeName}
+                                        </div>
+                                        <lightning-badge label="Active" class="active-badge"></lightning-badge>
+                                    </div>
+                                    <div class="card-body">
+                                        
+                                        <div class="info-row">
+                                            
+                                            <div class="value">{scheme.description}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">Discount:</div>
+                                            <div class="value">{scheme.formattedDiscount}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">Threshold Quantity:</div>
+                                            <div class="value">{scheme.formattedThreshold}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">Start Date:</div>
+                                            <div class="value">{scheme.formattedStartDate}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">End Date:</div>
+                                            <div class="value">{scheme.formattedEndDate}</div>
+                                        </div>
+                                        <!-- <div class="info-row">
+                                            <div class="label">Scheme ID:</div>
+                                            <div class="value scheme-id">{scheme.schemeId}</div>
+                                        </div> -->
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Inactive Schemes Section -->
+                <template if:true={inactiveSchemes.length}>
+                    <div class="section-container">
+                        <h2 class="section-title">
+                            <lightning-icon icon-name="utility-close" size="small" class="title-icon"></lightning-icon>
+                            Inactive Schemes
+                        </h2>
+                        <div class="schemes-grid">
+                            <template for:each={inactiveSchemes} for:item="scheme">
+                                <div key={scheme.schemeId} class="scheme-card inactive-scheme">
+                                    <div class="card-header">
+                                        <div class="scheme-name clickable" data-scheme-id={scheme.schemeId} onclick={handleSchemeClick}>
+                                            {scheme.schemeName}
+                                        </div>
+                                        <lightning-badge label="Inactive" class="inactive-badge"></lightning-badge>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="info-row">
+                                            
+                                            <div class="value">{scheme.description}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">Discount:</div>
+                                            <div class="value">{scheme.formattedDiscount}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">Threshold Quantity:</div>
+                                            <div class="value">{scheme.formattedThreshold}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">Start Date:</div>
+                                            <div class="value">{scheme.formattedStartDate}</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="label">End Date:</div>
+                                            <div class="value">{scheme.formattedEndDate}</div>
+                                        </div>
+                                        <!-- <div class="info-row">
+                                            <div class="label">Scheme ID:</div>
+                                            <div class="value scheme-id">{scheme.schemeId}</div>
+                                        </div> -->
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </template>
+    </lightning-card>
+</template>

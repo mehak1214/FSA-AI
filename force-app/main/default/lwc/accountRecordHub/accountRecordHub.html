@@ -1,0 +1,100 @@
+<template>
+    <section class="hub-page">
+        <div class="hub-panel hub-header">
+            <div class="header-copy">
+                <h1>Account Hub</h1>
+                <p>Manage Dealer/Distributor and Franchise accounts from one place.</p>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn secondary" type="button" onclick={handleCreateDealerDistributor}>
+                    + New Dealer/Distributor
+                </button>
+                <button class="action-btn primary" type="button" onclick={handleCreateFranchise}>
+                    + New Franchise
+                </button>
+            </div>
+        </div>
+
+        <div class="hub-panel hub-content">
+            <div class="toolbar">
+                <div class="hub-tabs" role="tablist" aria-label="Account Type Tabs">
+                    <button class={dealerTabClass} data-type="Dealer_Distributor" onclick={handleTabSelect} type="button">
+                        Dealer/Distributor
+                    </button>
+                    <button class={franchiseTabClass} data-type="Franchise" onclick={handleTabSelect} type="button">
+                        Franchise
+                    </button>
+                </div>
+
+                <div class="toolbar-search">
+                    <lightning-input
+                        type="search"
+                        variant="label-hidden"
+                        placeholder="Search by name, phone, city or site"
+                        value={searchText}
+                        onchange={handleSearchChange}>
+                    </lightning-input>
+                    <lightning-combobox
+                        variant="label-hidden"
+                        options={sortOptions}
+                        value={sortBy}
+                        onchange={handleSortChange}
+                        placeholder="Sort by">
+                    </lightning-combobox>
+                    <button class="refresh-btn" type="button" onclick={handleToggleSortDirection}>Sort {sortDirectionLabel}</button>
+                    <button class="refresh-btn" type="button" onclick={handleRefresh}>Refresh</button>
+                </div>
+            </div>
+
+            <div class="section-title-row">
+                <h2>{panelTitle}</h2>
+            </div>
+
+            <template if:true={isLoading}>
+                <div class="loading-wrap">
+                    <lightning-spinner alternative-text="Loading accounts" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={hasRecords}>
+                <div class="records-grid">
+                    <template for:each={visibleRecords} for:item="record">
+                        <article key={record.accountId} class="record-card" data-id={record.accountId} onclick={handleOpenAccount}>
+                            <div class="record-accent"></div>
+                            <div class="record-main">
+                                <div class="avatar">{record.avatarLetter}</div>
+                                <div class="record-copy">
+                                    <h3>{record.accountName}</h3>
+                                    <p>{record.locationText}</p>
+                                </div>
+                            </div>
+                            <div class="record-meta">
+                                <span><strong>Phone:</strong> {record.phoneText}</span>
+                                <span><strong>{record.ownerLabel}:</strong> {record.ownerText}</span>
+                                <span><strong>Type:</strong> {record.recordTypeText}</span>
+                                <template if:true={record.showOutletFields}>
+                                    <span><strong>Outlet Status:</strong> {record.outletStatusText}</span>
+                                </template>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+                <div class="pagination-bar">
+                    <button class="refresh-btn" type="button" onclick={handlePrevPage} disabled={disablePrev}>Previous</button>
+                    <span class="page-info">{pageInfo}</span>
+                    <button class="refresh-btn" type="button" onclick={handleNextPage} disabled={disableNext}>Next</button>
+                </div>
+            </template>
+
+            <template if:true={errorMessage}>
+                <div class="error-box">{errorMessage}</div>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:false={hasRecords}>
+                    <div class="empty-box">{emptyMessage}</div>
+                </template>
+            </template>
+        </div>
+    </section>
+</template>

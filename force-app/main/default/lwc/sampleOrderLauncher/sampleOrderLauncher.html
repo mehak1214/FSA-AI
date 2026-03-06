@@ -1,0 +1,22 @@
+<template>
+    <lightning-button label="Create Sample Order" variant="brand" onclick={open}></lightning-button>
+
+    <template if:true={isOpen}>
+        <section class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2>Create Sample Order</h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <c-sample-order-creator record-id={recordId}></c-sample-order-creator>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Close" onclick={close}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

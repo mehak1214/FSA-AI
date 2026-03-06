@@ -1,0 +1,421 @@
+<template>
+    <!--
+    ═══════════════════════════════════════════════════════════════════════
+    beatPlanWeekly.html  —  Beat Plan Weekly Scheduler
+
+    REAL SCHEMA BINDINGS
+    ──────────────────────────────────────────────────────────────────────
+    {weekLabel}              ← ibfsa__Beat__c  date range label
+    {beatName}               ← ibfsa__Beat__c.Name
+    {beatStatusCls}          ← CSS badge from ibfsa__Beat__c.ibfsa__Status__c
+    {stats.totalVisits}      ← COUNT ibfsa__Visit__c
+    {stats.completed}        ← COUNT ibfsa__Is_Completed__c = true
+    {stats.pending}          ← COUNT remaining (not completed, not missed)
+    {stats.missed}           ← COUNT ibfsa__Visit_Status__c = 'Missed'
+
+    VISIT CARD FIELDS  (ibfsa__Visit__c)
+    ──────────────────────────────────────────────────────────────────────
+    visit.outletName         ← ibfsa__Outlet1__r.Name  (Account lookup on Visit)
+    visit.plannedStartTime   ← ibfsa__Planned_Start_Time__c  (formatted)
+    visit.plannedEndTime     ← ibfsa__Planned_End_Time__c    (formatted)
+    visit.visitStatus        ← ibfsa__Visit_Status__c
+    visit.colorClass → CSS   ← derived: card-completed / card-missed / card-inprogress / card-planned
+    visit.sequence           ← ibfsa__Sequence__c
+
+    MODAL DETAIL FIELDS
+    ──────────────────────────────────────────────────────────────────────
+    selectedVisit.beatName           ← ibfsa__Beat__r.Name
+    selectedVisit.outletName         ← ibfsa__Outlet1__r.Name
+    selectedVisit.outletPriority     ← ibfsa__Outlet1__r.ibfsa__Outlet_Priority__c
+    selectedVisit.approvalStatus     ← ibfsa__Approval_Status__c
+    selectedVisit.checkInTime        ← ibfsa__Check_In_Time__c   (formatted)
+    selectedVisit.checkOutTime       ← ibfsa__Check_Out_Time__c  (formatted)
+    selectedVisit.missedReason       ← ibfsa__Missed_Reason__c
+    selectedVisit.missedRemarks      ← ibfsa__Missed_Remarks__c
+    ═══════════════════════════════════════════════════════════════════════
+    -->
+
+    <div class="bp-shell">
+
+        <!-- ══ WEEK NAVIGATION ════════════════════════════════════════════ -->
+        <div class="bp-weeknav">
+            <button class="bp-navbtn" onclick={handlePrevWeek} aria-label="Previous Week">
+                <lightning-icon icon-name="utility:chevronleft" size="x-small"></lightning-icon>
+                <span>Prev</span>
+            </button>
+
+            <div class="bp-weeklabel">
+                <span class="bp-weektext">Week: {weekLabel}</span>
+                <!-- ibfsa__Beat__c.ibfsa__Status__c badge -->
+                <template if:true={beatName}>
+                    <span class="bp-beat-name">{beatName}</span>
+                </template>
+                <template if:true={beatStatus}>
+                    <span class={beatStatusCls}>{beatStatus}</span>
+                </template>
+            </div>
+
+            <button class="bp-navbtn bp-navbtn--right" onclick={handleNextWeek} aria-label="Next Week">
+                <span>Next</span>
+                <lightning-icon icon-name="utility:chevronright" size="x-small"></lightning-icon>
+            </button>
+        </div>
+
+        <!-- ══ STATS BANNER ═══════════════════════════════════════════════ -->
+        <!-- Counts from ibfsa__Visit__c children of the active Beat -->
+        <template if:true={stats}>
+            <div class="bp-stats">
+                <div class="bp-stat">
+                    <span class="bp-stat__num">{totalVisitsDisplay}</span>
+                    <span class="bp-stat__lbl">Total</span>
+                </div>
+                <div class="bp-stat-sep"></div>
+                <div class="bp-stat bp-stat--done">
+                    <span class="bp-stat__num">{completedDisplay}</span>
+                    <span class="bp-stat__lbl">Completed</span>
+                </div>
+                <div class="bp-stat-sep"></div>
+                <div class="bp-stat bp-stat--pend">
+                    <span class="bp-stat__num">{pendingDisplay}</span>
+                    <span class="bp-stat__lbl">Pending</span>
+                </div>
+                <div class="bp-stat-sep"></div>
+                <div class="bp-stat bp-stat--miss">
+                    <span class="bp-stat__num">{missedDisplay}</span>
+                    <span class="bp-stat__lbl">Missed</span>
+                </div>
+            </div>
+        </template>
+
+        <!-- ══ ACTION BUTTONS ═════════════════════════════════════════════ -->
+        <div class="bp-actions">
+            <!--
+                Add Visit:
+                  calls getBeatForWeek(anchorDate) to get ibfsa__Beat__c.Id
+                  then opens ibfsa__Visit__c new page with Beat pre-filled.
+                  User picks Account (outlet) from ibfsa__Outlet1__c lookup.
+            -->
+            <button class="bp-btn bp-btn--add" onclick={handleAddVisit}>
+                <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                Add Visit
+            </button>
+
+            <!--
+                Submit Beat Plan:
+                  disabled when no Beat, Beat is already Submitted/Approved, or loading.
+                  calls submitBeatPlan(beatId) where beatId = stats.beatId
+            -->
+            <button class="bp-btn bp-btn--submit"
+                    onclick={handleSubmit}
+                    disabled={isSubmitDisabled}>
+                Submit Beat Plan
+                <lightning-icon icon-name="utility:send" size="x-small"></lightning-icon>
+            </button>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="bp-loading">
+                <lightning-spinner alternative-text="Loading visits…" size="medium">
+                </lightning-spinner>
+            </div>
+        </template>
+
+        <!-- ══ NO BEAT MESSAGE ════════════════════════════════════════════ -->
+        
+
+        <!-- ══ WEEKLY CALENDAR GRID ═══════════════════════════════════════ -->
+        <template if:false={isLoading}>
+            <div class="bp-calendar">
+
+                <!-- Day column headers  MON 11 / TUE 12 / … / SUN 17 -->
+                <div class="bp-dayheads">
+                    <template for:each={dayHeaders} for:item="dh">
+                        <div key={dh.key}
+                             class={dh.cls}
+                             data-day={dh.key}
+                             onclick={handleDayClick}>
+                            <span class="bp-dh__abbr">{dh.abbr}</span>
+                            <span class="bp-dh__num">{dh.dateNum}</span>
+                        </div>
+                    </template>
+                </div>
+
+                <!--
+                    Visit card rows (N rows × 7 day columns)
+                    Each cell.visit = one ibfsa__Visit__c record wrapper
+                -->
+                <div class="bp-visitrows">
+                    <template for:each={calendarRows} for:item="row">
+                        <div key={row.rowIndex} class="bp-visitrow">
+                            <template for:each={row.cells} for:item="cell">
+                                <div key={cell.cellKey} class="bp-visitcell">
+                                    <template if:true={cell.visit}>
+                                        <div class={cell.visit.cardCls}
+                                             data-id={cell.visit.id}
+                                             onclick={handleVisitClick}
+                                             role="button"
+                                             tabindex="0">
+                                            <template if:true={cell.visit.isDraft}>
+                                                <button class="bp-draft-remove-inline"
+                                                        data-id={cell.visit.id}
+                                                        onclick={handleRemoveDraft}>x</button>
+                                            </template>
+
+                                            <!-- Sequence badge (ibfsa__Sequence__c) -->
+                                            <template if:true={cell.visit.sequence}>
+                                                <span class="bp-card__seq">{cell.visit.sequence}</span>
+                                            </template>
+
+                                            <!-- Outlet name (ibfsa__Outlet1__r.Name) -->
+                                            <div class="bp-card__outlet">{cell.visit.outletName}</div>
+
+                                            <!-- Time range (ibfsa__Planned_Start/End_Time__c) -->
+                                            <div class="bp-card__time">
+                                                {cell.visit.plannedStartTime}
+                                                <template if:true={cell.visit.plannedEndTime}>
+                                                    &nbsp;–&nbsp;{cell.visit.plannedEndTime}
+                                                </template>
+                                            </div>
+
+                                            <!-- Status (ibfsa__Visit_Status__c) -->
+                                            <template if:true={cell.visit.showBadge}>
+                                                <span class="bp-card__badge">
+                                                    {cell.visit.visitStatus}
+                                                </span>
+                                            </template>
+
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty state: beat found but no visits this week -->
+                <template if:true={isEmpty}>
+                    <div class="bp-empty">
+                        <lightning-icon icon-name="utility:event" size="large"></lightning-icon>
+                        <p>No visits scheduled for this week.</p>
+                        <button class="bp-btn bp-btn--add" onclick={handleAddVisit}>
+                            + Add First Visit
+                        </button>
+                    </div>
+                </template>
+
+            </div>
+        </template>
+
+        <!-- ══ SUCCESS TOAST ══════════════════════════════════════════════ -->
+        <template if:true={showSuccess}>
+            <div class="bp-toast" role="alert">
+                <lightning-icon icon-name="utility:success" size="small"></lightning-icon>
+                <span>Beat Plan submitted for approval!</span>
+            </div>
+        </template>
+
+        <!-- ══ VISIT DETAIL MODAL ══════════════════════════════════════════ -->
+        <!--
+            All fields from ibfsa__Visit__c.
+            Account (outlet) is accessed via selectedVisit.outletId / outletName
+            — it lives on the Visit, NOT on ibfsa__Beat__c directly.
+        -->
+        <template if:true={showDraftModal}>
+            <div class="bp-inline-overlay" role="presentation">
+                <div class="bp-inline-backdrop" onclick={handleCloseDraftModal}></div>
+                <section role="dialog"
+                         tabindex="-1"
+                         aria-modal="true"
+                         aria-labelledby="bpDraftTitle"
+                         class="bp-inline-dialog">
+                    <div class="bp-modal">
+                        <header class="bp-modal__header">
+                            <h2 id="bpDraftTitle" class="bp-modal__title">Add Draft Visit</h2>
+                            <button class="bp-modal__close"
+                                    onclick={handleCloseDraftModal}
+                                    aria-label="Close">✕</button>
+                        </header>
+                        <div class="bp-modal__body bp-modal__body--scroll">
+                            <div class="bp-form-grid">
+                                <lightning-combobox
+                                    name="visitDate"
+                                    label="Visit Date"
+                                    value={draftForm.visitDate}
+                                    options={draftDateOptions}
+                                    onchange={handleDraftFieldChange}
+                                    required>
+                                </lightning-combobox>
+                                <template if:true={visitDateError}>
+                                    <div class="slds-form-element__help">{visitDateError}</div>
+                                </template>
+
+                                <lightning-combobox
+                                    name="outletId"
+                                    label="Outlet"
+                                    value={draftForm.outletId}
+                                    options={outletOptions}
+                                    onchange={handleDraftFieldChange}
+                                    required>
+                                </lightning-combobox>
+
+                                <lightning-combobox
+                                    name="beatId"
+                                    label="Beat"
+                                    value={draftForm.beatId}
+                                    options={beatOptions}
+                                    onchange={handleDraftFieldChange}
+                                    required>
+                                </lightning-combobox>
+                                <div class="bp-field">
+                                    <label class="bp-field__label">Visit Status</label>
+                                    <div class="bp-field__input bp-field__input--disabled">{statusLabel}</div>
+                                </div>
+
+                                <div class="bp-field">
+                                    <label class="bp-field__label">Sales Rep</label>
+                                    <div class="bp-field__input bp-field__input--disabled">{salesRepLabel}</div>
+                                </div>
+
+                                <div class="bp-field">
+                                    <label class="bp-field__label">Start Time <abbr class="bp-field__required" title="required">*</abbr></label>
+                                    <input class="bp-field__input"
+                                           type="time"
+                                           name="startTime"
+                                           value={draftForm.startTime}
+                                           onchange={handleDraftFieldChange} />
+                                </div>
+
+                                <div class="bp-field">
+                                    <label class="bp-field__label">End Time <abbr class="bp-field__required" title="required">*</abbr></label>
+                                    <input class="bp-field__input"
+                                           type="time"
+                                           name="endTime"
+                                           value={draftForm.endTime}
+                                           onchange={handleDraftFieldChange} />
+                                </div>
+
+                                <div class="bp-field bp-field--full">
+                                    <label class="bp-field__label">Notes</label>
+                                    <textarea class="bp-field__input bp-field__textarea"
+                                              name="notes"
+                                              onchange={handleDraftFieldChange}>{draftForm.notes}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <footer class="bp-modal__footer">
+                            <lightning-button label="Cancel" onclick={handleCloseDraftModal}></lightning-button>
+                            <lightning-button label="Add Draft Visit" variant="brand" onclick={handleAddDraftVisit}></lightning-button>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <template if:true={showModal}>
+            <div class="bp-inline-overlay" role="presentation">
+                <div class="bp-inline-backdrop" onclick={handleCloseModal}></div>
+                <section role="dialog"
+                         tabindex="-1"
+                         aria-modal="true"
+                         aria-labelledby="bpModalTitle"
+                         class="bp-inline-dialog">
+                    <div class="bp-modal">
+
+                        <header class="bp-modal__header">
+                            <h2 id="bpModalTitle" class="bp-modal__title">
+                                {selectedVisit.outletName}
+                            </h2>
+                            <p class="bp-modal__subtitle">{selectedVisit.beatName}</p>
+                            <button class="bp-modal__close"
+                                    onclick={handleCloseModal}
+                                    aria-label="Close">✕</button>
+                        </header>
+
+                        <div class="bp-modal__body bp-modal__body--scroll">
+
+                            <div class="bp-mrow">
+                                <span class="bp-mrow__lbl">Beat Plan</span>
+                                <span class="bp-mrow__val">{selectedVisit.beatName}</span>
+                            </div>
+
+                            <div class="bp-mrow">
+                                <span class="bp-mrow__lbl">Outlet</span>
+                                <span class="bp-mrow__val">{selectedVisit.outletName}</span>
+                            </div>
+
+                            <template if:true={selectedVisit.outletPriority}>
+                                <div class="bp-mrow">
+                                    <span class="bp-mrow__lbl">Priority</span>
+                                    <span class="bp-mrow__val">{selectedVisit.outletPriority}</span>
+                                </div>
+                            </template>
+
+                            <div class="bp-mrow">
+                                <span class="bp-mrow__lbl">Date</span>
+                                <span class="bp-mrow__val">{selectedVisit.formattedDate}</span>
+                            </div>
+
+                            <div class="bp-mrow">
+                                <span class="bp-mrow__lbl">Planned Time</span>
+                                <span class="bp-mrow__val">
+                                    {selectedVisit.plannedStartTime}
+                                    <template if:true={selectedVisit.plannedEndTime}>
+                                        &nbsp;–&nbsp;{selectedVisit.plannedEndTime}
+                                    </template>
+                                </span>
+                            </div>
+
+                            <template if:true={selectedVisit.checkInTime}>
+                                <div class="bp-mrow">
+                                    <span class="bp-mrow__lbl">Check In</span>
+                                    <span class="bp-mrow__val">{selectedVisit.checkInTime}</span>
+                                </div>
+                            </template>
+                            <template if:true={selectedVisit.checkOutTime}>
+                                <div class="bp-mrow">
+                                    <span class="bp-mrow__lbl">Check Out</span>
+                                    <span class="bp-mrow__val">{selectedVisit.checkOutTime}</span>
+                                </div>
+                            </template>
+
+                            <div class="bp-mrow">
+                                <span class="bp-mrow__lbl">Visit Status</span>
+                                <span class={selectedVisit.visitStatusCls}>{selectedVisit.visitStatus}</span>
+                            </div>
+
+                            <div class="bp-mrow">
+                                <span class="bp-mrow__lbl">Approval</span>
+                                <span class={selectedVisit.approvalStatusCls}>{selectedVisit.approvalStatus}</span>
+                            </div>
+
+                            <template if:true={selectedVisit.missedReason}>
+                                <div class="bp-mrow">
+                                    <span class="bp-mrow__lbl">Missed Reason</span>
+                                    <span class="bp-mrow__val">{selectedVisit.missedReason}</span>
+                                </div>
+                            </template>
+
+                            <template if:true={selectedVisit.missedRemarks}>
+                                <div class="bp-mrow bp-mrow--full">
+                                    <span class="bp-mrow__lbl">Remarks</span>
+                                    <span class="bp-mrow__val bp-mrow__val--wrap">
+                                        {selectedVisit.missedRemarks}
+                                    </span>
+                                </div>
+                            </template>
+
+                        </div>
+
+                        <footer class="bp-modal__footer">
+                            <lightning-button label="Close"
+                                              onclick={handleCloseModal}>
+                            </lightning-button>
+                        </footer>
+
+                    </div>
+                </section>
+            </div>
+        </template>
+
+    </div>
+</template>

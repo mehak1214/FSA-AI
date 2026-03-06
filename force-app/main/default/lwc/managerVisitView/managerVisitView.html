@@ -1,0 +1,204 @@
+<template>
+    <div class="manager-view-container">
+        <div class="header">
+            <div class="header-left">
+                <span class="header-icon">MV</span>
+                <div>
+                    <h1 class="header-title">Visit Approvals</h1>
+                    <p class="header-subtitle">Manager Dashboard</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-pill pending-pill">
+                    <span class="stat-count">{pendingCount}</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+                <div class="stat-pill approved-pill">
+                    <span class="stat-count">{approvedCount}</span>
+                    <span class="stat-label">Approved</span>
+                </div>
+                <div class="stat-pill rejected-pill">
+                    <span class="stat-count">{rejectedCount}</span>
+                    <span class="stat-label">Rejected</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <button class={pendingTabClass} onclick={showPending}>
+                Pending Approval
+                <template if:true={pendingCount}>
+                    <span class="tab-badge">{pendingCount}</span>
+                </template>
+            </button>
+            <button class={approvedTabClass} onclick={showApproved}>
+                Approved Visits
+            </button>
+            <button class={rejectedTabClass} onclick={showRejected}>
+                Rejected Visits
+                <template if:true={rejectedCount}>
+                    <span class="tab-badge">{rejectedCount}</span>
+                </template>
+            </button>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="spinner-container">
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={hasError}>
+            <div class="error-box">
+                <span>{errorMessage}</span>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <template if:true={showPendingTab}>
+                <template if:true={hasPendingVisits}>
+                    <div class="cards-grid">
+                        <template for:each={pendingVisits} for:item="visit">
+                            <div key={visit.Id} class="visit-card pending-card" data-id={visit.Id} onclick={navigateToRecord}>
+                                <div class="card-hint">Click to open record</div>
+
+                                <div class="card-top">
+                                    <div class="employee-avatar">{visit.initials}</div>
+                                    <div class="card-info">
+                                        <p class="employee-name">{visit.salesRepName}</p>
+                                        <p class="visit-name">{visit.Name}</p>
+                                    </div>
+                                    <span class="status-badge status-pending">Pending</span>
+                                </div>
+
+                                <div class="card-meta">
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Date</span>
+                                        <span>{visit.formattedDate}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Time</span>
+                                        <span>{visit.formattedStartTime} - {visit.formattedEndTime}</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-actions">
+                                    <button class="action-btn action-approve" data-id={visit.Id} onclick={handleApprove} type="button">Approve</button>
+                                    <button class="action-btn action-reject" data-id={visit.Id} onclick={handleReject} type="button">Reject</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={hasPendingVisits}>
+                    <div class="empty-state">
+                        <p class="empty-title">All caught up.</p>
+                        <p class="empty-subtitle">No visits are waiting for your approval.</p>
+                    </div>
+                </template>
+            </template>
+
+            <template if:true={showApprovedTab}>
+                <template if:true={hasApprovedVisits}>
+                    <div class="cards-grid">
+                        <template for:each={approvedVisits} for:item="visit">
+                            <div key={visit.Id} class="visit-card approved-card" data-id={visit.Id} onclick={navigateToRecord}>
+                                <div class="card-hint">Click to open record</div>
+                                <div class="card-top">
+                                    <div class="employee-avatar approved-avatar">{visit.initials}</div>
+                                    <div class="card-info">
+                                        <p class="employee-name">{visit.salesRepName}</p>
+                                        <p class="visit-name">{visit.Name}</p>
+                                    </div>
+                                    <span class="status-badge status-approved">Approved</span>
+                                </div>
+                                <div class="card-meta">
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Date</span>
+                                        <span>{visit.formattedDate}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Time</span>
+                                        <span>{visit.formattedStartTime} - {visit.formattedEndTime}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={hasApprovedVisits}>
+                    <div class="empty-state">
+                        <p class="empty-title">No approved visits yet.</p>
+                        <p class="empty-subtitle">Approved visits will appear here.</p>
+                    </div>
+                </template>
+            </template>
+
+            <template if:true={showRejectedTab}>
+                <template if:true={hasRejectedVisits}>
+                    <div class="cards-grid">
+                        <template for:each={rejectedVisits} for:item="visit">
+                            <div key={visit.Id} class="visit-card rejected-card" data-id={visit.Id} onclick={navigateToRecord}>
+                                <div class="card-hint">Click to open record</div>
+                                <div class="card-top">
+                                    <div class="employee-avatar rejected-avatar">{visit.initials}</div>
+                                    <div class="card-info">
+                                        <p class="employee-name">{visit.salesRepName}</p>
+                                        <p class="visit-name">{visit.Name}</p>
+                                    </div>
+                                    <span class="status-badge status-rejected">Rejected</span>
+                                </div>
+                                <div class="card-meta">
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Date</span>
+                                        <span>{visit.formattedDate}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Time</span>
+                                        <span>{visit.formattedStartTime} - {visit.formattedEndTime}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={hasRejectedVisits}>
+                    <div class="empty-state">
+                        <p class="empty-title">No rejected visits yet.</p>
+                        <p class="empty-subtitle">Rejected visits will appear here.</p>
+                    </div>
+                </template>
+            </template>
+        </template>
+
+        <template if:true={showToast}>
+            <div class={toastClass}>
+                <span>{toastMessage}</span>
+            </div>
+        </template>
+
+        <template if:true={showRejectModal}>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="rejectModalTitle" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="rejectModalTitle" class="slds-text-heading_medium">Reject Visit</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <lightning-textarea
+                            label="Comment"
+                            value={rejectComment}
+                            onchange={handleRejectCommentChange}
+                            required
+                            placeholder="Enter rejection reason">
+                        </lightning-textarea>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="action-btn modal-cancel" onclick={closeRejectModal} type="button">Cancel</button>
+                        <button class="action-btn action-reject" onclick={confirmReject} type="button">Reject Visit</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>

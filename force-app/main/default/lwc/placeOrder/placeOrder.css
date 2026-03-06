@@ -1,0 +1,143 @@
+:host { display: block; }
+lightning-card {
+    --slds-c-card-color-background: #ffffff;
+    --slds-c-card-radius-border: 14px;
+    --slds-c-card-shadow: 0 10px 24px rgba(20, 45, 80, 0.08);
+}
+.product-image { width: 100%; height: 150px; object-fit: contain; background: #f8fbff; border-radius: 8px; }
+.primary { background: #17396e; color: #ffffff; border-color: #17396e; }
+.btn {
+    border-radius: 12px; padding: 8px 18px; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+    border: 1px solid #17396e; display: inline-flex; align-items: center; justify-content: center; transition: transform 120ms ease;
+    background: #ffffff; color: #17396e;
+}
+.btn.primary { background: #17396e; color: #ffffff; }
+.btn:hover { transform: translateY(-1px); }
+.slds-box { border: 1px solid #dbe7f7; border-radius: 12px; background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%); transition: transform 120ms ease; }
+.summary-box { background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border-radius: 12px; padding: 16px; border: 1px solid #dce8f8; }
+.summary-box h3, .address-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: #12315b; }
+.summary-item-block { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #e7effa; }
+.summary-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; gap: 8px; align-items: center; }
+.summary-row-sample { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; align-items: center; }
+.col-label { font-size: 10px; font-weight: 700; color: #6b7f9c; text-transform: uppercase; }
+.col-value { font-size: 13px; font-weight: 700; color: #12284b; }
+.address-box { background: #f8fbff; border: 1px solid #dde8f8; border-radius: 10px; padding: 16px; }
+.invoice-totals { background: #f8fbff; border-radius: 10px; padding: 15px; border: 1px solid #dde8f8; }
+.qty-input-small { width: 70px; } /* Ensures the input doesn't take up too much space */
+@media (max-width: 768px) {
+     .summary-row { grid-template-columns: 1fr 1fr; }
+.scheme-option{
+    font-size: 10px !important;
+}
+
+}
+
+/* Success Step Container */
+.success-container {
+    background: #ffffff;
+    border-radius: 12px;
+    animation: fadeIn 0.6s ease-out;
+}
+.Apply Scheme{
+    margin-bottom: 0 !important;
+}
+
+.success-title {
+    color: #12315b;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.success-subtitle {
+    color: #6b7f9c;
+    font-size: 16px;
+}
+
+.order-summary-card {
+    background: #f8fbff;
+    border: 1px solid #dce8f8;
+    border-radius: 16px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e7effa;
+}
+
+.label { color: #6b7f9c; font-weight: 600; }
+.value { color: #12315b; font-weight: 700; }
+
+/* Buttons */
+.btn.outline {
+    background: transparent;
+    border: 2px solid #17396e;
+    color: #17396e;
+}
+
+/* Animated Checkmark CSS */
+.success-checkmark {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.check-icon {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    border-radius: 50%;
+    box-sizing: content-box;
+    border: 4px solid #4CAF50;
+}
+
+.check-icon::after {
+    content: '';
+    position: absolute;
+    top: 24px;
+    left: 14px;
+    width: 45px;
+    height: 22px;
+    border-left: 4px solid #4CAF50;
+    border-bottom: 4px solid #4CAF50;
+    transform: rotate(-45deg);
+    animation: checkmark 0.5s ease-in-out;
+}
+
+@keyframes checkmark {
+    0% { height: 0; width: 0; opacity: 1; }
+    20% { height: 0; width: 22px; opacity: 1; }
+    40% { height: 22px; width: 22px; opacity: 1; }
+    100% { height: 22px; width: 45px; opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.discount{
+color: #4CAF50;
+/* font-size: 14px; */
+}
+
+.stock-label {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.stock-available {
+    color: #2e7d32;
+    background: #e8f5e9;
+}
+
+.stock-out {
+    color: #c62828;
+    background: #ffebee;
+}

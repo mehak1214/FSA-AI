@@ -1,0 +1,120 @@
+<template>
+    <div class="container">
+        <div class="main-card">
+            <div class="cards-wrapper">
+                <template if:true={displaySchemes}>
+                    <template for:each={displaySchemes} for:item="scheme" for:index="index">
+                        <div key={scheme.Id} class={scheme.cardClass} data-scheme-id={scheme.Id}>
+                            <div class="card-content">
+                                <template if:true={scheme.isOverflow}>
+                                    <button class="slds-button slds-button_neutral slds-button_small" onclick={handleOpenModal} title="View all schemes">
+                                        View All
+                                    </button>
+                                </template>
+                                <template if:false={scheme.isOverflow}>
+                                    <div class="card-info">
+                                        <p class="card-scheme-name">{scheme.SchemeName}</p>
+                                        <template if:true={scheme.Discount}>
+                                            <p class="card-scheme-discount">{scheme.Discount}%</p>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                
+                <template if:false={displaySchemes}>
+                    <p class="no-schemes">No active schemes available</p>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <template if:true={isModalOpen}>
+        <div class="modal-layer">
+            <div class="modal-backdrop" onclick={handleCloseModal}></div>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-label="All Active Schemes" class="modal-dialog" lwc:ref="schemesModal">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">All Active Schemes</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium schemes-modal-content">
+                        <template if:true={allSchemes}>
+                            <div class="schemes-list">
+                                <template for:each={allSchemes} for:item="scheme">
+                                    <div class="scheme-list-item" key={scheme.Id} data-scheme-id={scheme.Id} onclick={handleSchemeCardClick}>
+                                        <div class="scheme-list-name">{scheme.SchemeName}</div>
+                                        <template if:true={scheme.Discount}>
+                                            <div class="scheme-list-discount">{scheme.Discount}%</div>
+                                        </template>
+                                        <template if:true={scheme.StartDate}>
+                                            <div class="scheme-list-date">{scheme.StartDate} – {scheme.EndDate}</div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="btn secondary" onclick={handleCloseModal} type="button">Close</button>
+                    </footer>
+                </div>
+            </section>
+        </div>
+    </template>
+
+    <!-- Scheme Detail Modal -->
+    <template if:true={isSchemeDetailModalOpen}>
+        <div class="modal-layer">
+            <div class="modal-backdrop" onclick={handleCloseSchemeDetailModal}></div>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-label="Scheme Details" class="modal-dialog">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium">Scheme Details</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium scheme-detail-content">
+                        <template if:true={selectedScheme}>
+                            <div class="detail-card">
+                                <div class="detail-card-head">
+                                    <lightning-icon icon-name="standard:document" size="small"></lightning-icon>
+                                    <span class="detail-card-title">{selectedScheme.SchemeName}</span>
+                                </div>
+                                <div class="detail-grid">
+                                    <template if:true={selectedScheme.Discount}>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Discount</span>
+                                            <span class="detail-value">{selectedScheme.Discount}%</span>
+                                        </div>
+                                    </template>
+                                    <template if:true={selectedScheme.StartDate}>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Start Date</span>
+                                            <span class="detail-value">{selectedScheme.StartDate}</span>
+                                        </div>
+                                    </template>
+                                    <template if:true={selectedScheme.EndDate}>
+                                        <div class="detail-row">
+                                            <span class="detail-label">End Date</span>
+                                            <span class="detail-value">{selectedScheme.EndDate}</span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <template if:true={selectedScheme.Description}>
+                                    <div class="detail-description-box">
+                                        <span class="detail-label">Description</span>
+                                        <p class="detail-description-text">{selectedScheme.Description}</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="btn secondary" onclick={handleCloseSchemeDetailModal} type="button">Close</button>
+                    </footer>
+                </div>
+            </section>
+        </div>
+    </template>
+</template>

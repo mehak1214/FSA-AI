@@ -1,0 +1,32 @@
+:host {
+    display: block;
+    --tone-border: #dbe7f7;
+    --tone-bg: #f5f9ff;
+}
+
+lightning-card {
+    --slds-c-card-color-background: #ffffff;
+    --slds-c-card-radius-border: 14px;
+    --slds-c-card-shadow: 0 8px 22px rgba(20, 45, 80, 0.08);
+}
+
+.slds-box {
+    background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
+    border: 1px solid var(--tone-border);
+    border-radius: 12px;
+}
+
+.slds-theme_shade {
+    background-color: transparent;
+}
+
+lightning-button-icon {
+    --slds-c-button-color-border: #d0dff4;
+    --slds-c-button-radius-border: 8px;
+}
+
+@media (max-width: 700px) {
+    lightning-layout {
+        display: block;
+    }
+}

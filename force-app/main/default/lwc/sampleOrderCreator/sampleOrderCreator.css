@@ -1,0 +1,28 @@
+:host {
+    display: block;
+}
+
+lightning-card {
+    --slds-c-card-color-background: #ffffff;
+    --slds-c-card-radius-border: 14px;
+    --slds-c-card-shadow: 0 8px 22px rgba(20, 45, 80, 0.08);
+}
+
+.slds-grid.slds-wrap.slds-gutters.slds-p-around_small {
+    background: linear-gradient(180deg, #fbfdff 0%, #f5f9ff 100%);
+    border: 1px solid #dce8f7;
+    border-radius: 12px;
+    margin: 8px;
+}
+
+.slds-grid.slds-gutters.slds-p-around_x-small {
+    border: 1px solid #e3ecf8;
+    border-radius: 10px;
+    margin: 6px 8px;
+    background: #ffffff;
+}
+
+.slds-align_absolute-center.slds-p-around_medium {
+    border-top: 1px solid #e7eef9;
+    margin-top: 8px;
+}

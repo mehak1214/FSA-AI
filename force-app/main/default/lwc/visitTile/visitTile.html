@@ -1,0 +1,19 @@
+<template>
+    <div class={cardClass}
+         role="button"
+         tabindex="0"
+         onclick={handleCardClick}
+         onkeydown={handleCardKeydown}>
+        <div class="head-row">
+            <span class="visit-no">Visit No: {visitNumber}</span>
+        </div>
+
+        <strong class="outlet-name">{outletName}</strong>
+        <p class="address-text">{outletAddress}</p>
+
+        <div class="foot-row">
+            <span class={statusBadgeClass}>{visitStatus}</span>
+            <button type="button" class="dir-btn" onclick={navigateToMap}>Get Directions</button>
+        </div>
+    </div>
+</template>

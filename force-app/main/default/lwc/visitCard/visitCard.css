@@ -1,0 +1,107 @@
+:host {
+    --brand-blue: #1b4fd8;
+    --success-green: #2e844a;
+    --error-red: #ea001e;
+}
+
+.visit-card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.visit-id {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #747474;
+    text-transform: uppercase;
+}
+
+/* Status Badges */
+.status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.status.inprogress { background: #fff4ce; color: #8a6d00; }
+.status.completed { background: #dff0e0; color: #1e7e34; }
+.status.missed { background: #fdecea; color: #a61b1b; }
+
+.outlet-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #181818;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.meta-row {
+    display: flex;
+    align-items: center;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Map Preview Styling */
+.map-container {
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+
+/* Mobile-First Buttons */
+.card-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s active;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-checkin {
+    background: var(--brand-blue);
+    color: white;
+}
+
+.btn-checkout {
+    background: var(--error-red);
+    color: white;
+}
+
+.completed-badge {
+    width: 100%;
+    text-align: center;
+    background: #f4f6f9;
+    padding: 10px;
+    border-radius: 8px;
+    color: #2e844a;
+    font-weight: 600;
+}

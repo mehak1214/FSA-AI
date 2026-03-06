@@ -1,0 +1,31 @@
+<template>
+    <lightning-card title="Outlet Location">
+        <div class="container">
+            <p class="hint">
+                Click on the map to place or move the marker.
+            </p>
+
+            <lightning-map
+                map-markers={mapMarkers}
+                center={mapCenter}
+                zoom-level="16"
+                onclick={handleMapClick}>
+            </lightning-map>
+
+            <div class="actions">
+                <lightning-button
+                    label="Use Current Location"
+                    variant="brand"
+                    onclick={useCurrentLocation}>
+                </lightning-button>
+
+                <lightning-button
+                    label="Save Location"
+                    variant="success"
+                    onclick={saveLocation}
+                    disabled={disableSave}>
+                </lightning-button>
+            </div>
+        </div>
+    </lightning-card>
+</template>

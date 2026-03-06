@@ -1,0 +1,415 @@
+import { LightningElement, api, track, wire } from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { refreshApex } from '@salesforce/apex';
+import ORDER_OBJECT from '@salesforce/schema/Order';
+import ORDER_TYPE_FIELD from '@salesforce/schema/Order.Type';
+import { getObjectInfo, getPicklistValues } from 'lightning/uiObjectInfoApi';
+
+// Apex Imports
+import getFranchiseAccounts from '@salesforce/apex/PlaceOrderController.getFranchiseAccounts';
+import getDistributorAccounts from '@salesforce/apex/PlaceOrderController.getDistributorAccounts';
+import getProductsByDistributor from '@salesforce/apex/PlaceOrderController.getProductsByDistributor';
+import getSampleProducts from '@salesforce/apex/PlaceOrderController.getSampleProducts';
+import getSchemesByThresholdQuantity from '@salesforce/apex/PlaceOrderController.getSchemesByThresholdQuantity';
+import placeOrder from '@salesforce/apex/PlaceOrderController.placeOrder';
+import getAccountAddress from '@salesforce/apex/PlaceOrderController.getAccountAddress';
+
+export default class PlaceOrder extends LightningElement {
+    _franchiseId;
+    @track currentStep = 1; 
+
+    @track address = {
+        shippingStreet: '', shippingCity: '', shippingState: '', shippingPostalCode: '', shippingCountry: '',
+        billingStreet: '', billingCity: '', billingState: '', billingPostalCode: '', billingCountry: '', contactName:'', phone:''
+    };
+
+    @track isBillingSame = false;
+    @track addressReady = false; // controls address form mount/remount
+
+    @track payment = {
+        amount: 0, mode: 'Cash', cardNumber: '', cardHolder: '', cardExpiry: '', cardType: '', upiId: ''
+    };
+
+    @track sampleProducts = [];
+    @track regularProducts = [];
+    @track franchiseOptions = [];
+    @track distributorOptions = [];
+    @track availableSchemes = [];
+    @track orderTypeOptions = [];
+    
+    selectedOrderType;
+    selectedFranchise;
+    selectedDistributor;
+    selectedSchemeId = null;
+
+    paymentModes = [{ label: 'Cash', value: 'Cash' }, { label: 'UPI', value: 'UPI' }, { label: 'Card', value: 'Card' }];
+    cardOptions = [{ label: 'Visa', value: 'Visa' }, { label: 'MasterCard', value: 'MasterCard' }, { label: 'RuPay', value: 'RuPay'}];
+
+    @api
+    get franchiseId() { return this._franchiseId; }
+    set franchiseId(value) {
+        this._franchiseId = value;
+        if (value) { this.selectedFranchise = value; }
+    }
+
+    get stepOne() { return this.currentStep === 1; }
+    get stepTwo() { return this.currentStep === 2; }
+    // For Sample Orders, stepThree (payment) is skipped; step 3 maps directly to success
+    get stepThree() { return this.currentStep === 3 && !this.isSampleOrder; }
+    get stepFour() { return this.isSampleOrder ? this.currentStep === 3 : this.currentStep === 4; }
+    // Show Place Order on stepTwo for Sample Orders, stepThree for Regular Orders
+    get showPlaceOrder() { return (this.isSampleOrder && this.currentStep === 2) || (!this.isSampleOrder && this.currentStep === 3); }
+    get showNextButton() { return !this.showPlaceOrder && !this.stepFour; }
+
+    get isCard() { return this.payment.mode === 'Card'; }
+    get isUPI() { return this.payment.mode === 'UPI'; }
+    get isFranchiseLocked() { return !!this.franchiseId; }
+
+    @wire(getObjectInfo, { objectApiName: ORDER_OBJECT })
+    orderObjectInfo;
+
+    @wire(getPicklistValues, { recordTypeId: '$orderObjectInfo.data.defaultRecordTypeId', fieldApiName: ORDER_TYPE_FIELD })
+    wiredOrderTypes({ data }) {
+        if (data) this.orderTypeOptions = data.values.map(v => ({ label: v.label, value: v.value }));
+    }
+
+    @wire(getFranchiseAccounts)
+    wiredFranchises({ data }) {
+        if (data) {
+            this.franchiseOptions = data.map(acc => ({ label: acc.Name, value: acc.Id }));
+            if (this.franchiseId) { this.selectedFranchise = this.franchiseId; }
+        }
+    }
+
+    @wire(getDistributorAccounts)
+    wiredDistributors({ data }) {
+        if (data) this.distributorOptions = data.map(acc => ({ label: acc.Name, value: acc.Id }));
+    }
+
+    @wire(getProductsByDistributor, { distributorId: '$selectedDistributor' })
+    wiredProductsResult(result) {
+        this._wiredProductsResult = result;
+        const { data } = result;
+        if (data) {
+            const normalizedProducts = data.map(p => ({
+                ...p,
+                quantity: 0,
+                unitPrice: p.unitPrice || 0,
+                totalSampleQuantity: p.totalSampleQuantity,
+            }));
+            this.regularProducts = normalizedProducts.filter(p => p.isSample !== true);
+        } else {
+            this.regularProducts = [];
+        }
+    }
+
+    handleNext() {
+        if (this.currentStep === 1) {
+            const selectedItems = this.currentProducts.filter(p => p.quantity > 0);
+            if (!this.selectedFranchise || selectedItems.length === 0) {
+                this.showToast('Error', 'Ensure franchise is selected and products are added', 'error');
+                return;
+            }
+            this.addressReady = false; // unmount address form before fetch
+            getAccountAddress({ accountId: this.selectedFranchise })
+                .then(result => {
+                    // Normalize nulls to empty strings so lightning-input
+                    // fields reliably update when the address object is replaced.
+                    const toStr = v => (v == null ? '' : v);
+                    // Strip all characters except digits and leading '+' so the
+                    // phone value is valid for Salesforce phone fields (no hyphens,
+                    // spaces, parentheses, etc. from the Contact record).
+                    const sanitizePhone = v => {
+                        if (!v) return '';
+                        const cleaned = String(v).replace(/[^\d+]/g, '');
+                        return cleaned.startsWith('+')
+                            ? '+' + cleaned.slice(1).replace(/\D/g, '')
+                            : cleaned;
+                    };
+                    if (result) {
+                        this.address = {
+                            shippingStreet:     toStr(result.shippingStreet),
+                            shippingCity:       toStr(result.shippingCity),
+                            shippingState:      toStr(result.shippingState),
+                            shippingPostalCode: toStr(result.shippingPostalCode),
+                            shippingCountry:    toStr(result.shippingCountry),
+                            billingStreet:      toStr(result.billingStreet),
+                            billingCity:        toStr(result.billingCity),
+                            billingState:       toStr(result.billingState),
+                            billingPostalCode:  toStr(result.billingPostalCode),
+                            billingCountry:     toStr(result.billingCountry),
+                            contactName:        toStr(result.contactName),
+                            phone:              sanitizePhone(result.phone)
+                        };
+                        if (!result.billingStreet) {
+                            this.isBillingSame = true;
+                            this.handleSameAddress({ target: { checked: true } });
+                        }
+                    }
+                    // Advance to step 2 and remount address form AFTER data is set,
+                    // so lightning-input fields render fresh with the fetched values.
+                    this.currentStep = 2;
+                    this.addressReady = true;
+                })
+                .catch(() => {
+                    this.currentStep = 2;
+                    this.addressReady = true;
+                });
+        } else if (this.currentStep === 2 && !this.isSampleOrder) {
+            // Regular Order: proceed to payment step
+            this.payment.amount = parseFloat(this.computedTotalPriceDisplay) || 0;
+            this.currentStep = 3;
+        }
+    }
+
+    handlePrev() { this.currentStep -= 1; }
+
+    handleOrderTypeChange(event) {
+        this.selectedOrderType = event.detail.value;
+        if (!this.selectedOrderType) {
+            this.selectedDistributor = null;
+        }
+        // When Sample Order is selected, load sample products immediately (no distributor needed)
+        if (this.selectedOrderType === 'Sample Order' && this.selectedFranchise) {
+            this.loadSampleProducts();
+        }
+    }
+
+    loadSampleProducts() {
+        getSampleProducts({ franchiseId: this.selectedFranchise })
+            .then(data => {
+                this.sampleProducts = data.map(p => ({
+                    ...p,
+                    quantity: 0,
+                    quantityOnHand: p.quantityOnHand,
+                    sampleOrderLimit: p.sampleOrderLimit,
+                    alreadyOrderedQty: p.alreadyOrderedQty || 0
+                }));
+            })
+            .catch(error => {
+                this.showToast('Error', error.body?.message || 'Failed to load sample products', 'error');
+            });
+    }
+    handleFranchiseChange(event) {
+        if (!this.isFranchiseLocked) {
+            this.selectedFranchise = event.detail.value;
+            if (this.selectedOrderType === 'Sample Order') {
+                this.loadSampleProducts();
+            }
+        }
+    }
+    handleDistributorChange(event) { this.selectedDistributor = event.detail.value; }
+
+    handleAddressChange(event) {
+        const field = event.target.name;
+        this.address[field] = event.target.value;
+        if (this.isBillingSame && field.startsWith('shipping')) {
+            this.address[field.replace('shipping', 'billing')] = event.target.value;
+        }
+    }
+
+    handleSameAddress(event) {
+        this.isBillingSame = event.target.checked;
+        if (this.isBillingSame) {
+            this.address.billingStreet = this.address.shippingStreet;
+            this.address.billingCity = this.address.shippingCity;
+            this.address.billingState = this.address.shippingState;
+            this.address.billingPostalCode = this.address.shippingPostalCode;
+            this.address.billingCountry = this.address.shippingCountry;
+        }
+    }
+
+    handlePaymentChange(event) { this.payment[event.target.name] = event.target.value;}
+    
+    // if(computedTotalPriceDisplay) }
+    handleSummarySchemeChange(event) { this.selectedSchemeId = event.detail.value; }
+
+    // Unified Quantity Logic
+    handleSummaryQtyChange(event) {
+        const productId = event.target.dataset.id;
+        const newQty = parseInt(event.target.value, 10);
+        this.updateQtyValue(productId, isNaN(newQty) ? 0 : newQty);
+    }
+
+    increaseQty(event) { this.updateQtyValue(event.target.dataset.id, 'inc'); }
+    decreaseQty(event) { this.updateQtyValue(event.target.dataset.id, 'dec'); }
+
+    updateQtyValue(productId, actionOrValue) {
+        const updatedProducts = this.currentProducts.map(p => {
+            if (p.productId === productId) {
+                let qty = p.quantity;
+                if (actionOrValue === 'inc') qty++;
+                else if (actionOrValue === 'dec') qty--;
+                else qty = actionOrValue;
+
+                if (qty < 0) qty = 0;
+
+                // Sample order validations
+                if (this.selectedOrderType === 'Sample Order') {
+                    // Cannot exceed available stock (from ProductItem.QuantityOnHand)
+                    const stock = p.quantityOnHand != null ? p.quantityOnHand : null;
+                    if (stock !== null && qty > stock) {
+                        this.showToast('Stock Limit', `Only ${stock} unit(s) available in stock for "${p.productName}".`, 'warning');
+                        qty = stock;
+                    }
+                    // Cannot exceed the remaining sample order limit for this franchise
+                    const limit = p.sampleOrderLimit != null ? p.sampleOrderLimit : null;
+                    if (limit !== null) {
+                        const alreadyOrdered = p.alreadyOrderedQty || 0;
+                        const remaining = limit - alreadyOrdered;
+                        if (remaining <= 0) {
+                            this.showToast('Order Limit Reached', `The sample order limit for "${p.productName}" has already been reached for this account.`, 'warning');
+                            qty = 0;
+                        } else if (qty > remaining) {
+                            this.showToast('Order Limit', `You can only order ${remaining} more unit(s) of "${p.productName}" as a sample (limit: ${limit}, already ordered: ${alreadyOrdered}).`, 'warning');
+                            qty = remaining;
+                        }
+                    }
+                }
+
+                return { ...p, quantity: qty };
+            }
+            return p;
+        });
+        this.setCurrentProducts(updatedProducts);
+        this.updateAvailableSchemes();
+    }
+
+    updateAvailableSchemes() {
+        const totalQty = this.currentProducts.reduce((sum, p) => sum + (parseInt(p.quantity, 10) || 0), 0);
+        if (totalQty === 0) {
+            this.availableSchemes = [];
+            this.selectedSchemeId = null;
+            return;
+        }
+        getSchemesByThresholdQuantity({ thresholdQuantity: totalQty })
+            .then((result) => {
+                this.availableSchemes = result.map(scheme => ({
+                    label: scheme.label + ' (' + scheme.discount + '% off)',
+                    value: scheme.value,
+                    discount: scheme.discount
+                }));
+                if (!this.availableSchemes.length) this.selectedSchemeId = null;
+                else if (!this.selectedSchemeId) this.selectedSchemeId = this.availableSchemes[0].value;
+            });
+    }
+
+    orderAmt;
+
+    saveOrder() {
+        const selectedItems = this.currentProducts.filter(p => p.quantity > 0).map(p => ({
+            productId: p.productId, productName: p.productName, quantity: parseInt(p.quantity, 10), unitPrice: p.unitPrice, productItemId: p.productItemId || null
+        }));
+
+        this.orderAmt = this.computedTotalPriceDisplay;
+
+        placeOrder({
+            franchiseId: this.selectedFranchise,
+            distributorId: this.selectedDistributor,
+            orderType: this.selectedOrderType,
+            selectedProducts: selectedItems,
+            selectedSchemeId: this.selectedSchemeId ? String(this.selectedSchemeId) : null,
+            addressData: this.address,
+            paymentData: this.payment
+        })
+        .then((result) => {
+            // For Sample Orders, success is currentStep=3; for Regular Orders, currentStep=4
+            this.currentStep = this.isSampleOrder ? 3 : 4;
+
+            // Optimistically update local stock and alreadyOrderedQty so the
+            // product grid is accurate immediately if the user starts a new order.
+            if (this.selectedOrderType === 'Sample Order') {
+                const orderedQtyById = {};
+                selectedItems.forEach(item => { orderedQtyById[item.productId] = item.quantity; });
+
+                this.sampleProducts = this.sampleProducts.map(p => {
+                    const ordered = orderedQtyById[p.productId] || 0;
+                    if (ordered > 0) {
+                        const currentStock = p.quantityOnHand != null ? p.quantityOnHand : 0;
+                        const newStock = Math.max(0, currentStock - ordered);
+                        const newAlreadyOrdered = (p.alreadyOrderedQty || 0) + ordered;
+                        return { ...p, quantity: 0, quantityOnHand: newStock, alreadyOrderedQty: newAlreadyOrdered };
+                    }
+                    return { ...p, quantity: 0 };
+                });
+            } else {
+                this.setCurrentProducts(this.currentProducts.map(p => ({ ...p, quantity: 0 })));
+            }
+
+            // Also force a server-side cache refresh so subsequent wire calls get fresh data
+            refreshApex(this._wiredProductsResult);
+        })
+        .catch(error => this.showToast('Error', error.body?.message || 'Error', 'error'));
+    }
+
+    get selectedItemsForSummary() {
+        const isSample = this.isSampleOrder;
+        return this.currentProducts.filter(p => p.quantity > 0).map(p => {
+            const qty = parseInt(p.quantity, 10) || 0;
+            const unit = parseFloat(p.unitPrice) || 0;
+            let disc = 0;
+            if (this.selectedSchemeId) {
+                const s = this.availableSchemes.find(x => x.value === this.selectedSchemeId);
+                if (s) disc = parseFloat(s.discount) || 0;
+            }
+            const dAmt = qty * unit * (disc / 100);
+            return {
+                ...p,
+                summaryRowClass: isSample ? 'summary-row summary-row-sample' : 'summary-row',
+                unitPriceDisplay: unit.toFixed(2),
+                lineTotalDisplay: (qty * unit).toFixed(2),
+                discountAmountDisplay: dAmt.toFixed(2),
+                discountedTotalDisplay: ((qty * unit) - dAmt).toFixed(2),
+                discountedTotal: (qty * unit) - dAmt,
+                lineTotal: qty * unit,
+                discountAmount: dAmt
+            };
+        });
+    }
+
+    get selectedItemsSubtotalDisplay() { return this.selectedItemsForSummary.reduce((s, i) => s + i.lineTotal, 0).toFixed(2); }
+    get selectedItemsTotalDiscountDisplay() { return this.selectedItemsForSummary.reduce((s, i) => s + i.discountAmount, 0).toFixed(2); }
+    get computedTotalPriceDisplay() { return this.selectedItemsForSummary.reduce((s, i) => s + i.discountedTotal, 0).toFixed(2); }
+    get currentProducts() {
+        if (this.selectedOrderType === 'Sample Order') return this.sampleProducts;
+        if (this.selectedOrderType === 'Regular Order') return this.regularProducts;
+        return [];
+    }
+    get displayedProducts() {
+        return this.currentProducts.map(p => {
+            let stockLabel = null;
+            let stockLabelClass = 'stock-label';
+            if (this.isSampleOrder) {
+                const stock = p.quantityOnHand;
+                if (stock != null && stock > 0) {
+                    stockLabel = `${stock} in stock`;
+                    stockLabelClass = 'stock-label stock-available';
+                } else {
+                    stockLabel = 'Out of stock';
+                    stockLabelClass = 'stock-label stock-out';
+                }
+            }
+            return { ...p, stockLabel, stockLabelClass };
+        });
+    }
+
+    get isSampleOrder() {
+        return this.selectedOrderType === 'Sample Order';
+    }
+
+    get isRegularOrder() {
+        return this.selectedOrderType === 'Regular Order';
+    }
+
+    setCurrentProducts(updatedProducts) {
+        if (this.selectedOrderType === 'Sample Order') {
+            this.sampleProducts = updatedProducts;
+        } else if (this.selectedOrderType === 'Regular Order') {
+            this.regularProducts = updatedProducts;
+        }
+    }
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+    }
+}

@@ -1,0 +1,35 @@
+<template>
+    <lightning-card title="Sales Target achievement">
+        <div class="progress-container">
+
+            <!-- Top Row: Amounts + Percentage -->
+            <div class="amount-row">
+                <span class="amount">₹{actualFormatted}</span>
+                <span class="target">/ ₹{targetFormatted}</span>
+                <span class="percent">{progressLabel}</span>
+            </div>
+
+            <!-- Custom Progress Bar -->
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar">
+                    <div class="progress-fill" style={progressStyle}></div>
+                </div>
+
+                <!-- Markers with tooltips -->
+                <div class="markers">
+                    <span class="marker actual" title="Actual Sales">₹{actualFormatted}</span>
+                    <span class="marker mid" title="Midpoint (50% of Target)">₹{midFormatted}</span>
+                    <span class="marker target" title="Target Sales">₹{targetFormatted}</span>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <template if:true={error}>
+                <div class="error-message">
+                    Error loading data: {error.message}
+                </div>
+            </template>
+
+        </div>
+    </lightning-card>
+</template>

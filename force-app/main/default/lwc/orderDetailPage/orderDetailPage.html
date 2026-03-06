@@ -1,0 +1,79 @@
+<template>
+    <section class="order-detail-page">
+        <template if:true={isLoading}>
+            <div class="loading-wrap">
+                <lightning-spinner alternative-text="Loading order details" size="large"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={errorMessage}>
+            <div class="error-card">
+                <h2>Unable to Load Order</h2>
+                <p>{errorMessage}</p>
+            </div>
+        </template>
+
+        <template if:true={order}>
+            <article class="detail-shell">
+                <header class="page-panel detail-header">
+                    <button class="back-btn" onclick={handleBack} type="button" title="Back to orders">
+                        <lightning-icon icon-name="utility:chevronleft" size="x-small"></lightning-icon>
+                        <span>Back to Orders</span>
+                    </button>
+                    <span class={statusBadgeClass}>{order.status}</span>
+                </header>
+
+                <section class="page-panel summary-panel">
+                    <div>
+                        <h1>Order #{order.orderNumber}</h1>
+                        <p class="subline">Custom order detail view</p>
+                        <div class="summary-meta">
+                            <span class="summary-meta-item">
+                                <lightning-icon icon-name="utility:category" size="xx-small" class="summary-meta-icon" alternative-text="Type"></lightning-icon>
+                                Type: {orderType}
+                            </span>
+                            <span class="summary-meta-separator">|</span>
+                            <span class="summary-meta-item">
+                                <lightning-icon icon-name="utility:number_input" size="xx-small" class="summary-meta-icon" alternative-text="Items"></lightning-icon>
+                                Items: {itemsCount}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="amount-block">
+                        <span class="label">Order Amount</span>
+                        <span class="amount">{formattedAmount}</span>
+                    </div>
+                </section>
+
+                <section class="page-panel">
+                    <h3 class="section-title">Order Information</h3>
+                    <div class="grid">
+                        <section class="card">
+                        <h3>Order Info</h3>
+                        <div class="item"><span>Dealer/Distributor</span><strong>{dealerName}</strong></div>
+                        <div class="item"><span>Order By</span><strong>{activatedByName}</strong></div>
+                        <div class="item"><span>Order Start Date</span><strong>{formattedOrderStartDate}</strong></div>
+                        <div class="item"><span>Type</span><strong>{orderType}</strong></div>
+                        <div class="item"><span>Items</span><strong>{itemsCount}</strong></div>
+                        </section>
+
+                        <section class="card">
+                        <h3>Billing Address</h3>
+                        <p class="address">{billingAddress}</p>
+                        </section>
+
+                        <section class="card">
+                        <h3>Shipping Address</h3>
+                        <p class="address">{shippingAddress}</p>
+                        </section>
+
+                        <section class="card full-width">
+                        <h3>Order Description</h3>
+                        <p class="description">{description}</p>
+                        </section>
+                    </div>
+                </section>
+            </article>
+        </template>
+    </section>
+</template>

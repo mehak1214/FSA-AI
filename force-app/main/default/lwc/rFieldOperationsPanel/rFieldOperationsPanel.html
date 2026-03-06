@@ -1,0 +1,35 @@
+<template>
+    <section class="visit-tabs">
+        <button class={upcomingTabClass} data-tab="upcoming" onclick={handleTabClick}>
+            Upcoming
+        </button>
+        <button class={ongoingTabClass} data-tab="ongoing" onclick={handleTabClick}>
+            Ongoing
+        </button>
+        <button class={completedTabClass} data-tab="completed" onclick={handleTabClick}>
+            Completed
+        </button>
+    </section>
+
+    <section class="visit-list">
+        <template if:true={filteredVisits.length}>
+            <template for:each={filteredVisits} for:item="visit">
+                <c-visit-tile
+                    key={visit.Id}
+                    visit={visit}
+                    day-started={dayStarted}
+                    day-ended={dayEnded}
+                    is-today={isToday}
+                    onrefresh={handleTileRefresh}>
+                </c-visit-tile>
+            </template>
+        </template>
+
+        <template if:false={filteredVisits.length}>
+            <div class="empty">
+                <p>{emptyVisitTitle}</p>
+                <span>{emptyVisitSubtitle}</span>
+            </div>
+        </template>
+    </section>
+</template>

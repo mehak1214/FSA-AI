@@ -1,0 +1,257 @@
+:host {
+    display: block;
+    min-height: 100vh;
+    background: #eef3fa;
+    font-family: "Salesforce Sans", Arial, sans-serif;
+}
+
+.page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 14px 28px;
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.head h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #1f2937;
+}
+
+.btn {
+    border: 1px solid #d1dbe8;
+    background: #ffffff;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1f2937;
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn.action {
+    background: #0d2e69;
+    color: #ffffff;
+    border-color: #0d2e69;
+}
+
+.back-btn {
+    border: none;
+    background: #e4ebf8;
+    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+    color: #1b3c7b;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #dce5f2;
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.outlet-header h2 {
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+    color: #1f2937;
+}
+
+.outlet-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.82rem;
+    color: #4b5d73;
+    margin-bottom: 6px;
+}
+
+.outlet-address {
+    margin: 0;
+    font-size: 0.86rem;
+    color: #4b5d73;
+}
+
+.card-head {
+    margin-bottom: 8px;
+}
+
+.card-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+.card-head.with-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.btn.refresh {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+.meta {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    color: #5b6777;
+}
+
+.meta.warn {
+    color: #8a5300;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.kpi {
+    border: 1px solid #e4ebf5;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f9fbfe;
+}
+
+.kpi span {
+    display: block;
+    font-size: 0.75rem;
+    color: #607187;
+    margin-bottom: 5px;
+}
+
+.kpi strong {
+    font-size: 1rem;
+    color: #1d2e44;
+}
+
+/* Payment Overview - Red values for Pending Amount and Overdue Count */
+.outlet-header + .card .kpi:nth-child(1) strong,
+.outlet-header + .card .kpi:nth-child(2) strong {
+    color: #d32f2f;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.modal-content {
+    max-height: 65vh;
+    overflow: auto;
+}
+
+.summary {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.summary th,
+.summary td {
+    text-align: left;
+    font-size: 0.84rem;
+    padding: 8px;
+    border-bottom: 1px solid #edf1f7;
+    color: #243041;
+}
+
+.summary th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #66758a;
+}
+
+.state {
+    border: 1px solid #dce5f2;
+    border-radius: 10px;
+    background: #f8fbff;
+    color: #3d4f66;
+    padding: 10px 12px;
+    font-size: 0.86rem;
+}
+
+.state.error {
+    border-color: #f0c7cc;
+    background: #fff4f5;
+    color: #9d2f3a;
+}
+
+/* Star Rating Display */
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #4b5d73;
+}
+
+.rating-label {
+    font-weight: 600;
+}
+
+.star-group {
+    display: flex;
+    gap: 2px;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    cursor: default;
+    padding: 0;
+    line-height: 1;
+}
+
+.star-filled {
+    color: #f59e0b;
+}
+
+.star-empty {
+    color: #d1d5db;
+}
+
+.rating-value {
+    font-weight: 600;
+    color: #243041;
+    min-width: 28px;
+}
+
+/* Status Text Styling */
+.status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+}
+
+.status-label {
+    color: #4b5d73;
+    font-weight: 600;
+}
+
+.status-text-active {
+    color: #10b981;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-text-inactive {
+    color: #4b5d73;
+    text-transform: capitalize;
+}

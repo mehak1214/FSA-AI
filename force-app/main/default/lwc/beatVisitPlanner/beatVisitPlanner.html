@@ -1,0 +1,228 @@
+<template>
+    <div class="planner-root">
+
+        <!-- ── Top Header ── -->
+        <div class="header">
+            <div class="header-week-nav">
+                <button class="nav-btn" onclick={prevWeek}>&#9664; Prev</button>
+                <div class="week-label">{weekLabel}</div>
+                <button class="nav-btn" onclick={nextWeek}>Next &#9654;</button>
+            </div>
+            <div class="stats-bar">
+                <span class="stat-item">Total: <strong>{totalVisits}</strong></span>
+                <span class="stat-sep">|</span>
+                <span class="stat-item executed">Executed: <strong>{executedCount}</strong></span>
+                <span class="stat-sep">|</span>
+                <span class="stat-item pending">Pending: <strong>{pendingCount}</strong></span>
+                <span class="stat-sep">|</span>
+                <span class="stat-item missed">Missed: <strong>{missedCount}</strong></span>
+            </div>
+        </div>
+
+        <!-- ── Action Buttons ── -->
+        <div class="action-bar">
+            <button class="btn-add" onclick={openAddVisitModal}>
+                <span class="btn-icon">+</span> Add Visit
+            </button>
+            <button class={submitBtnClass} onclick={submitBeatPlan} disabled={isSubmitDisabled}>
+                <template if:true={submitted}>&#10003; Beat Submitted!</template>
+                <template if:false={submitted}>Submit Beat Plan &#8250;</template>
+            </button>
+        </div>
+
+        <!-- ── Weekly Calendar Grid ── -->
+        <div class="calendar-scroll">
+            <div class="calendar-grid">
+
+                <!-- Day Headers -->
+                <div class="day-headers">
+                    <template for:each={weekDays} for:item="day">
+                        <div key={day.dateStr} class="day-header">
+                            <div class="day-label">{day.label}</div>
+                            <div class="day-num">{day.num}</div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Visit Cards per Day -->
+                <div class="day-columns">
+                    <template for:each={weekDays} for:item="day">
+                        <div key={day.dateStr} class="day-col" data-date={day.dateStr}>
+                            <template for:each={day.visits} for:item="visit">
+                                <div key={visit.Id} class={visit.cardClass}
+                                     style={visit.cardStyle}
+                                     data-id={visit.Id}
+                                     data-date={day.dateStr}>
+                                    <button class="remove-btn"
+                                            data-id={visit.Id}
+                                            data-date={day.dateStr}
+                                            onclick={removeVisit}>&#x2715;</button>
+                                    <div class="vc-name">{visit.outletName}</div>
+                                    <div class="vc-time">{visit.timeRange}</div>
+                                    <div class="vc-type">{visit.visitType}</div>
+                                    <span class={visit.badgeClass} style={visit.badgeStyle}>{visit.badgeLabel}</span>
+                                </div>
+                            </template>
+
+                            <!-- Inline add button per day -->
+                            <button class="day-add-btn"
+                                    data-date={day.dateStr}
+                                    data-label={day.label}
+                                    data-num={day.num}
+                                    onclick={openDayModal}>+</button>
+                        </div>
+                    </template>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── Add Visit Modal ── -->
+        <template if:true={showModal}>
+            <div class="modal-overlay" onclick={handleOverlayClick}>
+                <div class="modal-box">
+
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h2 class="modal-title">Add Visit &ndash; {modalDayLabel}</h2>
+                        <button class="modal-close" onclick={closeModal}>&#x2715;</button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body">
+
+                        <!-- Outlet -->
+                        <div class="form-field">
+                            <label class="form-label">Outlet:</label>
+                            <div class="select-wrap icon-select">
+                                <span class="sel-icon">&#127978;</span>
+                                <select class={outletSelectClass} value={formData.outlet}
+                                        onchange={handleOutletChange}>
+                                    <option value="">Select outlet&hellip;</option>
+                                    <template for:each={accounts} for:item="acc">
+                                        <option key={acc.Id} value={acc.Id}>{acc.Name}</option>
+                                    </template>
+                                </select>
+                                <span class="sel-arrow">&#9660;</span>
+                            </div>
+                            <template if:true={errors.outlet}>
+                                <p class="err-msg">&#9888; {errors.outlet}</p>
+                            </template>
+                        </div>
+
+                        <!-- Visit Type -->
+                        <div class="form-field">
+                            <label class="form-label">Visit Type:</label>
+                            <div class="select-wrap icon-select">
+                                <span class="sel-icon">&#128203;</span>
+                                <select value={formData.visitType} onchange={handleVtypeChange}>
+                                    <template for:each={visitTypes} for:item="vt">
+                                        <option key={vt} value={vt}>{vt}</option>
+                                    </template>
+                                </select>
+                                <span class="sel-arrow">&#9660;</span>
+                            </div>
+                        </div>
+
+                        <!-- Times -->
+                        <div class="time-row">
+                            <div class="form-field time-field">
+                                <label class="form-label">Start Time:</label>
+                                <div class="time-wrap">
+                                    <input type="time" class={startTimeClass}
+                                           value={formData.startTime}
+                                           onchange={handleStartChange} />
+                                    <span class="time-icon">&#128336;</span>
+                                </div>
+                                <template if:true={errors.startTime}>
+                                    <p class="err-msg">&#9888; {errors.startTime}</p>
+                                </template>
+                            </div>
+                            <div class="form-field time-field">
+                                <label class="form-label">End Time:</label>
+                                <div class="time-wrap">
+                                    <input type="time" class={endTimeClass}
+                                           value={formData.endTime}
+                                           onchange={handleEndChange} />
+                                    <span class="time-icon">&#128336;</span>
+                                </div>
+                                <template if:true={errors.endTime}>
+                                    <p class="err-msg">&#9888; {errors.endTime}</p>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Overlap Warning -->
+                        <template if:true={overlapWarning}>
+                            <div class="overlap-warn">
+                                <span class="warn-icon">&#9888;&#65039;</span>
+                                <span class="warn-text">{overlapWarning}</span>
+                            </div>
+                        </template>
+
+                        <!-- Visit Status -->
+                        <div class="form-field">
+                            <label class="form-label">Visit Status:</label>
+                            <div class="select-wrap">
+                                <select value={formData.status} onchange={handleStatusChange}>
+                                    <template for:each={visitStatuses} for:item="st">
+                                        <option key={st} value={st}>{st}</option>
+                                    </template>
+                                </select>
+                                <span class="sel-arrow">&#9660;</span>
+                            </div>
+                        </div>
+
+                        <!-- Missed Reason (conditional) -->
+                        <template if:true={isMissed}>
+                            <div class="form-field">
+                                <label class="form-label">Missed Reason: <span class="required">*</span></label>
+                                <div class="select-wrap">
+                                    <select class={reasonSelectClass} value={formData.reason}
+                                            onchange={handleReasonChange}>
+                                        <option value="">Select reason&hellip;</option>
+                                        <template for:each={missedReasons} for:item="mr">
+                                            <option key={mr} value={mr}>{mr}</option>
+                                        </template>
+                                    </select>
+                                    <span class="sel-arrow">&#9660;</span>
+                                </div>
+                                <template if:true={errors.reason}>
+                                    <p class="err-msg">&#9888; {errors.reason}</p>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Notes -->
+                        <div class="form-field">
+                            <label class="form-label">Notes <span class="optional">(Optional)</span></label>
+                            <textarea class="notes-area" maxlength="255"
+                                      value={formData.notes}
+                                      onchange={handleNotesChange}
+                                      placeholder="Add notes here&hellip;"></textarea>
+                            <div class="char-count">{notesLength}/255</div>
+                        </div>
+
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <button class="btn-save" onclick={saveVisit}>
+                            &#128190; Save Visit
+                        </button>
+                        <button class="btn-cancel" onclick={closeModal}>Cancel</button>
+                    </div>
+
+                </div>
+            </div>
+        </template>
+
+        <!-- ── Toast ── -->
+        <template if:true={toast}>
+            <div class={toastClass}>
+                {toast.msg}
+            </div>
+        </template>
+
+    </div>
+</template>

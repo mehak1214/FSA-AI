@@ -1,0 +1,18 @@
+<template>
+    <lightning-card title="Start Day">
+        <div class="slds-p-around_medium">
+            <lightning-button
+                variant="brand"
+                label="Start Day"
+                onclick={handleStartDay}
+                disabled={isStarted}>
+            </lightning-button>
+
+            <template if:true={error}>
+                <p class="slds-text-color_error slds-m-top_small">
+                    {error}
+                </p>
+            </template>
+        </div>
+    </lightning-card>
+</template>
