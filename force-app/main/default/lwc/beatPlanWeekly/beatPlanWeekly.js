@@ -448,7 +448,7 @@ export default class BeatPlanWeekly extends LightningElement {
         };
         this.draftVisits = [...this.draftVisits, draft];
         this.showDraftModal = false;
-        this.showSuccessToast('Draft visit added. It will be saved on Submit Beat Plan.');
+        this.showToast('Success', 'Draft visit added. It will be saved on Submit Beat Plan.', 'success');
     }
 
     handleRemoveDraft(event) {

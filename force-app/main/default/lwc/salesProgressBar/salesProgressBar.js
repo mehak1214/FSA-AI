@@ -40,7 +40,8 @@ export default class SalesProgressBar extends LightningElement {
 
     // Label with arrow
     get progressLabel() {
-        return `▲ ${this.progress}%`;
+        const safe = Number.isFinite(this.progress) ? this.progress : 0;
+        return `▲ ${safe}%`;
     }
 
     get currentMonth() {
@@ -58,9 +59,9 @@ export default class SalesProgressBar extends LightningElement {
     wiredData({ error, data }) {
         this.isLoading = false;
         if (data) {
-            this.actual = data.actual || 0;
-            this.target = data.target || 0;
-            this.progress = data.progress || 0;
+            this.actual = Number.isFinite(Number(data.actual)) ? Number(data.actual) : 0;
+            this.target = Number.isFinite(Number(data.target)) ? Number(data.target) : 0;
+            this.progress = Number.isFinite(Number(data.progress)) ? Number(data.progress) : 0;
             this.error = undefined;
         } else if (error) {
             this.error = error;
