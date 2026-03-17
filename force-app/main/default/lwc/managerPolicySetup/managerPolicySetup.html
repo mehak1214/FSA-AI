@@ -1,0 +1,166 @@
+<template>
+    <div class="ps-container">
+
+        <!-- Page header -->
+        <div class="ps-page-header">
+            <div class="ps-header-left">
+                <h1 class="ps-page-title">Expense Policies &amp; Allowances</h1>
+                <p class="ps-page-subtitle">Set per-type claim caps and monthly allowances for your team</p>
+            </div>
+        </div>
+
+        <!-- Two-panel layout -->
+        <div class="ps-panels">
+
+            <!-- ── LEFT: Policy Caps ───────────────────── -->
+            <div class="ps-panel">
+                <div class="ps-panel-header">
+                    <lightning-icon icon-name="utility:shield" size="small" class="ps-panel-icon"></lightning-icon>
+                    <h2 class="ps-panel-title">Expense Type Caps</h2>
+                </div>
+                <p class="ps-panel-sub">Maximum allowed per single claim. Amounts above 150% will be hard-blocked.</p>
+
+                <template lwc:if={isPolicyLoading}>
+                    <div class="ps-loading">
+                        <lightning-spinner size="small"></lightning-spinner>
+                    </div>
+                </template>
+
+                <template lwc:else>
+                    <div class="ps-form">
+
+                        <template for:each={capFields} for:item="f">
+                            <div key={f.key} class="ps-field-row">
+                                <label class="ps-field-label">{f.label}</label>
+                                <div class="ps-field-input-wrap">
+                                    <span class="ps-currency-symbol">₹</span>
+                                    <input
+                                        type="number"
+                                        class="ps-input"
+                                        data-key={f.key}
+                                        value={f.value}
+                                        min="0"
+                                        placeholder="No cap"
+                                        oninput={handleCapInput} />
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="ps-field-row">
+                            <label class="ps-field-label">Warn Threshold %</label>
+                            <div class="ps-field-input-wrap">
+                                <input
+                                    type="number"
+                                    class="ps-input"
+                                    data-key="warnThresholdPct"
+                                    value={policyForm.warnThresholdPct}
+                                    min="0"
+                                    max="100"
+                                    placeholder="80"
+                                    oninput={handleCapInput} />
+                                <span class="ps-percent-symbol">%</span>
+                            </div>
+                        </div>
+
+                        <div class="ps-field-hint">
+                            Warn when a rep's monthly spend reaches this % of their allowance.
+                        </div>
+
+                        <div class="ps-form-footer">
+                            <template lwc:if={policySaveSuccess}>
+                                <span class="ps-save-success">
+                                    <lightning-icon icon-name="utility:check" size="xx-small" class="ps-success-icon"></lightning-icon>
+                                    Saved
+                                </span>
+                            </template>
+                            <button class="ps-btn-save" onclick={handleSavePolicy} disabled={isSavingPolicy}>
+                                <template lwc:if={isSavingPolicy}>Saving…</template>
+                                <template lwc:else>Save Policy</template>
+                            </button>
+                        </div>
+
+                    </div>
+                </template>
+            </div><!-- end left panel -->
+
+            <!-- ── RIGHT: Team Allowances ─────────────── -->
+            <div class="ps-panel">
+                <div class="ps-panel-header">
+                    <lightning-icon icon-name="utility:people" size="small" class="ps-panel-icon"></lightning-icon>
+                    <h2 class="ps-panel-title">Team Monthly Allowances</h2>
+                </div>
+                <p class="ps-panel-sub">Set a total monthly expense budget per rep. Changes apply from next save.</p>
+
+                <!-- Month navigator -->
+                <div class="ps-month-nav">
+                    <button class="ps-month-btn" onclick={handlePrevMonth}>
+                        <lightning-icon icon-name="utility:chevronleft" size="xx-small"></lightning-icon>
+                    </button>
+                    <span class="ps-month-label">{currentMonthLabel}</span>
+                    <button class="ps-month-btn" onclick={handleNextMonth} disabled={isCurrentMonth}>
+                        <lightning-icon icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+                    </button>
+                </div>
+
+                <template lwc:if={isAllowancesLoading}>
+                    <div class="ps-loading">
+                        <lightning-spinner size="small"></lightning-spinner>
+                    </div>
+                </template>
+
+                <template lwc:elseif={noTeam}>
+                    <div class="ps-empty">
+                        <lightning-icon icon-name="utility:people" size="medium" class="ps-empty-icon"></lightning-icon>
+                        <p>No direct reports found.</p>
+                    </div>
+                </template>
+
+                <template lwc:else>
+                    <div class="ps-rep-list">
+                        <template for:each={repRows} for:item="rep">
+                            <div key={rep.userId} class="ps-rep-row">
+
+                                <div class="ps-rep-info">
+                                    <span class="ps-rep-name">{rep.repName}</span>
+                                    <template lwc:if={rep.allowanceAmount}>
+                                        <div class="ps-allowance-bar-wrap">
+                                            <div class="ps-allowance-bar">
+                                                <div class={rep.barClass} style={rep.barStyle}></div>
+                                            </div>
+                                            <span class="ps-spent-label">₹{rep.spentFormatted} spent · {rep.spentPct}%</span>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="ps-rep-input-wrap">
+                                    <span class="ps-currency-symbol">₹</span>
+                                    <input
+                                        type="number"
+                                        class="ps-input ps-input--rep"
+                                        data-userid={rep.userId}
+                                        data-allowanceid={rep.allowanceId}
+                                        value={rep.allowanceAmount}
+                                        min="0"
+                                        placeholder="No limit"
+                                        oninput={handleAllowanceInput} />
+                                    <button
+                                        class="ps-btn-save-rep"
+                                        data-userid={rep.userId}
+                                        onclick={handleSaveAllowance}
+                                        disabled={rep.isSaving}>
+                                        <template lwc:if={rep.isSaving}>…</template>
+                                        <template lwc:else>Save</template>
+                                    </button>
+                                </div>
+
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+            </div><!-- end right panel -->
+
+        </div><!-- end ps-panels -->
+
+    </div>
+</template>

@@ -1,0 +1,319 @@
+<template>
+    <div class="detail-container">
+
+        <!-- ── BACK BUTTON ──────────────────────────────── -->
+        <div class="detail-topbar">
+            <button class="back-btn" onclick={handleBack}>
+                <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+                Back to Queue
+            </button>
+        </div>
+
+        <template lwc:if={isLoading}>
+            <div class="loading-panel">
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template lwc:else>
+
+            <!-- ── REPORT HEADER CARD ────────────────────── -->
+            <div class="report-header-card">
+                <div class="report-header-top">
+                    <div class="report-title-block">
+                        <h1 class="report-name">{detail.report.name}</h1>
+                        <span class={reportStatusClass}>{detail.report.status}</span>
+                    </div>
+                    <div class="report-meta-row">
+                        <span class="meta-chip meta-chip--rep">
+                            <lightning-icon icon-name="utility:person_account" size="xx-small"></lightning-icon>
+                            <span class="rep-name-highlight">{detail.report.salesRepName}</span>
+                        </span>
+                        <span class="meta-chip">
+                            <lightning-icon icon-name="utility:event" size="xx-small"></lightning-icon>
+                            {formattedReportDate}
+                        </span>
+                        <span class="meta-chip total-chip">
+                            <lightning-icon icon-name="utility:currency" size="xx-small"></lightning-icon>
+                            Total: {formattedTotal}
+                        </span>
+                        <span class="meta-chip count-chip">
+                            {detail.report.expenseCount} expense(s) · {detail.report.submittedCount} pending
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Rejection reason (if any) -->
+                <template lwc:if={detail.report.rejectionReason}>
+                    <div class="rejection-banner">
+                        <lightning-icon icon-name="utility:error" size="x-small" class="rejection-icon"></lightning-icon>
+                        <span>Rejection Reason: {detail.report.rejectionReason}</span>
+                    </div>
+                </template>
+
+                <!-- Bulk action buttons -->
+                <div class="bulk-actions">
+                    <div class="bulk-actions-left">
+                        <button class="btn-bulk btn-approve-pend" onclick={handleApprovePending} disabled={isProcessing}>
+                            Approve Pending
+                            <template lwc:if={detail.report.submittedCount}>
+                                <span class="pending-badge">{detail.report.submittedCount}</span>
+                            </template>
+                        </button>
+                        <button class="btn-bulk btn-reject-pend"  onclick={handleRejectPending}  disabled={isProcessing}>
+                            Reject Pending
+                            <template lwc:if={detail.report.submittedCount}>
+                                <span class="pending-badge">{detail.report.submittedCount}</span>
+                            </template>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── EXPENSES TABLE ────────────────────────── -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <lightning-icon icon-name="utility:receipt" size="small" class="section-icon"></lightning-icon>
+                        Expenses ({detail.report.expenseCount})
+                    </h2>
+                </div>
+
+                <template lwc:if={hasExpenses}>
+                    <div class="table-wrap">
+                        <table class="expense-table">
+                            <thead>
+                                <tr class="table-head-row">
+                                    <th class="th th-name">Expense #</th>
+                                    <th class="th th-type">Type</th>
+                                    <th class="th th-date">Date</th>
+                                    <th class="th th-desc">Description</th>
+                                    <th class="th th-amount">Amount</th>
+                                    <th class="th th-status">Status</th>
+                                    <th class="th th-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={enrichedExpenses} for:item="exp">
+                                    <tr key={exp.id} class={exp.rowClass} data-id={exp.id} onclick={handleExpenseRowClick} title="Click to view details">
+                                        <td class="td td-name td-clickable">{exp.name}</td>
+                                        <td class="td td-type">
+                                            <span class="type-badge">{exp.expenseType}</span>
+                                        </td>
+                                        <td class="td td-date">{exp.formattedDate}</td>
+                                        <td class="td td-desc" title={exp.description}>{exp.truncatedDesc}</td>
+                                        <td class="td td-amount">{exp.formattedAmount}</td>
+                                        <td class="td td-status">
+                                            <span class={exp.statusClass}>{exp.status}</span>
+                                        </td>
+                                        <td class="td td-actions" onclick={stopRowPropagation}>
+                                            <template lwc:if={exp.isActionable}>
+                                                <button class="btn-row-approve" data-id={exp.id} onclick={handleApproveExpense} title="Approve">&#10003;</button>
+                                                <button class="btn-row-reject"  data-id={exp.id} onclick={handleRejectExpense}  title="Reject">&#10005;</button>
+                                            </template>
+                                            <template lwc:else>—</template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-foot-row">
+                                    <td colspan="4" class="foot-label">Total</td>
+                                    <td class="foot-total">{formattedTotal}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </template>
+                <template lwc:else>
+                    <div class="empty-section">No expenses found for this report.</div>
+                </template>
+            </div>
+
+        </template>
+
+        <!-- ── EXPENSE DETAIL POPUP + REJECT MODAL (portal → moved to document.body) ── -->
+        <div class="med-portal">
+
+            <!-- Expense detail popup -->
+            <div style={expensePopupStyle}>
+                <div class="med-backdrop" onclick={closeExpensePopup}></div>
+                <div class="med-popup" role="dialog" aria-modal="true" aria-label="Expense Detail">
+                    <div class="med-popup-header">
+                        <div class="med-popup-title-block">
+                            <span class="med-popup-name">{popupExpense.name}</span>
+                            <span class={popupStatusClass}>{popupExpense.status}</span>
+                        </div>
+                        <div class="med-popup-actions">
+                            <template lwc:if={popupIsActionable}>
+                                <button class="med-btn-approve" onclick={handlePopupApprove} disabled={isProcessing}>
+                                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                                    Approve
+                                </button>
+                                <button class="med-btn-reject" onclick={handlePopupReject} disabled={isProcessing}>
+                                    <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                    Reject
+                                </button>
+                            </template>
+                            <button class="med-close-btn" onclick={closeExpensePopup}>&#10005;</button>
+                        </div>
+                    </div>
+
+                    <div class="med-popup-body">
+
+                        <!-- Amount -->
+                        <div class="med-field-row">
+                            <span class="med-field-label">Amount</span>
+                            <span class="med-field-value med-amount">{popupFormattedAmount}</span>
+                        </div>
+
+                        <!-- Type -->
+                        <div class="med-field-row">
+                            <span class="med-field-label">Expense Type</span>
+                            <span class="med-field-value">{popupExpense.expenseType}</span>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="med-field-row">
+                            <span class="med-field-label">Date</span>
+                            <span class="med-field-value">{popupFormattedDate}</span>
+                        </div>
+
+                        <!-- Status (repeated inline for quick scan) -->
+                        <div class="med-field-row">
+                            <span class="med-field-label">Status</span>
+                            <span class={popupStatusClass}>{popupExpense.status}</span>
+                        </div>
+
+                        <!-- Description — full width -->
+                        <div class="med-field-row med-field-row--col med-field-row--full">
+                            <span class="med-field-label">Description</span>
+                            <span class="med-field-value med-desc">{popupDescription}</span>
+                        </div>
+
+                        <!-- Rejection Reason — full width, only when Rejected -->
+                        <template lwc:if={popupHasRejectionReason}>
+                            <div class="med-field-row med-field-row--col med-field-row--full">
+                                <span class="med-field-label med-field-label--rejection">Rejection Reason</span>
+                                <div class="med-rejection-banner">
+                                    <lightning-icon icon-name="utility:error" size="x-small" class="med-rejection-icon"></lightning-icon>
+                                    <span class="med-rejection-text">{popupExpense.rejectionReason}</span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Policy Breach — full width, shown whenever breach flag is set -->
+                        <template lwc:if={popupHasPolicyBreach}>
+                            <div class="med-field-row med-field-row--col med-field-row--full">
+                                <span class="med-field-label med-field-label--breach">
+                                    <lightning-icon icon-name="utility:warning" size="xx-small" class="med-breach-label-icon"></lightning-icon>
+                                    Policy Breach — {popupExpense.policyBreachType}
+                                </span>
+                                <div class="med-breach-banner">
+                                    <div class="med-breach-grid">
+                                        <template lwc:if={popupBreachHasTypeCap}>
+                                            <div class="med-breach-item">
+                                                <span class="med-breach-item-label">Type Cap at Time</span>
+                                                <span class="med-breach-item-value">{popupCapAtTime}</span>
+                                            </div>
+                                            <div class="med-breach-item">
+                                                <span class="med-breach-item-label">Over By</span>
+                                                <span class="med-breach-item-value med-breach-over">{popupBreachAmount}</span>
+                                            </div>
+                                        </template>
+                                        <template lwc:if={popupBreachHasAllowance}>
+                                            <div class="med-breach-item">
+                                                <span class="med-breach-item-label">Monthly Allowance</span>
+                                                <span class="med-breach-item-value">{popupAllowanceAtTime}</span>
+                                            </div>
+                                            <div class="med-breach-item">
+                                                <span class="med-breach-item-label">Already Spent</span>
+                                                <span class="med-breach-item-value">{popupAllowanceUsed}</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Linked Visits — full width -->
+                        <div class="med-field-row med-field-row--col med-field-row--full">
+                            <span class="med-field-label">Linked Visits</span>
+                            <template lwc:if={popupHasVisits}>
+                                <div class="med-visit-list">
+                                    <template for:each={popupExpense.linkedVisits} for:item="v">
+                                        <a key={v.id} href={v.recordUrl} target="_blank" class="med-visit-chip">
+                                            <span class="med-visit-name">{v.name}</span>
+                                            <template lwc:if={v.outletName}>
+                                                <span class="med-visit-outlet">{v.outletName}</span>
+                                            </template>
+                                        </a>
+                                    </template>
+                                </div>
+                            </template>
+                            <template lwc:else>
+                                <span class="med-empty">No visits linked</span>
+                            </template>
+                        </div>
+
+                        <!-- Attachments — full width -->
+                        <div class="med-field-row med-field-row--col med-field-row--full">
+                            <span class="med-field-label">Attachments</span>
+                            <template lwc:if={popupHasFiles}>
+                                <div class="med-file-list">
+                                    <template for:each={popupExpense.files} for:item="f">
+                                        <button key={f.documentId} data-document-id={f.documentId} onclick={handleFilePreview} class="med-file-chip">
+                                            <lightning-icon icon-name="doctype:attachment" size="small" class="med-file-icon"></lightning-icon>
+                                            <div class="med-file-info">
+                                                <span class="med-file-name">{f.title}</span>
+                                                <span class="med-file-size">{f.formattedSize}</span>
+                                            </div>
+                                            <lightning-icon icon-name="utility:preview" size="xx-small" class="med-file-preview-icon"></lightning-icon>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                            <template lwc:else>
+                                <span class="med-empty">No attachments</span>
+                            </template>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reject comment modal (inside portal so z-index stacks correctly) -->
+            <div style={rejectModalStyle}>
+                <div class="modal-backdrop" onclick={cancelReject}></div>
+                <div class="reject-modal" role="dialog">
+                    <div class="reject-modal-header">
+                        <h3 class="reject-modal-title">Rejection Comments</h3>
+                        <lightning-button-icon
+                            icon-name="utility:close"
+                            variant="bare"
+                            alternative-text="Close"
+                            onclick={cancelReject}>
+                        </lightning-button-icon>
+                    </div>
+                    <div class="reject-modal-body">
+                        <p class="reject-hint">Please provide a reason for rejection (optional):</p>
+                        <textarea
+                            class="reject-textarea"
+                            rows="4"
+                            placeholder="Enter rejection reason…"
+                            oninput={handleCommentInput}>{rejectComment}</textarea>
+                    </div>
+                    <div class="reject-modal-footer">
+                        <button class="btn-modal-cancel" onclick={cancelReject}>Cancel</button>
+                        <button class="btn-modal-confirm" onclick={confirmReject} disabled={isProcessing}>
+                            Confirm Rejection
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</template>

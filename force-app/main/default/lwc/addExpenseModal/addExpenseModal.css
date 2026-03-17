@@ -1,0 +1,172 @@
+/* ── Backdrop ────────────────────────────────────────── */
+.modal-backdrop {
+    position  : fixed;
+    inset     : 0;
+    background: rgba(0,0,0,.45);
+    z-index   : 8000;
+    animation : fadeIn .2s ease;
+}
+
+/* ── Bottom Sheet ────────────────────────────────────── */
+.modal-sheet {
+    position      : fixed;
+    bottom        : 0;
+    left          : 0;
+    right         : 0;
+    background    : #ffffff;
+    border-radius : 20px 20px 0 0;
+    z-index       : 8100;
+    max-height    : 90vh;
+    display       : flex;
+    flex-direction: column;
+    animation     : slideUp .28s cubic-bezier(.32,1,.28,1);
+    box-shadow    : 0 -4px 30px rgba(0,0,0,.18);
+}
+
+/* ── Handle ──────────────────────────────────────────── */
+.sheet-handle {
+    width        : 40px;
+    height       : 4px;
+    background   : #d8d8d8;
+    border-radius: 2px;
+    margin       : 12px auto 0;
+    flex-shrink  : 0;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.sheet-header {
+    display         : flex;
+    justify-content : space-between;
+    align-items     : center;
+    padding         : 16px 20px 12px;
+    border-bottom   : 1px solid #e8e8e8;
+    flex-shrink     : 0;
+}
+.sheet-title {
+    font-size  : 18px;
+    font-weight: 700;
+    color      : #181818;
+    margin     : 0;
+}
+.close-btn { --lwc-colorTextIconDefault: #706e6b; }
+
+/* ── Body ────────────────────────────────────────────── */
+.sheet-body {
+    padding   : 16px 20px;
+    overflow-y: auto;
+    flex      : 1;
+}
+
+/* ── Form elements ───────────────────────────────────── */
+.form-group    { margin-bottom: 18px; }
+.form-label    { display: block; font-size: 13px; font-weight: 600;
+                 color: #3e3e3c; margin-bottom: 6px; }
+.required-label::after { content: ' *'; color: #c23934; }
+.optional { font-weight: 400; color: #706e6b; font-size: 12px; }
+
+.form-input,
+.form-select,
+.form-textarea {
+    width         : 100%;
+    padding       : 11px 14px;
+    border        : 1.5px solid #dddbda;
+    border-radius : 8px;
+    font-size     : 15px;
+    color         : #181818;
+    background    : #f9f9f9;
+    box-sizing    : border-box;
+    transition    : border-color .15s, box-shadow .15s;
+    -webkit-appearance: none;
+    appearance    : none;
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline      : none;
+    border-color : #0070d2;
+    box-shadow   : 0 0 0 3px rgba(0,112,210,.15);
+    background   : #fff;
+}
+.form-textarea { resize: none; line-height: 1.5; }
+
+/* Amount with currency prefix */
+.amount-input-wrap {
+    position : relative;
+    display  : flex;
+    align-items: center;
+}
+.currency-symbol {
+    position   : absolute;
+    left       : 14px;
+    font-size  : 16px;
+    font-weight: 600;
+    color      : #444;
+    pointer-events: none;
+}
+.amount-input { padding-left: 30px !important; }
+
+/* Select wrapper */
+.select-wrap { position: relative; }
+.select-icon {
+    position      : absolute;
+    right         : 12px;
+    top           : 50%;
+    transform     : translateY(-50%);
+    pointer-events: none;
+    --lwc-colorTextIconDefault: #706e6b;
+}
+
+/* Error */
+.field-error {
+    display    : block;
+    font-size  : 12px;
+    color      : #c23934;
+    margin-top : 4px;
+}
+
+/* ── Footer ──────────────────────────────────────────── */
+.sheet-footer {
+    display    : flex;
+    gap        : 12px;
+    padding    : 14px 20px 24px;
+    border-top : 1px solid #e8e8e8;
+    flex-shrink: 0;
+    background : #fff;
+}
+.btn-cancel {
+    flex           : 1;
+    padding        : 13px;
+    border         : 1.5px solid #dddbda;
+    border-radius  : 8px;
+    background     : #fff;
+    font-size      : 15px;
+    font-weight    : 600;
+    color          : #3e3e3c;
+    cursor         : pointer;
+}
+.btn-save {
+    flex           : 2;
+    padding        : 13px;
+    border         : none;
+    border-radius  : 8px;
+    background     : #0070d2;
+    font-size      : 15px;
+    font-weight    : 700;
+    color          : #fff;
+    cursor         : pointer;
+    position       : relative;
+    transition     : background .15s;
+}
+.btn-save:hover:not([disabled]) { background: #005fb2; }
+.btn-save[disabled] { background: #9ec5e9; cursor: not-allowed; }
+.btn-spinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+/* ── Animations ──────────────────────────────────────── */
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}

@@ -1,0 +1,81 @@
+/* Row */
+.expense-row { border-bottom: 1px solid #f0f0f0; transition: background .12s; }
+.expense-row:hover { background: #f8faff; }
+.status-row-rejected { background: #fff8f8; }
+.status-row-approved { background: #f6fff8; }
+
+/* Cells — widths MUST match col-* widths in managerExpenseDetail.css */
+.cell {
+    padding        : 11px 14px;
+    font-size      : 13px;
+    color          : #181818;
+    vertical-align : middle;
+    overflow       : hidden;
+    text-overflow  : ellipsis;
+    white-space    : nowrap;
+    box-sizing     : border-box;
+}
+.cell-name    { width: 120px; font-weight: 600; }
+.cell-type    { width: 180px; }
+.cell-date    { width: 120px; color: #706e6b; }
+.cell-desc    { width: 220px; color: #444; }
+.cell-visit   { width: 130px; color: #0070d2; font-size: 12px; }
+.cell-amount  { width: 110px; font-weight: 700; text-align: right; }
+.cell-status  { width: 110px; }
+.cell-actions { width: 175px; white-space: nowrap; }
+
+/* Type badge */
+.type-badge {
+    display      : inline-block;
+    padding      : 2px 8px;
+    border-radius: 12px;
+    background   : #f3f3f3;
+    font-size    : 11px;
+    font-weight  : 600;
+    color        : #3e3e3c;
+    white-space  : nowrap;
+}
+
+/* Status pills */
+.status-pill {
+    display      : inline-block;
+    padding      : 3px 10px;
+    border-radius: 12px;
+    font-size    : 11px;
+    font-weight  : 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    white-space  : nowrap;
+}
+.pill-draft     { background: #f3f3f3; color: #3e3e3c; }
+.pill-submitted { background: #d8edff; color: #004e8c; }
+.pill-approved  { background: #cdecd4; color: #1a5e34; }
+.pill-rejected  { background: #fce8e8; color: #8e1a1a; }
+.pill-paid      { background: #f3e8fb; color: #6a1585; }
+
+/* Row action buttons */
+.btn-row-approve,
+.btn-row-reject {
+    display      : inline-flex;
+    align-items  : center;
+    gap          : 4px;
+    padding      : 5px 10px;
+    border-radius: 6px;
+    border       : none;
+    font-size    : 12px;
+    font-weight  : 600;
+    cursor       : pointer;
+    transition   : background .13s;
+}
+.btn-row-approve {
+    background: #cdecd4;
+    color     : #1a5e34;
+    margin-right: 6px;
+}
+.btn-row-approve:hover { background: #b2deba; }
+.btn-row-reject  {
+    background: #fce8e8;
+    color     : #8e1a1a;
+}
+.btn-row-reject:hover  { background: #f5cdcd; }
+.no-action { color: #b0adab; font-size: 12px; }

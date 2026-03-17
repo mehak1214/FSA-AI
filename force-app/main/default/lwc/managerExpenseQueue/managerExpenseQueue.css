@@ -1,0 +1,400 @@
+/* ── Container ───────────────────────────────────────── */
+.queue-container {
+    padding    : 24px 28px 48px;
+    background : #f4f6f9;
+    min-height : 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Salesforce Sans', sans-serif;
+}
+
+/* ── Page header ─────────────────────────────────────── */
+.page-header {
+    display         : flex;
+    justify-content : space-between;
+    align-items     : flex-start;
+    margin-bottom   : 20px;
+}
+.page-title    { font-size: 26px; font-weight: 800; color: #181818; margin: 0 0 4px; }
+.page-subtitle { font-size: 14px; color: #706e6b; margin: 0; }
+.refresh-btn {
+    padding      : 8px;
+    border       : 1.5px solid #dddbda;
+    border-radius: 8px;
+    background   : #fff;
+    cursor       : pointer;
+    display      : flex;
+    transition   : background .13s;
+    --lwc-colorTextIconDefault: #0070d2;
+}
+.refresh-btn:hover { background: #f0f6ff; }
+
+/* ── Stats row ───────────────────────────────────────── */
+.stats-row {
+    display              : grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap                  : 14px;
+    margin-bottom        : 20px;
+}
+.stat-card {
+    background   : #fff;
+    border-radius: 10px;
+    padding      : 18px 20px 16px;
+    box-shadow   : 0 1px 5px rgba(0,0,0,.07);
+    display      : flex;
+    flex-direction: column;
+    gap          : 3px;
+    position     : relative;
+    border       : 1.5px solid transparent;
+    transition   : border-color .25s, box-shadow .25s;
+}
+
+/* Glow state — all cards get blue border when any filter is active */
+.stat-card--filtered {
+    border-color : #0070d2;
+    box-shadow   : 0 0 0 3px rgba(0,112,210,.10), 0 2px 8px rgba(0,0,0,.07);
+}
+
+/* Main number — full size when unfiltered, dims when filtered */
+.stat-value {
+    font-size  : 28px;
+    font-weight: 800;
+    color      : #181818;
+    line-height: 1;
+    transition : font-size .2s, color .2s;
+}
+.stat-card--filtered .stat-value {
+    font-size: 14px;
+    color    : #b0adab;
+    font-weight: 500;
+}
+
+/* Filtered number — hidden by default, becomes the headline when filtered */
+.stat-filtered-headline {
+    display    : none;
+    font-size  : 28px;
+    font-weight: 800;
+    color      : #181818;
+    line-height: 1;
+}
+.stat-card--filtered .stat-filtered-headline { display: block; }
+.stat-card--filtered .stat-amount-value + .stat-label ~ .stat-filtered-headline,
+.stat-card--filtered .stat-amount-value { font-size: 14px; color: #b0adab; font-weight: 500; }
+/* Amount card filtered headline should be blue */
+.stat-card--filtered .stat-filtered-headline:first-child { color: #181818; }
+
+
+/* "of N total" dim sub-line shown only in filtered mode */
+.stat-total-sub {
+    display    : none;
+    font-size  : 11px;
+    color      : #b0adab;
+    font-weight: 400;
+}
+.stat-card--filtered .stat-total-sub { display: block; }
+
+.stat-label {
+    font-size     : 12px;
+    color         : #706e6b;
+    font-weight   : 500;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-top    : 2px;
+}
+.stat-amount .stat-value { font-size: 20px; color: #0070d2; }
+.stat-amount-value       { font-size: 20px; color: #0070d2; }
+
+/* ── Smart filter bar ────────────────────────────────── */
+.smart-bar {
+    display      : flex;
+    align-items  : center;
+    flex-wrap    : wrap;
+    gap          : 6px;
+    background   : #fff;
+    border       : 1.5px solid #dddbda;
+    border-radius: 12px;
+    padding      : 8px 14px;
+    margin-bottom: 20px;
+    box-shadow   : 0 1px 6px rgba(0,0,0,.06);
+    position     : relative;
+    min-height   : 48px;
+    transition   : border-color .15s, box-shadow .15s;
+}
+.smart-bar:focus-within {
+    border-color : #0070d2;
+    box-shadow   : 0 0 0 3px rgba(0,112,210,.10), 0 2px 8px rgba(0,0,0,.07);
+}
+
+/* Search icon on the left */
+.sb-search-icon { --lwc-colorTextIconDefault: #b0adab; flex-shrink: 0; }
+
+/* Active filter chips */
+.sb-chip {
+    display      : inline-flex;
+    align-items  : center;
+    gap          : 5px;
+    background   : #e8f0fe;
+    border       : 1px solid #c3d4fb;
+    border-radius: 20px;
+    padding      : 4px 6px 4px 10px;
+    font-size    : 13px;
+    font-weight  : 600;
+    color        : #0a2c6b;
+    white-space  : nowrap;
+}
+.sb-chip-icon  { --lwc-colorTextIconDefault: #0070d2; flex-shrink: 0; }
+.sb-chip-label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.sb-chip-remove {
+    display      : inline-flex;
+    align-items  : center;
+    justify-content: center;
+    border       : none;
+    background   : #c3d4fb;
+    border-radius: 50%;
+    width        : 18px;
+    height       : 18px;
+    cursor       : pointer;
+    padding      : 0;
+    flex-shrink  : 0;
+    transition   : background .13s;
+    --lwc-colorTextIconDefault: #0a2c6b;
+}
+.sb-chip-remove:hover { background: #a8bef8; }
+
+/* Rep text input */
+.sb-input-wrap { position: relative; flex: 1; min-width: 160px; }
+.sb-input {
+    width      : 100%;
+    border     : none;
+    outline    : none;
+    font-size  : 14px;
+    color      : #181818;
+    background : transparent;
+    padding    : 4px 0;
+    min-width  : 140px;
+}
+.sb-input::placeholder { color: #aaa; }
+
+/* Floating suggestion dropdown */
+.sb-suggestions {
+    position     : absolute;
+    top          : calc(100% + 8px);
+    left         : -14px;
+    min-width    : 260px;
+    background   : #fff;
+    border       : 1.5px solid #dddbda;
+    border-radius: 10px;
+    box-shadow   : 0 8px 24px rgba(0,0,0,.13);
+    z-index      : 500;
+    overflow     : hidden;
+}
+.sb-suggestions-header {
+    padding   : 8px 14px 6px;
+    font-size : 11px;
+    font-weight: 700;
+    color     : #a0a0a0;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-bottom: 1px solid #f0f0f0;
+}
+.sb-suggestion-item {
+    display    : flex;
+    align-items: center;
+    gap        : 8px;
+    width      : 100%;
+    padding    : 10px 14px;
+    border     : none;
+    background : transparent;
+    font-size  : 14px;
+    color      : #181818;
+    cursor     : pointer;
+    text-align : left;
+    transition : background .1s;
+    --lwc-colorTextIconDefault: #706e6b;
+}
+.sb-suggestion-item:hover { background: #f4f6fd; color: #0070d2; --lwc-colorTextIconDefault: #0070d2; }
+
+/* Date picker inside bar */
+.sb-date-wrap {
+    display    : flex;
+    align-items: center;
+    gap        : 5px;
+    border-left: 1.5px solid #ececec;
+    padding-left: 10px;
+    flex-shrink: 0;
+}
+.sb-date-icon { --lwc-colorTextIconDefault: #b0adab; }
+.sb-date {
+    border     : none;
+    outline    : none;
+    font-size  : 13px;
+    color      : #181818;
+    background : transparent;
+    cursor     : pointer;
+    padding    : 4px 0;
+}
+.sb-date::-webkit-calendar-picker-indicator { opacity: .5; cursor: pointer; }
+
+/* Spacer pushes count + clear to right */
+.sb-spacer { flex: 1; }
+
+/* Result count */
+.sb-count {
+    font-size  : 12px;
+    color      : #888;
+    font-weight: 500;
+    white-space: nowrap;
+    padding    : 0 4px;
+}
+
+/* Clear all button */
+.sb-clear {
+    display    : inline-flex;
+    align-items: center;
+    gap        : 4px;
+    border     : 1.5px solid #f5c0bf;
+    border-radius: 8px;
+    background : #fff4f4;
+    color      : #c23934;
+    font-size  : 12px;
+    font-weight: 600;
+    padding    : 4px 10px;
+    cursor     : pointer;
+    white-space: nowrap;
+    transition : background .13s;
+    --lwc-colorTextIconDefault: #c23934;
+}
+.sb-clear:hover { background: #fce8e8; }
+
+/* ── Loading / empty ─────────────────────────────────── */
+.loading-panel {
+    display       : flex;
+    flex-direction: column;
+    align-items   : center;
+    padding       : 80px 0;
+    gap           : 14px;
+}
+.loading-text { font-size: 14px; color: #706e6b; }
+.empty-panel {
+    display       : flex;
+    flex-direction: column;
+    align-items   : center;
+    padding       : 80px 0;
+    gap           : 8px;
+    text-align    : center;
+}
+.empty-icon  { --lwc-colorTextIconDefault: #2e844a; }
+.error-icon  { --lwc-colorTextIconDefault: #c23934; }
+.empty-title { font-size: 18px; font-weight: 700; color: #3e3e3c; margin: 8px 0 0; }
+.empty-sub   { font-size: 14px; color: #706e6b; margin: 0; }
+.retry-btn {
+    margin-top   : 14px;
+    padding      : 10px 24px;
+    border-radius: 8px;
+    border       : 1.5px solid #0070d2;
+    color        : #0070d2;
+    background   : #fff;
+    font-size    : 14px;
+    font-weight  : 600;
+    cursor       : pointer;
+}
+
+/* ── Report list ─────────────────────────────────────── */
+.report-list { display: flex; flex-direction: column; gap: 12px; }
+.report-card {
+    background   : #fff;
+    border-radius: 12px;
+    padding      : 18px 20px;
+    box-shadow   : 0 1px 5px rgba(0,0,0,.07);
+    cursor       : pointer;
+    border-left  : 4px solid #0070d2;
+    transition   : box-shadow .15s, transform .12s;
+}
+.report-card:hover {
+    box-shadow : 0 4px 16px rgba(0,112,210,.14);
+    transform  : translateY(-1px);
+}
+
+/* Header row */
+.rc-header {
+    display        : flex;
+    justify-content: space-between;
+    align-items    : center;
+    margin-bottom  : 10px;
+}
+.rc-title-block { display: flex; align-items: center; gap: 10px; }
+.rc-name        { font-size: 16px; font-weight: 700; color: #181818; }
+.rc-amount      { font-size: 18px; font-weight: 800; color: #181818; }
+
+/* Status badge */
+.rc-status {
+    padding      : 3px 10px;
+    border-radius: 12px;
+    font-size    : 11px;
+    font-weight  : 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+.badge-draft     { background:#f3f3f3; color:#3e3e3c; }
+.badge-submitted { background:#d8edff; color:#004e8c; }
+.badge-approved  { background:#cdecd4; color:#1a5e34; }
+.badge-rejected  { background:#fce8e8; color:#8e1a1a; }
+.badge-paid      { background:#f3e8fb; color:#6a1585; }
+
+/* Meta row */
+.rc-meta {
+    display      : flex;
+    flex-wrap    : wrap;
+    gap          : 12px;
+    margin-bottom: 12px;
+}
+.rc-meta-item {
+    display    : flex;
+    align-items: center;
+    gap        : 5px;
+    font-size  : 13px;
+    color      : #706e6b;
+    --lwc-colorTextIconDefault: #b0adab;
+}
+.rc-rep-name {
+    font-weight  : 700;
+    color        : #0070d2;
+    background   : #e8f4fd;
+    padding      : 2px 8px;
+    border-radius: 12px;
+    font-size    : 12px;
+    letter-spacing: 0.01em;
+}
+
+/* Footer row */
+.rc-footer {
+    display        : flex;
+    justify-content: space-between;
+    align-items    : center;
+    padding-top    : 10px;
+    border-top     : 1px solid #f0f0f0;
+    font-size      : 13px;
+}
+.rc-counts    { color: #706e6b; }
+.rc-open-hint {
+    display    : flex;
+    align-items: center;
+    gap        : 4px;
+    color      : #0070d2;
+    font-weight: 600;
+    --lwc-colorTextIconDefault: #0070d2;
+}
+
+/* ── Policy breach badge on report cards ─────────────── */
+.rc-breach-badge {
+    display      : inline-flex;
+    align-items  : center;
+    gap          : 4px;
+    padding      : 2px 8px;
+    background   : #fff8e1;
+    border       : 1px solid #f0c040;
+    border-radius: 12px;
+    font-size    : 11px;
+    font-weight  : 700;
+    color        : #7a4f00;
+    white-space  : nowrap;
+}
+.rc-breach-icon { --lwc-colorTextIconDefault: #e6a817; }

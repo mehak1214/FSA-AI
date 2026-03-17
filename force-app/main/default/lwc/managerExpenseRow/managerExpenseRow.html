@@ -1,0 +1,37 @@
+<template>
+    <tr class={rowClass}>
+        <td class="cell cell-name">
+            <span class="expense-name">{expense.name}</span>
+        </td>
+        <td class="cell cell-type">
+            <span class="type-badge">{expense.expenseType}</span>
+        </td>
+        <td class="cell cell-date">{formattedDate}</td>
+        <td class="cell cell-desc" title={expense.description}>{truncatedDesc}</td>
+        <td class="cell cell-visit">
+            <template lwc:if={expense.visitName}>
+                {expense.visitName}
+            </template>
+            <template lwc:else>—</template>
+        </td>
+        <td class="cell cell-amount">{formattedAmount}</td>
+        <td class="cell cell-status">
+            <span class={statusClass}>{expense.status}</span>
+        </td>
+        <td class="cell cell-actions">
+            <template lwc:if={isActionable}>
+                <button class="btn-row-approve" onclick={handleApprove} title="Approve">
+                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                    Approve
+                </button>
+                <button class="btn-row-reject" onclick={handleReject} title="Reject">
+                    <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                    Reject
+                </button>
+            </template>
+            <template lwc:else>
+                <span class="no-action">—</span>
+            </template>
+        </td>
+    </tr>
+</template>

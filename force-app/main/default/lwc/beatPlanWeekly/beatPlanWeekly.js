@@ -396,8 +396,8 @@ export default class BeatPlanWeekly extends LightningElement {
         const errors = {};
         let nonFutureDateMessage = '';
         if (!this.draftForm.visitDate) errors.visitDate = 'Required';
-        if (this.draftForm.visitDate && this.draftForm.visitDate <= this._isoDate(new Date())) {
-            nonFutureDateMessage = 'Visit can only be created for future dates';
+        if (this.draftForm.visitDate && this.draftForm.visitDate < this._isoDate(new Date())) {
+            nonFutureDateMessage = 'Visit can only be created for today or future dates';
         }
         if (!errors.visitDate && this.draftForm.visitDate && !this._isDateInCurrentWeek(this.draftForm.visitDate)) {
             errors.visitDate = 'Select a date from the displayed week';
@@ -448,7 +448,7 @@ export default class BeatPlanWeekly extends LightningElement {
         };
         this.draftVisits = [...this.draftVisits, draft];
         this.showDraftModal = false;
-        this.showToast('Success', 'Draft visit added. It will be saved on Submit Beat Plan.', 'success');
+        this.showSuccessToast('Draft visit added. It will be saved on Submit Beat Plan.');
     }
 
     handleRemoveDraft(event) {

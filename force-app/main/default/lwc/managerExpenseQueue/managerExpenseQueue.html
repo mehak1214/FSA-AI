@@ -1,0 +1,226 @@
+<template>
+    <div class="queue-container">
+
+        <!-- ── DETAIL VIEW ──────────────────────────────── -->
+        <template lwc:if={selectedReportId}>
+            <c-manager-expense-detail
+                report-id={selectedReportId}
+                onback={handleBack}
+                onreportprocessed={handleReportProcessed}>
+            </c-manager-expense-detail>
+        </template>
+
+        <!-- ── QUEUE LIST VIEW ──────────────────────────── -->
+        <template lwc:else>
+
+            <!-- Page header -->
+            <div class="page-header">
+                <div class="page-header-left">
+                    <h1 class="page-title">Expense Approvals</h1>
+                    <p class="page-subtitle">Expense Reports pending your approval</p>
+                </div>
+                <div class="page-header-right">
+                    <button class="refresh-btn" onclick={handleRefresh} title="Refresh">
+                        <lightning-icon icon-name="utility:refresh" size="small"></lightning-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary stats -->
+            <div class="stats-row">
+
+                <div class={statCardClass}>
+                    <span class="stat-filtered-headline">{filteredPending}</span>
+                    <span class="stat-total-sub">{totalPendingLabel}</span>
+                    <span class="stat-value">{totalPending}</span>
+                    <span class="stat-label">Pending Reports</span>
+                </div>
+
+                <div class={statCardClass}>
+                    <span class="stat-filtered-headline">{filteredExpenses}</span>
+                    <span class="stat-total-sub">{totalExpensesLabel}</span>
+                    <span class="stat-value">{totalExpenses}</span>
+                    <span class="stat-label">Total Expenses</span>
+                </div>
+
+                <div class={statCardClass}>
+                    <span class="stat-filtered-headline">{formattedFilteredAmount}</span>
+                    <span class="stat-total-sub">{totalAmountLabel}</span>
+                    <span class="stat-value stat-amount-value">{formattedTotalAmount}</span>
+                    <span class="stat-label">Total Amount</span>
+                </div>
+
+                <div class={statCardClass}>
+                    <span class="stat-filtered-headline">{filteredSubmitted}</span>
+                    <span class="stat-total-sub">{totalSubmittedLabel}</span>
+                    <span class="stat-value">{totalSubmitted}</span>
+                    <span class="stat-label">Pending Items</span>
+                </div>
+
+            </div>
+
+            <!-- ── SMART FILTER BAR ──────────────────────── -->
+            <div class="smart-bar">
+
+                <!-- Search icon -->
+                <lightning-icon icon-name="utility:search" size="xx-small" class="sb-search-icon"></lightning-icon>
+
+                <!-- Active chips (rep + date) live inside the bar -->
+                <template for:each={activeChips} for:item="chip">
+                    <span key={chip.key} class="sb-chip">
+                        <lightning-icon icon-name={chip.icon} size="xx-small" class="sb-chip-icon"></lightning-icon>
+                        <span class="sb-chip-label">{chip.label}</span>
+                        <button class="sb-chip-remove" data-key={chip.key} onclick={handleRemoveChip} title="Remove">
+                            <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                        </button>
+                    </span>
+                </template>
+
+                <!-- Free-text input for rep search -->
+                <template lwc:if={showRepSearch}>
+                    <div class="sb-input-wrap">
+                        <input
+                            type="text"
+                            class="sb-input"
+                            placeholder={searchPlaceholder}
+                            value={repSearchText}
+                            oninput={handleSearchInput}
+                            onfocus={handleSearchFocus}
+                            onblur={handleSearchBlur}
+                            autocomplete="off" />
+
+                        <!-- Floating rep suggestion list -->
+                        <template lwc:if={showSuggestions}>
+                            <div class="sb-suggestions">
+                                <div class="sb-suggestions-header">Select a rep</div>
+                                <template for:each={filteredRepOptions} for:item="rep">
+                                    <button
+                                        key={rep.id}
+                                        class="sb-suggestion-item"
+                                        data-id={rep.id}
+                                        data-name={rep.name}
+                                        onclick={handleRepSelect}>
+                                        <lightning-icon icon-name="utility:person_account" size="xx-small" class="sb-suggestion-icon"></lightning-icon>
+                                        {rep.name}
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Date picker — always visible in bar -->
+                <template lwc:if={showDatePicker}>
+                    <div class="sb-date-wrap">
+                        <lightning-icon icon-name="utility:event" size="xx-small" class="sb-date-icon"></lightning-icon>
+                        <input
+                            type="date"
+                            class="sb-date"
+                            value={filterDate}
+                            onchange={handleDateChange}
+                            title="Filter by report date" />
+                    </div>
+                </template>
+
+                <!-- Divider + result count -->
+                <span class="sb-spacer"></span>
+                <span class="sb-count">{resultCountLabel}</span>
+
+                <!-- Clear all — only when any filter is active -->
+                <template lwc:if={isFiltered}>
+                    <button class="sb-clear" onclick={handleClearAll} title="Clear all filters">
+                        <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                        Clear
+                    </button>
+                </template>
+
+            </div><!-- end .smart-bar -->
+
+            <!-- Loading -->
+            <template lwc:if={isLoading}>
+                <div class="loading-panel">
+                    <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                    <p class="loading-text">Loading approval queue…</p>
+                </div>
+            </template>
+
+            <!-- Error -->
+            <template lwc:elseif={hasError}>
+                <div class="empty-panel">
+                    <lightning-icon icon-name="utility:error" size="large" class="error-icon"></lightning-icon>
+                    <p class="empty-title">Something went wrong</p>
+                    <p class="empty-sub">{errorMessage}</p>
+                    <button class="retry-btn" onclick={handleRefresh}>Retry</button>
+                </div>
+            </template>
+
+            <!-- Empty queue -->
+            <template lwc:elseif={isEmpty}>
+                <div class="empty-panel">
+                    <lightning-icon icon-name="utility:check" size="large" class="empty-icon"></lightning-icon>
+                    <p class="empty-title">All caught up!</p>
+                    <p class="empty-sub">No expense reports are pending your approval.</p>
+                </div>
+            </template>
+
+            <!-- Empty after filter -->
+            <template lwc:elseif={isFilteredEmpty}>
+                <div class="empty-panel">
+                    <lightning-icon icon-name="utility:search" size="large" class="empty-icon"></lightning-icon>
+                    <p class="empty-title">No results</p>
+                    <p class="empty-sub">No reports match the active filters. Try adjusting or clearing them.</p>
+                </div>
+            </template>
+
+            <!-- Report cards list -->
+            <template lwc:else>
+                <div class="report-list">
+                    <template for:each={filteredReports} for:item="rpt">
+                        <div key={rpt.id} class="report-card" onclick={handleReportClick} data-id={rpt.id}>
+
+                            <div class="rc-header">
+                                <div class="rc-title-block">
+                                    <span class="rc-name">{rpt.name}</span>
+                                    <span class={rpt.statusClass}>{rpt.status}</span>
+                                </div>
+                                <span class="rc-amount">{rpt.formattedAmount}</span>
+                            </div>
+
+                            <div class="rc-meta">
+                                <span class="rc-meta-item">
+                                    <lightning-icon icon-name="utility:person_account" size="xx-small" class="rc-meta-icon"></lightning-icon>
+                                    <span class="rc-rep-name">{rpt.salesRepName}</span>
+                                </span>
+                                <span class="rc-meta-item">
+                                    <lightning-icon icon-name="utility:event" size="xx-small" class="rc-meta-icon"></lightning-icon>
+                                    {rpt.formattedDate}
+                                </span>
+                                <template lwc:if={rpt.hasBreach}>
+                                    <span class="rc-breach-badge">
+                                        <lightning-icon icon-name="utility:warning" size="xx-small" class="rc-breach-icon"></lightning-icon>
+                                        {rpt.breachLabel}
+                                    </span>
+                                </template>
+                            </div>
+
+                            <div class="rc-footer">
+                                <span class="rc-counts">
+                                    {rpt.expenseCount} expense(s)
+                                    <template lwc:if={rpt.submittedCount}>
+                                        · <strong>{rpt.submittedCount} pending</strong>
+                                    </template>
+                                </span>
+                                <span class="rc-open-hint">
+                                    View Details
+                                    <lightning-icon icon-name="utility:forward" size="xx-small" class="rc-forward-icon"></lightning-icon>
+                                </span>
+                            </div>
+
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+        </template>
+    </div>
+</template>

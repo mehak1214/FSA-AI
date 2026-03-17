@@ -1,0 +1,112 @@
+<template>
+    <template lwc:if={isOpen}>
+        <!-- Backdrop -->
+        <div class="modal-backdrop" onclick={handleBackdropClick}></div>
+
+        <!-- Bottom Sheet Modal -->
+        <div class="modal-sheet" role="dialog" aria-modal="true" aria-label="Add Expense">
+
+            <!-- Handle bar -->
+            <div class="sheet-handle"></div>
+
+            <!-- Header -->
+            <div class="sheet-header">
+                <h2 class="sheet-title">Add Expense</h2>
+                <lightning-button-icon
+                    icon-name="utility:close"
+                    variant="bare"
+                    alternative-text="Close"
+                    class="close-btn"
+                    onclick={handleClose}>
+                </lightning-button-icon>
+            </div>
+
+            <!-- Form body -->
+            <div class="sheet-body">
+
+                <!-- Amount -->
+                <div class="form-group">
+                    <label class="form-label required-label">Amount (₹)</label>
+                    <div class="amount-input-wrap">
+                        <span class="currency-symbol">₹</span>
+                        <input
+                            type="number"
+                            class="form-input amount-input"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            data-field="amount"
+                            value={formData.amount}
+                            oninput={handleInput}
+                        />
+                    </div>
+                    <template lwc:if={errors.amount}>
+                        <span class="field-error">{errors.amount}</span>
+                    </template>
+                </div>
+
+                <!-- Expense Type -->
+                <div class="form-group">
+                    <label class="form-label required-label">Expense Type</label>
+                    <div class="select-wrap">
+                        <select
+                            class="form-select"
+                            data-field="expenseType"
+                            onchange={handleInput}>
+                            <option value="">-- Select Type --</option>
+                            <template for:each={expenseTypeOptions} for:item="opt">
+                                <option key={opt.value} value={opt.value}
+                                    selected={opt.selected}>{opt.label}</option>
+                            </template>
+                        </select>
+                        <lightning-icon icon-name="utility:chevrondown" size="xx-small" class="select-icon"></lightning-icon>
+                    </div>
+                    <template lwc:if={errors.expenseType}>
+                        <span class="field-error">{errors.expenseType}</span>
+                    </template>
+                </div>
+
+                <!-- Date -->
+                <div class="form-group">
+                    <label class="form-label required-label">Expense Date</label>
+                    <input
+                        type="date"
+                        class="form-input"
+                        data-field="expenseDate"
+                        value={formData.expenseDate}
+                        oninput={handleInput}
+                    />
+                    <template lwc:if={errors.expenseDate}>
+                        <span class="field-error">{errors.expenseDate}</span>
+                    </template>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label class="form-label">Description <span class="optional">(optional)</span></label>
+                    <textarea
+                        class="form-textarea"
+                        placeholder="Enter notes or description…"
+                        data-field="description"
+                        oninput={handleInput}
+                        rows="3">{formData.description}</textarea>
+                </div>
+
+            </div>
+
+            <!-- Footer actions -->
+            <div class="sheet-footer">
+                <button class="btn-cancel" onclick={handleClose}>Cancel</button>
+                <button class="btn-save" onclick={handleSave} disabled={isSaving}>
+                    <template lwc:if={isSaving}>
+                        <lightning-spinner alternative-text="Saving" size="small" class="btn-spinner"></lightning-spinner>
+                    </template>
+                    <template lwc:else>
+                        Save Expense
+                    </template>
+                </button>
+            </div>
+
+        </div>
+    </template>
+</template>

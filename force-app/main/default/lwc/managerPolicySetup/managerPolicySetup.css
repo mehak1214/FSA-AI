@@ -1,0 +1,206 @@
+/* ── Container ───────────────────────────────────────── */
+.ps-container {
+    padding    : 24px 28px 48px;
+    background : #f4f6f9;
+    min-height : 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Salesforce Sans', sans-serif;
+}
+
+/* ── Page header ─────────────────────────────────────── */
+.ps-page-header    { margin-bottom: 24px; }
+.ps-page-title     { font-size: 26px; font-weight: 800; color: #181818; margin: 0 0 4px; }
+.ps-page-subtitle  { font-size: 14px; color: #706e6b; margin: 0; }
+
+/* ── Two-panel layout ────────────────────────────────── */
+.ps-panels {
+    display              : grid;
+    grid-template-columns: 420px 1fr;
+    gap                  : 20px;
+    align-items          : start;
+}
+
+/* ── Panel card ──────────────────────────────────────── */
+.ps-panel {
+    background   : #fff;
+    border-radius: 12px;
+    padding      : 24px;
+    box-shadow   : 0 1px 6px rgba(0,0,0,.07);
+}
+.ps-panel-header {
+    display    : flex;
+    align-items: center;
+    gap        : 10px;
+    margin-bottom: 6px;
+}
+.ps-panel-icon  { --lwc-colorTextIconDefault: #0070d2; }
+.ps-panel-title { font-size: 17px; font-weight: 700; color: #181818; margin: 0; }
+.ps-panel-sub   { font-size: 13px; color: #706e6b; margin: 0 0 20px; }
+
+/* ── Policy form ─────────────────────────────────────── */
+.ps-form { display: flex; flex-direction: column; gap: 14px; }
+.ps-field-row {
+    display        : flex;
+    justify-content: space-between;
+    align-items    : center;
+    gap            : 12px;
+}
+.ps-field-label {
+    font-size  : 13px;
+    font-weight: 600;
+    color      : #3e3e3c;
+    flex       : 1;
+}
+.ps-field-input-wrap {
+    display    : flex;
+    align-items: center;
+    border     : 1.5px solid #dddbda;
+    border-radius: 7px;
+    background : #f9f9f9;
+    overflow   : hidden;
+    width      : 140px;
+    flex-shrink: 0;
+}
+.ps-field-input-wrap:focus-within {
+    border-color: #0070d2;
+    background  : #fff;
+    box-shadow  : 0 0 0 3px rgba(0,112,210,.10);
+}
+.ps-currency-symbol, .ps-percent-symbol {
+    padding   : 0 8px;
+    font-size : 13px;
+    color     : #706e6b;
+    font-weight: 600;
+    background: #f0f0f0;
+    height    : 100%;
+    display   : flex;
+    align-items: center;
+}
+.ps-input {
+    border  : none;
+    outline : none;
+    padding : 8px 10px;
+    font-size: 13px;
+    color   : #181818;
+    background: transparent;
+    width   : 100%;
+    -moz-appearance: textfield;
+}
+.ps-input::-webkit-inner-spin-button,
+.ps-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.ps-field-hint { font-size: 12px; color: #a0a0a0; margin-top: -4px; }
+.ps-form-footer {
+    display        : flex;
+    justify-content: flex-end;
+    align-items    : center;
+    gap            : 12px;
+    padding-top    : 8px;
+    border-top     : 1px solid #f0f0f0;
+    margin-top     : 4px;
+}
+.ps-save-success {
+    display    : flex;
+    align-items: center;
+    gap        : 4px;
+    font-size  : 13px;
+    font-weight: 600;
+    color      : #2e844a;
+    --lwc-colorTextIconDefault: #2e844a;
+}
+.ps-btn-save {
+    padding      : 9px 20px;
+    background   : #0070d2;
+    color        : #fff;
+    border       : none;
+    border-radius: 7px;
+    font-size    : 13px;
+    font-weight  : 700;
+    cursor       : pointer;
+    transition   : background .13s;
+}
+.ps-btn-save:hover    { background: #005fb2; }
+.ps-btn-save:disabled { background: #c9c9c9; cursor: not-allowed; }
+
+/* ── Month navigator ─────────────────────────────────── */
+.ps-month-nav {
+    display        : flex;
+    align-items    : center;
+    gap            : 12px;
+    margin-bottom  : 16px;
+    padding-bottom : 14px;
+    border-bottom  : 1px solid #f0f0f0;
+}
+.ps-month-btn {
+    display      : flex;
+    align-items  : center;
+    justify-content: center;
+    width        : 32px;
+    height       : 32px;
+    border       : 1.5px solid #dddbda;
+    border-radius: 7px;
+    background   : #fff;
+    cursor       : pointer;
+    transition   : background .13s;
+    --lwc-colorTextIconDefault: #0070d2;
+}
+.ps-month-btn:hover    { background: #f0f6ff; }
+.ps-month-btn:disabled { opacity: .4; cursor: not-allowed; }
+.ps-month-label { font-size: 15px; font-weight: 700; color: #181818; flex: 1; text-align: center; }
+
+/* ── Rep list ────────────────────────────────────────── */
+.ps-rep-list { display: flex; flex-direction: column; gap: 14px; }
+.ps-rep-row {
+    display        : flex;
+    align-items    : center;
+    justify-content: space-between;
+    gap            : 16px;
+    padding        : 12px 14px;
+    border         : 1.5px solid #ececec;
+    border-radius  : 10px;
+    background     : #fafafa;
+}
+.ps-rep-info  { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ps-rep-name  { font-size: 14px; font-weight: 700; color: #181818; }
+
+/* Progress bar */
+.ps-allowance-bar-wrap { display: flex; flex-direction: column; gap: 3px; }
+.ps-allowance-bar {
+    height       : 6px;
+    background   : #e0e0e0;
+    border-radius: 4px;
+    overflow     : hidden;
+}
+.ps-bar-fill       { height: 100%; border-radius: 4px; background: #2e844a; transition: width .3s; }
+.ps-bar-fill--warn { background: #f0a500; }
+.ps-bar-fill--over { background: #c23934; }
+.ps-spent-label    { font-size: 11px; color: #888; }
+
+/* Rep allowance input + save btn */
+.ps-rep-input-wrap {
+    display    : flex;
+    align-items: center;
+    gap        : 6px;
+    flex-shrink: 0;
+}
+.ps-input--rep {
+    width: 110px;
+}
+.ps-btn-save-rep {
+    padding      : 7px 14px;
+    background   : #0070d2;
+    color        : #fff;
+    border       : none;
+    border-radius: 7px;
+    font-size    : 12px;
+    font-weight  : 700;
+    cursor       : pointer;
+    transition   : background .13s;
+    white-space  : nowrap;
+}
+.ps-btn-save-rep:hover    { background: #005fb2; }
+.ps-btn-save-rep:disabled { background: #c9c9c9; cursor: not-allowed; }
+
+/* ── Loading / empty ─────────────────────────────────── */
+.ps-loading { display: flex; justify-content: center; padding: 30px 0; }
+.ps-empty   { display: flex; flex-direction: column; align-items: center; padding: 40px 0; gap: 10px; }
+.ps-empty-icon { --lwc-colorTextIconDefault: #c9c9c9; }
+.ps-empty p    { font-size: 14px; color: #706e6b; margin: 0; }
