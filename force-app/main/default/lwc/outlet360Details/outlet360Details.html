@@ -17,17 +17,17 @@
         <template if:true={hasRecordContext}>
             <section class="card outlet-header">
                 <h2>{displayOutletName}</h2>
+                <template if:true={outletStatus}>
+                    <span class="status-item status-badge">
+                        <span class={statusTextClass}>{outletStatus}</span>
+                    </span>
+                </template>
                 <template if:true={hasOutletSubInfo}>
                     <div class="outlet-meta">
                         <template if:true={outletCode}>
                             <span>Outlet Code: {outletCode}</span>
                         </template>
-                        <template if:true={outletStatus}>
-                            <span class="status-item">
-                                <span class="status-label">Status:</span>
-                                <span class={statusTextClass}>{outletStatus}</span>
-                            </span>
-                        </template>
+                       
                         <template if:true={outletPhone}>
                             <span>Phone: {outletPhone}</span>
                         </template>

@@ -62,6 +62,10 @@
     margin-bottom: 12px;
 }
 
+.outlet-header {
+    position: relative;
+}
+
 .outlet-header h2 {
     margin: 0 0 6px;
     font-size: 1.2rem;
@@ -240,7 +244,14 @@
     font-size: 0.82rem;
 }
 
+.status-item.status-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
 .status-label {
+    display: none;
     color: #4b5d73;
     font-weight: 600;
 }

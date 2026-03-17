@@ -34,14 +34,6 @@
                         value={searchText}
                         onchange={handleSearchChange}>
                     </lightning-input>
-                    <lightning-combobox
-                        variant="label-hidden"
-                        options={sortOptions}
-                        value={sortBy}
-                        onchange={handleSortChange}
-                        placeholder="Sort by">
-                    </lightning-combobox>
-                    <button class="refresh-btn" type="button" onclick={handleToggleSortDirection}>Sort {sortDirectionLabel}</button>
                     <button class="refresh-btn" type="button" onclick={handleRefresh}>Refresh</button>
                 </div>
             </div>

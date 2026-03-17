@@ -46,7 +46,7 @@ import createVisitsAndSubmitForApproval from '@salesforce/apex/BeatPlanControlle
 const DAY_KEYS  = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const DAY_NAMES = { MON:'Mon', TUE:'Tue', WED:'Wed', THU:'Thu', FRI:'Fri', SAT:'Sat', SUN:'Sun' };
 
-// Card background CSS — keyed to Apex colorClass (from statusToColor helper)
+// Card background CSS — keyed to local status mapping
 const CARD_CSS = {
     'card-completed'  : 'bp-card bp-card--completed',
     'card-draft'      : 'bp-card bp-card--draft',
@@ -55,17 +55,10 @@ const CARD_CSS = {
     'card-planned'    : 'bp-card bp-card--planned'
 };
 
-// Visit status pill CSS
-const VISIT_STATUS_CSS = {
-    'Draft'         : 'bp-pill bp-pill--planned',
-    'Planned'       : 'bp-pill bp-pill--planned',
-    'In Progress'   : 'bp-pill bp-pill--inprogress',
-    'Missed'        : 'bp-pill bp-pill--missed',
-    'Completed'     : 'bp-pill bp-pill--completed'
-};
-
 // Approval status pill CSS  (ibfsa__Approval_Status__c)
 const APPROVAL_CSS = {
+    'Draft'             : 'bp-pill bp-pill--planned',
+    'Submitted'         : 'bp-pill bp-pill--pending',
     'Planned'           : 'bp-pill bp-pill--planned',
     'Pending Approval'  : 'bp-pill bp-pill--pending',
     'Approved'          : 'bp-pill bp-pill--completed',
@@ -278,9 +271,11 @@ export default class BeatPlanWeekly extends LightningElement {
                 outletName: d.outletName,
                 plannedStartTime: this._to12Hour(d.startTime),
                 plannedEndTime: this._to12Hour(d.endTime),
+                approvalStatus: 'Draft',
                 visitStatus: 'Draft',
+                badgeCls: 'bp-card__badge',
                 showBadge: true,
-                cardCls: 'bp-card bp-card--planned',
+                cardCls: CARD_CSS['card-planned'],
                 isDraft: true,
                 sortMinutes: this._timeToMinutes(d.startTime)
             });
@@ -325,7 +320,7 @@ export default class BeatPlanWeekly extends LightningElement {
     handleVisitClick(event) {
         const id    = event.currentTarget.dataset.id;
         if (id && id.startsWith('draft-')) {
-            this.showSuccessToast('Draft visit. It will be created when you submit beat plan.');
+            this.showToast('', 'Draft visit. It will be created when you submit beat plan.', 'base');
             return;
         }
         const visit = this.visits.find(v => v.id === id);
@@ -445,6 +440,7 @@ export default class BeatPlanWeekly extends LightningElement {
             startTime: this.draftForm.startTime,
             endTime: this.draftForm.endTime,
             notes: this.draftForm.notes || '',
+            approvalStatus: 'Draft',
             visitStatus: 'Draft',
             salesRepId: this.currentUserId,
             salesRepName: this.salesRepLabel,
@@ -529,11 +525,23 @@ export default class BeatPlanWeekly extends LightningElement {
      * showBadge    → hide badge only when completed (green card speaks for itself)
      */
     _enrich(v) {
+        const statusLabel = v.approvalStatus || v.visitStatus || '';
+        const cardKey = this._cardClassFromApproval(statusLabel);
+        const badgeCls = [
+            'bp-card__badge',
+            statusLabel === 'Draft' ? 'bp-card__badge--draft' : '',
+            statusLabel === 'Submitted' ? 'bp-card__badge--submitted' : '',
+            statusLabel === 'Pending Approval' ? 'bp-card__badge--pending' : '',
+            statusLabel === 'Approved' ? 'bp-card__badge--approved' : '',
+            statusLabel === 'Rejected' ? 'bp-card__badge--rejected' : ''
+        ].filter(Boolean).join(' ');
         return {
             ...v,
-            cardCls          : CARD_CSS[v.colorClass]           ?? CARD_CSS['card-planned'],
-            visitStatusCls   : VISIT_STATUS_CSS[v.visitStatus]  ?? 'bp-pill',
+            cardCls          : CARD_CSS[cardKey]                ?? CARD_CSS['card-planned'],
+            visitStatus      : statusLabel,
+            visitStatusCls   : APPROVAL_CSS[statusLabel]        ?? 'bp-pill',
             approvalStatusCls: APPROVAL_CSS[v.approvalStatus]   ?? 'bp-pill',
+            badgeCls,
             showBadge        : !v.isCompleted,
             formattedDate    : v.visitDate
                 ? new Date(v.visitDate).toLocaleDateString('en-US', {
@@ -589,7 +597,7 @@ export default class BeatPlanWeekly extends LightningElement {
     }
 
     async loadBeats() {
-        const beats = await getUserBeats();
+        const beats = await getUserBeats({ anchorDate: this._isoDate(this.anchorDate) });
         this.beatOptions = (beats || []).map(b => ({
             label: b.name,
             value: b.id
@@ -688,6 +696,14 @@ export default class BeatPlanWeekly extends LightningElement {
         return this._displayTimeToMinutes(v.plannedStartTime);
     }
 
+    _cardClassFromApproval(statusLabel) {
+        if (statusLabel === 'Approved') return 'card-completed';
+        if (statusLabel === 'Rejected') return 'card-missed';
+        if (statusLabel === 'Submitted' || statusLabel === 'Pending Approval') return 'card-draft';
+        if (statusLabel === 'Draft') return 'card-planned';
+        return 'card-planned';
+    }
+
     _hasTimeConflict(visitDate, startTime, endTime) {
         const candidateStart = this._timeToMinutes(startTime);
         const candidateEnd = this._timeToMinutes(endTime);
@@ -711,11 +727,11 @@ export default class BeatPlanWeekly extends LightningElement {
         return existingConflict;
     }
 
-    showSuccessToast(message) {
+    showToast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({
-            title: 'Success',
+            title,
             message,
-            variant: 'success'
+            variant
         }));
     }
 

@@ -179,7 +179,7 @@
 
                                             <!-- Status (ibfsa__Visit_Status__c) -->
                                             <template if:true={cell.visit.showBadge}>
-                                                <span class="bp-card__badge">
+                                                <span class={cell.visit.badgeCls}>
                                                     {cell.visit.visitStatus}
                                                 </span>
                                             </template>
@@ -249,14 +249,10 @@
                                     <div class="slds-form-element__help">{visitDateError}</div>
                                 </template>
 
-                                <lightning-combobox
-                                    name="outletId"
-                                    label="Outlet"
-                                    value={draftForm.outletId}
-                                    options={outletOptions}
-                                    onchange={handleDraftFieldChange}
-                                    required>
-                                </lightning-combobox>
+                                <div class="bp-field">
+                                    <label class="bp-field__label">Visit Status</label>
+                                    <div class="bp-field__input bp-field__input--disabled">{statusLabel}</div>
+                                </div>
 
                                 <lightning-combobox
                                     name="beatId"
@@ -266,15 +262,14 @@
                                     onchange={handleDraftFieldChange}
                                     required>
                                 </lightning-combobox>
-                                <div class="bp-field">
-                                    <label class="bp-field__label">Visit Status</label>
-                                    <div class="bp-field__input bp-field__input--disabled">{statusLabel}</div>
-                                </div>
-
-                                <div class="bp-field">
-                                    <label class="bp-field__label">Sales Rep</label>
-                                    <div class="bp-field__input bp-field__input--disabled">{salesRepLabel}</div>
-                                </div>
+                                <lightning-combobox
+                                    name="outletId"
+                                    label="Outlet"
+                                    value={draftForm.outletId}
+                                    options={outletOptions}
+                                    onchange={handleDraftFieldChange}
+                                    required>
+                                </lightning-combobox>
 
                                 <div class="bp-field">
                                     <label class="bp-field__label">Start Time <abbr class="bp-field__required" title="required">*</abbr></label>
@@ -323,9 +318,9 @@
 
                         <header class="bp-modal__header">
                             <h2 id="bpModalTitle" class="bp-modal__title">
-                                {selectedVisit.outletName}
+                                {selectedVisit.name}
                             </h2>
-                            <p class="bp-modal__subtitle">{selectedVisit.beatName}</p>
+                            <p class="bp-modal__subtitle">{selectedVisit.outletName}</p>
                             <button class="bp-modal__close"
                                     onclick={handleCloseModal}
                                     aria-label="Close">✕</button>
@@ -377,11 +372,6 @@
                                     <span class="bp-mrow__val">{selectedVisit.checkOutTime}</span>
                                 </div>
                             </template>
-
-                            <div class="bp-mrow">
-                                <span class="bp-mrow__lbl">Visit Status</span>
-                                <span class={selectedVisit.visitStatusCls}>{selectedVisit.visitStatus}</span>
-                            </div>
 
                             <div class="bp-mrow">
                                 <span class="bp-mrow__lbl">Approval</span>

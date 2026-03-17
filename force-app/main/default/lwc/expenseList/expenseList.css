@@ -1,0 +1,542 @@
+/* ── Container ───────────────────────────────────────── */
+.expense-list-container {
+    min-height     : 100vh;
+    background     : #f4f6f9;
+    padding        : 0 0 80px;   /* space for FAB */
+    font-family    : -apple-system, BlinkMacSystemFont, 'Salesforce Sans', sans-serif;
+}
+
+/* ── Summary Banner ──────────────────────────────────── */
+.summary-banner {
+    display         : flex;
+    align-items     : center;
+    justify-content : space-around;
+    background      : linear-gradient(135deg, #0070d2 0%, #005fb2 100%);
+    padding         : 16px 20px;
+    color           : #fff;
+}
+.summary-item   { text-align: center; }
+.summary-label  { display: block; font-size: 11px; text-transform: uppercase;
+                  letter-spacing: .6px; opacity: .85; margin-bottom: 4px; }
+.summary-value  { display: block; font-size: 22px; font-weight: 700; }
+.summary-divider{ width: 1px; height: 36px; background: rgba(255,255,255,.3); }
+
+.summary-submit { display: flex; align-items: center; }
+
+/* Base submit button */
+.submit-report-btn {
+    display        : inline-flex;
+    align-items    : center;
+    gap            : 6px;
+    padding        : 9px 18px;
+    border-radius  : 20px;
+    border         : none;
+    font-size      : 13px;
+    font-weight    : 700;
+    cursor         : pointer;
+    transition     : background .15s, transform .1s;
+    white-space    : nowrap;
+}
+/* Active — ready to submit */
+.submit-report-btn--active {
+    background : #fff;
+    color      : #0070d2;
+}
+.submit-report-btn--active:hover  { background: #e8f0fe; transform: scale(1.03); }
+.submit-report-btn--active:active { transform: scale(.97); }
+
+/* Already submitted / approved / paid */
+.submit-report-btn--done {
+    background : rgba(255,255,255,.18);
+    color      : #fff;
+    cursor     : default;
+    opacity    : .9;
+}
+
+/* No expenses yet — greyed out */
+.submit-report-btn--disabled {
+    background : rgba(255,255,255,.12);
+    color      : rgba(255,255,255,.55);
+    cursor     : not-allowed;
+}
+
+/* ── Pending Sync Banner ─────────────────────────────── */
+.sync-banner {
+    display         : flex;
+    justify-content : space-between;
+    align-items     : center;
+    background      : #fef3cd;
+    border-left     : 4px solid #e8a000;
+    padding         : 10px 14px;
+    gap             : 10px;
+}
+.sync-banner-left {
+    display    : flex;
+    align-items: center;
+    gap        : 8px;
+    flex       : 1;
+}
+.sync-icon  { --lwc-colorTextIconDefault: #b86e00; flex-shrink: 0; }
+.sync-text  { font-size: 13px; color: #6b4c00; line-height: 1.4; }
+.sync-btn {
+    padding       : 7px 14px;
+    border-radius : 6px;
+    border        : 1.5px solid #b86e00;
+    background    : #fff;
+    color         : #b86e00;
+    font-size     : 13px;
+    font-weight   : 700;
+    cursor        : pointer;
+    white-space   : nowrap;
+    flex-shrink   : 0;
+    position      : relative;
+    min-width     : 80px;
+    min-height    : 34px;
+    transition    : background .15s;
+}
+.sync-btn:hover:not([disabled]) { background: #fef3cd; }
+.sync-btn[disabled] { opacity: .6; cursor: not-allowed; }
+.sync-spinner {
+    position : absolute;
+    inset    : 0;
+    margin   : auto;
+}
+
+
+.view-toggle {
+    display       : flex;
+    background    : #ffffff;
+    border-bottom : 1px solid #e8e8e8;
+    padding       : 0 16px;
+}
+.toggle-btn {
+    flex           : 1;
+    padding        : 13px 4px;
+    border         : none;
+    background     : transparent;
+    font-size      : 14px;
+    font-weight    : 600;
+    color          : #706e6b;
+    cursor         : pointer;
+    border-bottom  : 3px solid transparent;
+    transition     : color .15s, border-color .15s;
+}
+.toggle-btn.active {
+    color        : #0070d2;
+    border-bottom-color: #0070d2;
+}
+
+/* ── Filter Row ──────────────────────────────────────── */
+.filter-row {
+    display   : flex;
+    gap       : 10px;
+    padding   : 10px 14px 4px;
+    flex-wrap : wrap;
+}
+.filter-group {
+    display    : flex;
+    align-items: center;
+    gap        : 6px;
+    flex       : 1;
+    min-width  : 130px;
+}
+.filter-label {
+    font-size  : 12px;
+    font-weight: 600;
+    color      : #706e6b;
+    flex-shrink: 0;
+}
+.select-wrap-small {
+    position  : relative;
+    display   : flex;
+    align-items: center;
+    flex      : 1;
+}
+.filter-select {
+    width         : 100%;
+    padding       : 7px 28px 7px 10px;
+    border-radius : 8px;
+    border        : 1.5px solid #dddbda;
+    background    : #fff;
+    font-size     : 13px;
+    color         : #3e3e3c;
+    font-weight   : 500;
+    cursor        : pointer;
+    -webkit-appearance: none;
+    appearance    : none;
+}
+.filter-select:focus {
+    outline     : none;
+    border-color: #0070d2;
+    box-shadow  : 0 0 0 3px rgba(0,112,210,.12);
+}
+.filter-select-icon {
+    position      : absolute;
+    right         : 8px;
+    pointer-events: none;
+    --lwc-colorTextIconDefault: #706e6b;
+}
+
+/* ── Results info ────────────────────────────────────── */
+.results-info {
+    display         : flex;
+    justify-content : space-between;
+    align-items     : center;
+    padding         : 8px 16px 4px;
+}
+.results-count { font-size: 12px; color: #706e6b; font-weight: 500; }
+.clear-filters-btn {
+    font-size  : 12px;
+    color      : #0070d2;
+    border     : none;
+    background : transparent;
+    cursor     : pointer;
+    font-weight: 600;
+    padding    : 0;
+}
+
+/* ── List body ───────────────────────────────────────── */
+.list-body { padding: 8px 14px 0; }
+
+/* ── Loading ─────────────────────────────────────────── */
+.loading-state {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    padding        : 48px 20px;
+    gap            : 12px;
+}
+.loading-text { font-size: 14px; color: #706e6b; }
+
+/* ── Empty ───────────────────────────────────────────── */
+.empty-state {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    text-align     : center;
+    padding        : 48px 24px;
+    gap            : 8px;
+}
+.empty-icon  { --lwc-colorTextIconDefault: #b0adab; }
+.error-icon  { --lwc-colorTextIconDefault: #c23934; }
+.empty-title { font-size: 16px; font-weight: 700; color: #3e3e3c; margin: 4px 0 0; }
+.empty-sub   { font-size: 13px; color: #706e6b; margin: 0; }
+.retry-btn {
+    margin-top : 12px;
+    padding    : 10px 24px;
+    border-radius: 8px;
+    border     : 1.5px solid #0070d2;
+    color      : #0070d2;
+    background : #fff;
+    font-size  : 14px;
+    font-weight: 600;
+    cursor     : pointer;
+}
+
+/* FAB styles live in c/expenseFab component */
+
+/* ── Shared backdrop ─────────────────────────────── */
+.modal-backdrop {
+    position  : fixed;
+    inset     : 0;
+    background: rgba(0,0,0,.45);
+    z-index   : 9000;
+    animation : fadeIn .2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Delete confirm dialog ───────────────────────── */
+.confirm-dialog {
+    position     : fixed;
+    top          : 50%;
+    left         : 50%;
+    transform    : translate(-50%, -50%);
+    width        : min(88vw, 320px);
+    background   : #fff;
+    border-radius: 16px;
+    z-index      : 9100;
+    padding      : 28px 24px 24px;
+    text-align   : center;
+    box-shadow   : 0 8px 40px rgba(0,0,0,.22);
+    animation    : popIn .2s cubic-bezier(.32,1,.28,1);
+}
+@keyframes popIn {
+    from { transform: translate(-50%,-50%) scale(.92); opacity: 0; }
+    to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+}
+.confirm-icon-wrap { margin-bottom: 14px; }
+.confirm-icon      { --lwc-colorTextIconDefault: #e8a000; }
+.confirm-title     { font-size: 17px; font-weight: 700; color: #181818; margin: 0 0 8px; }
+.confirm-body      { font-size: 14px; color: #555; margin: 0 0 22px; line-height: 1.5; }
+.confirm-actions   { display: flex; gap: 10px; }
+.btn-cancel-confirm {
+    flex: 1; padding: 11px; border: 1.5px solid #dddbda; border-radius: 8px;
+    background: #fff; font-size: 15px; font-weight: 600; color: #3e3e3c; cursor: pointer;
+}
+.btn-delete-confirm {
+    flex: 1; padding: 11px; border: none; border-radius: 8px;
+    background: #c23934; font-size: 15px; font-weight: 700; color: #fff;
+    cursor: pointer; transition: background .15s;
+}
+.btn-delete-confirm:hover:not([disabled]) { background: #a61c17; }
+.btn-delete-confirm[disabled] { background: #e8a5a2; cursor: not-allowed; }
+
+/* ── Edit bottom sheet ───────────────────────────── */
+.edit-sheet {
+    position      : fixed;
+    bottom        : 0;
+    left          : 0;
+    right         : 0;
+    background    : #fff;
+    border-radius : 20px 20px 0 0;
+    z-index       : 9100;
+    max-height    : 92vh;
+    display       : flex;
+    flex-direction: column;
+    animation     : slideUp .28s cubic-bezier(.32,1,.28,1);
+    box-shadow    : 0 -4px 30px rgba(0,0,0,.18);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.sheet-handle {
+    width: 40px; height: 4px; background: #d8d8d8;
+    border-radius: 2px; margin: 12px auto 0; flex-shrink: 0;
+}
+.sheet-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px 12px; border-bottom: 1px solid #e8e8e8; flex-shrink: 0;
+}
+.sheet-title { font-size: 18px; font-weight: 700; color: #181818; margin: 0; }
+.close-btn {
+    background: none; border: none; font-size: 18px;
+    color: #706e6b; cursor: pointer; padding: 4px 8px; border-radius: 4px;
+}
+.sheet-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+
+/* Form elements (mirrors expenseFab) */
+.form-group    { margin-bottom: 18px; }
+.form-label    { display: block; font-size: 13px; font-weight: 600; color: #3e3e3c; margin-bottom: 6px; }
+.required-label::after { content: ' *'; color: #c23934; }
+.optional      { font-weight: 400; color: #706e6b; font-size: 12px; }
+.form-input, .form-select, .form-textarea {
+    width: 100%; padding: 11px 14px; border: 1.5px solid #dddbda;
+    border-radius: 8px; font-size: 15px; color: #181818; background: #f9f9f9;
+    box-sizing: border-box; transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none; appearance: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none; border-color: #0070d2;
+    box-shadow: 0 0 0 3px rgba(0,112,210,.15); background: #fff;
+}
+.form-textarea  { resize: none; line-height: 1.5; }
+.amount-input-wrap { position: relative; display: flex; align-items: center; }
+.currency-symbol   { position: absolute; left: 14px; font-size: 16px; font-weight: 600; color: #444; pointer-events: none; }
+.amount-input      { padding-left: 30px !important; }
+.select-wrap       { position: relative; }
+.field-error       { display: block; font-size: 12px; color: #c23934; margin-top: 4px; }
+
+/* Visit section */
+.visits-loading { display: flex; align-items: center; gap: 8px; color: #706e6b; font-size: 13px; padding: 8px 0; }
+.visits-spinner { width: 16px; height: 16px; border: 2px solid #e0e0e0; border-top: 2px solid #0070d2; border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.visits-empty        { font-size: 13px; color: #888; margin: 6px 0 0; font-style: italic; }
+.visits-selected-hint{ font-size: 12px; color: #0070d2; font-weight: 600; margin: 6px 0 0; }
+.visit-list  { display: flex; flex-direction: column; gap: 6px; }
+.visit-row   { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: border-color .15s, background .15s; user-select: none; }
+.visit-row:active { background: #f0f5ff; }
+.visit-check-wrap { flex-shrink: 0; }
+.visit-check { width: 20px; height: 20px; border: 2px solid #c8c8c8; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; transition: background .15s, border-color .15s; }
+.visit-check--on { background: #0070d2; border-color: #0070d2; }
+.visit-info   { flex: 1; min-width: 0; }
+.visit-name   { display: block; font-size: 13px; font-weight: 600; color: #181818; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.visit-outlet { display: block; font-size: 12px; color: #706e6b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Footer */
+.sheet-footer { display: flex; gap: 12px; padding: 14px 20px 24px; border-top: 1px solid #e8e8e8; flex-shrink: 0; background: #fff; }
+.btn-cancel { flex: 1; padding: 13px; border: 1.5px solid #dddbda; border-radius: 8px; background: #fff; font-size: 15px; font-weight: 600; color: #3e3e3c; cursor: pointer; }
+.btn-save   { flex: 2; padding: 13px; border: none; border-radius: 8px; background: #0070d2; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; transition: background .15s; }
+.btn-save:hover:not([disabled]) { background: #005fb2; }
+.btn-save[disabled] { background: #9ec5e9; cursor: not-allowed; }
+
+/* ── File upload (edit modal) ────────────────────── */
+.edit-file-input { display: none; }
+
+.upload-area {
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    justify-content: center;
+    gap            : 4px;
+    padding        : 14px;
+    border         : 2px dashed #c8c8c8;
+    border-radius  : 10px;
+    background     : #f8faff;
+    cursor         : pointer;
+    margin-top     : 10px;
+    transition     : border-color .15s, background .15s;
+}
+.upload-area:active { border-color: #0070d2; background: #eaf2ff; }
+.upload-icon  { --lwc-colorTextIconDefault: #0070d2; margin-bottom: 2px; }
+.upload-text  { font-size: 14px; font-weight: 600; color: #0070d2; }
+.upload-hint  { font-size: 11px; color: #888; }
+
+.file-list  { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+
+.file-chip {
+    display    : flex;
+    align-items: center;
+    gap        : 10px;
+    padding    : 8px 10px;
+    background : #f3f3f3;
+    border-radius: 8px;
+    border     : 1px solid #e0e0e0;
+}
+.file-chip--existing { background: #eef5ff; border-color: #c5d9f7; }
+
+.file-thumb {
+    width        : 40px;
+    height       : 40px;
+    object-fit   : cover;
+    border-radius: 6px;
+    flex-shrink  : 0;
+}
+.file-thumb-existing {
+    display        : flex;
+    align-items    : center;
+    justify-content: center;
+    background     : #dceeff;
+    border-radius  : 6px;
+}
+.file-thumb-pdf {
+    display        : flex;
+    align-items    : center;
+    justify-content: center;
+    background     : #fce8e8;
+    border-radius  : 6px;
+}
+.file-thumb-link { flex-shrink: 0; text-decoration: none; }
+
+.file-info   { flex: 1; min-width: 0; }
+.file-name   { display: block; font-size: 12px; font-weight: 600; color: #181818;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-size   { display: block; font-size: 11px; color: #888; margin-top: 2px; }
+.file-remove {
+    background: none; border: none; font-size: 14px; color: #888;
+    cursor: pointer; padding: 2px 6px; flex-shrink: 0; border-radius: 4px;
+}
+.file-remove:hover { background: #e0e0e0; color: #c23934; }
+
+/* ── View modal (read-only detail sheet) ────────── */
+.view-sheet {
+    position      : fixed;
+    bottom        : 0;
+    left          : 0;
+    right         : 0;
+    background    : #fff;
+    border-radius : 20px 20px 0 0;
+    z-index       : 9100;
+    max-height    : 85vh;
+    display       : flex;
+    flex-direction: column;
+    animation     : slideUp .28s cubic-bezier(.32,1,.28,1);
+    box-shadow    : 0 -4px 30px rgba(0,0,0,.18);
+}
+
+.view-status-row {
+    display    : flex;
+    align-items: center;
+    gap        : 10px;
+    margin-bottom: 18px;
+}
+.view-expense-name { font-size: 12px; color: #888; }
+
+.view-row {
+    display        : flex;
+    justify-content: space-between;
+    align-items    : center;
+    padding        : 10px 0;
+    border-bottom  : 1px solid #f0f0f0;
+    gap            : 12px;
+}
+.view-row--col {
+    flex-direction: column;
+    align-items   : flex-start;
+    gap           : 6px;
+}
+.view-label  { font-size: 12px; color: #888; font-weight: 500; flex-shrink: 0; }
+.view-value  { font-size: 14px; color: #181818; text-align: right; }
+.view-amount { font-size: 18px; font-weight: 700; color: #0070d2; text-align: right; }
+.view-description { text-align: left; color: #444; line-height: 1.5; font-size: 13px; }
+.view-empty  { font-size: 13px; color: #aaa; font-style: italic; }
+
+.view-visit-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.view-visit-chip {
+    display       : flex;
+    flex-direction: column;
+    padding       : 7px 10px;
+    background    : #f0f5ff;
+    border-radius : 8px;
+    border        : 1px solid #c5d9f7;
+}
+.view-visit-name   { font-size: 13px; font-weight: 600; color: #0a2c6b; }
+.view-visit-outlet { font-size: 11px; color: #5a7ab5; margin-top: 2px; }
+
+/* end expenseList styles */
+
+/* ── View sheet rejection reason ────────────────────── */
+.view-label--rejection { color: #ba0517; }
+.view-rejection-banner {
+    display    : flex;
+    align-items: flex-start;
+    gap        : 8px;
+    background : #fff4f4;
+    border     : 1px solid #f5c2c7;
+    border-radius: 8px;
+    padding    : 10px 14px;
+    width      : 100%;
+}
+.view-rejection-icon { --lwc-colorTextIconDefault: #ba0517; flex-shrink: 0; margin-top: 1px; }
+.view-rejection-text { font-size: 13px; color: #6b0e16; line-height: 1.5; }
+
+/* ── All-tab date grouping ───────────────────────────── */
+.expense-date-group {
+    margin-bottom: 16px;
+}
+.expense-date-header {
+    display     : flex;
+    align-items : center;
+    gap         : 7px;
+    padding     : 8px 12px;
+    background  : #eef2f9;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor      : pointer;
+    user-select : none;
+    transition  : background .13s;
+}
+.expense-date-header:hover  { background: #dde5f5; }
+.expense-date-header.is-collapsed { margin-bottom: 0; border-radius: 8px; }
+.date-header-icon   { --lwc-colorTextIconDefault: #0070d2; flex-shrink: 0; }
+.expense-date-label {
+    font-size  : 13px;
+    font-weight: 700;
+    color      : #0a2c6b;
+    flex       : 1;
+}
+.expense-date-count {
+    font-size  : 11px;
+    color      : #555;
+    background : #d6e0f7;
+    padding    : 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.date-chevron {
+    --lwc-colorTextIconDefault: #5a7ab5;
+    flex-shrink: 0;
+    transition : transform .2s ease;
+    transform  : rotate(0deg);
+}
+.date-chevron.chevron-collapsed {
+    transform: rotate(-90deg);
+}

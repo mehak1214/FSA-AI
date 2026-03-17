@@ -15,8 +15,6 @@ export default class AccountRecordHub extends NavigationMixin(LightningElement) 
     @track errorMessage = '';
     @track selectedType = DEALER_DISTRIBUTOR;
     @track searchText = '';
-    @track sortBy = 'NAME';
-    @track sortDirection = 'ASC';
     @track currentPage = 1;
     recordTypeIdByDeveloperName = {};
     searchDebounce;
@@ -50,44 +48,8 @@ export default class AccountRecordHub extends NavigationMixin(LightningElement) 
         return this.records && this.records.length > 0;
     }
 
-    get sortOptions() {
-        return [
-            { label: 'Name', value: 'NAME' },
-            { label: 'Last Modified', value: 'LAST_MODIFIED' }
-        ];
-    }
-
-    get sortDirectionLabel() {
-        return this.sortDirection === 'ASC' ? 'Asc' : 'Desc';
-    }
-
     get sortedRecords() {
-        const rows = [...(this.records || [])];
-        if (!rows.length) {
-            return rows;
-        }
-
-        rows.sort((a, b) => {
-            let left;
-            let right;
-
-            if (this.sortBy === 'LAST_MODIFIED') {
-                left = a.lastModifiedEpoch || 0;
-                right = b.lastModifiedEpoch || 0;
-            } else {
-                left = (a.accountName || '').toLowerCase();
-                right = (b.accountName || '').toLowerCase();
-            }
-
-            if (left === right) {
-                return 0;
-            }
-
-            const base = left > right ? 1 : -1;
-            return this.sortDirection === 'ASC' ? base : -base;
-        });
-
-        return rows;
+        return [...(this.records || [])];
     }
 
     get totalPages() {
@@ -139,16 +101,6 @@ export default class AccountRecordHub extends NavigationMixin(LightningElement) 
             this.hydrateFromCache();
             this.loadAccounts();
         }, 300);
-    }
-
-    handleSortChange(event) {
-        this.sortBy = event.detail.value;
-        this.currentPage = 1;
-    }
-
-    handleToggleSortDirection() {
-        this.sortDirection = this.sortDirection === 'ASC' ? 'DESC' : 'ASC';
-        this.currentPage = 1;
     }
 
     handlePrevPage() {

@@ -10,7 +10,6 @@ import getVisitsByBeat from '@salesforce/apex/VisitController.getVisitsByBeat';
 import getDayTimeline from '@salesforce/apex/VisitController.getDayTimeline';
 import startDay from '@salesforce/apex/VisitController.startDay';
 import endDay from '@salesforce/apex/VisitController.endDay';
-import getTravelSummaryByDate from '@salesforce/apex/VisitController.getTravelSummaryByDate';
 import getDashboardSnapshot from '@salesforce/apex/VisitController.getDashboardSnapshot';
 
 const USER_FIELDS = ['User.Name'];
@@ -50,37 +49,17 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
     timelineOpen = false;
     timelineVisits = [];
     timelineLoading = false;
-    travelSummary = {};
+
     showSchemesModal = false;
     showNewProductsModal = false;
     showBeatPlanWeeklyModal = false;
-    travelLoading = false;
-    travelError = null;
+
     dashboardSnapshot = {};
-    activeScreen = 'operations';
     activeVisitTab = 'upcoming';
     dailyVisits = [];
     activeMainScreen = 'dashboard'; // dashboard | field
     stayOnFieldNoBeat = false;
     activeProductSchemeTab = 'products'; // products | schemes
-
-    
-    manualExpenseType = 'Travel';
-    manualExpenseAmount = '';
-    manualExpenseRemark = '';
-    manualExpenses = [];
-
-    newProducts = [
-        { id: 'np1', name: 'FreshMax Energy Drink 250ml', category: 'Beverage' },
-        { id: 'np2', name: 'NutriBar Choco Almond', category: 'Snacks' },
-        { id: 'np3', name: 'QuickWash Liquid 1L', category: 'Home Care' }
-    ];
-
-    activeSchemes = [
-        { id: 'sc1', title: 'Retail Push', detail: 'Buy 20, Get 2', till: '28 Feb' },
-        { id: 'sc2', title: 'Visibility Bonus', detail: 'Extra 3% on premium shelf', till: '25 Feb' },
-        { id: 'sc3', title: 'New Outlet Starter', detail: 'Flat Rs 500 credit', till: '31 Mar' }
-    ];
 
     /* =====================
        USER
@@ -96,11 +75,56 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
        INIT
     ====================== */
     connectedCallback() {
-        this.loadAttendance();
-        this.loadBeats();
-        this.loadTravelSummary();
-        this.loadDashboardSnapshot();
-        this.fetchDayTimelineData();
+
+        Promise.all([
+            getTodayAttendance(),
+            getTodayBeats({ visitDate: this.selectedDate }),
+            getDashboardSnapshot({ visitDate: this.selectedDate }),
+            getDayTimeline({ visitDate: this.selectedDate })
+        ])
+        .then(([attendance, beats, snapshot, timeline]) => {
+
+            /* Attendance */
+            if (attendance) {
+                this.dayStarted = true;
+                this.dayEnded = !!attendance.End_Time__c;
+            }
+
+            /* Beats */
+            this.beats = (beats || []).map(beat => {
+                const startDay = beat.ibfsa__Start_Date__c || beat.Start_Date__c;
+                const endDay = beat.ibfsa__End_Date__c || beat.End_Date__c;
+
+                return {
+                    ...beat,
+                    startDay,
+                    endDay,
+                    rangeLabel: startDay && endDay
+                        ? `${startDay} - ${endDay}`
+                        : startDay
+                            ? `Start ${startDay}`
+                            : endDay
+                                ? `End ${endDay}`
+                                : null
+                };
+            });
+
+            /* Dashboard */
+            this.dashboardSnapshot = snapshot || {};
+
+            /* Timeline */
+            const records = timeline || [];
+            this.timelineVisits = records;
+            this.dailyVisits = records;
+
+        })
+        .catch(error => {
+            this.showToast(
+                'Loading Error',
+                error?.body?.message || 'Failed to load dashboard data.',
+                'error'
+            );
+        });
     }
 
     refreshDayViews() {
@@ -110,7 +134,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
         this.loadAttendance();
         }, 500);
 
-        this.loadTravelSummary();
         this.loadDashboardSnapshot();
         this.fetchDayTimelineData();
         this.loadBeats().then(() => {
@@ -124,7 +147,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
         // Date-driven refresh used by date picker and Today jump.
         this.loadAttendance();
         this.loadBeats();
-        this.loadTravelSummary();
         this.loadDashboardSnapshot();
         this.fetchDayTimelineData();
 
@@ -152,22 +174,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
             })
             .catch(() => {
                 // Keep optimistic UI on error
-            });
-    }
-
-    loadTravelSummary() {
-        this.travelLoading = true;
-        this.travelError = null;
-        getTravelSummaryByDate({ visitDate: this.selectedDate })
-            .then(summary => {
-                this.travelSummary = summary || {};
-            })
-            .catch(err => {
-                this.travelSummary = {};
-                this.travelError = err?.body?.message || 'Unable to load expense summary for selected date.';
-            })
-            .finally(() => {
-                this.travelLoading = false;
             });
     }
 
@@ -272,16 +278,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
         }
     }
 
-    handleScreenChange(event) {
-        const nextScreen = event?.currentTarget?.dataset?.screen;
-        if (!nextScreen || nextScreen === this.activeScreen) return;
-        this.activeScreen = nextScreen;
-        if (nextScreen !== 'operations') {
-            this.timelineOpen = false;
-            this.showBeatDropdown = false;
-        }
-    }
-
     handleTabChange(event) {
         const nextTab = event?.currentTarget?.dataset?.tab;
         if (!nextTab || nextTab === this.activeProductSchemeTab) return;
@@ -323,7 +319,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
 
         this.viewMode = 'BEAT';
         this.activeMainScreen = 'field';
-        this.activeScreen = 'operations';
         this.stayOnFieldNoBeat = false;
         this.applyVisits([], false);
         this.loadVisits();
@@ -352,7 +347,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
 
     handleRefresh() {
         this.applyVisits([], false);
-        this.loadTravelSummary();
         this.loadDashboardSnapshot();
         this.fetchDayTimelineData();
         setTimeout(() => {
@@ -448,37 +442,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
 
     showToast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
-    }
-
-    handleExpenseFieldChange(event) {
-        const field = event.target.dataset.field;
-        const value = event.detail?.value ?? event.target.value;
-        if (field === 'type') this.manualExpenseType = value;
-        if (field === 'amount') this.manualExpenseAmount = value;
-        if (field === 'remark') this.manualExpenseRemark = value;
-    }
-
-    handleAddExpense() {
-        const amount = Number(this.manualExpenseAmount);
-        if (!amount || amount <= 0) {
-            this.showToast('Invalid amount', 'Enter a valid manual expense amount.', 'warning');
-            return;
-        }
-
-        this.manualExpenses = [
-            {
-                id: `${Date.now()}`,
-                type: this.manualExpenseType,
-                amount,
-                remark: this.manualExpenseRemark || 'No remarks',
-                createdAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                formattedAmount: this.formatINRCurrency(amount)
-            },
-            ...this.manualExpenses
-        ];
-        this.manualExpenseAmount = '';
-        this.manualExpenseRemark = '';
-        this.showToast('Expense added', 'Manual expense added for today.', 'success');
     }
 
     applyVisits(nextVisits, shouldPulse = true) {
@@ -611,22 +574,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
         return `summary-pill pending${this.summaryPulse ? ' pulse' : ''}`;
     }
 
-    get isOperationsScreen() {
-        return this.activeScreen === 'operations';
-    }
-
-    get isTravelScreen() {
-        return this.activeScreen === 'travel';
-    }
-
-    get operationsTabClass() {
-        return `mode-btn${this.isOperationsScreen ? ' active' : ''}`;
-    }
-
-    get travelTabClass() {
-        return `mode-btn${this.isTravelScreen ? ' active' : ''}`;
-    }
-
     get isLatestProductsTab() {
         return this.activeProductSchemeTab === 'products';
     }
@@ -643,24 +590,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
         return `tab-btn${this.isActiveSchemesTab ? ' active' : ''}`;
     }
 
-    get todayDistanceKmLabel() {
-        const value = this.travelSummary?.totalDistanceKm;
-        return value === null || value === undefined ? '0.000 km' : `${Number(value).toFixed(3)} km`;
-    }
-
-    get eligibleDistanceKmLabel() {
-        const value = this.travelSummary?.eligibleDistanceKm;
-        return value === null || value === undefined ? '0.000 km' : `${Number(value).toFixed(3)} km`;
-    }
-
-    get estimatedExpenseLabel() {
-        const value = this.travelSummary?.expenseAmount;
-        return value === null || value === undefined ? 'Rs 0.00' : `Rs ${Number(value).toFixed(2)}`;
-    }
-
-    get travelStatusLabel() {
-        return this.travelSummary?.status || 'Draft';
-    }
 
     get selectedDateLabel() {
         if (!this.selectedDate) {
@@ -674,18 +603,12 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
             year: 'numeric'
         });
     }
-
-    get showTravelError() {
-        return !!this.travelError;
-    }
-
     get salesTargetAmount() {
         const snapshotTarget = Number(this.dashboardSnapshot?.targetAmount);
         if (!Number.isNaN(snapshotTarget) && snapshotTarget > 0) {
             return snapshotTarget;
         }
-        const outlets = this.totalVisits || (this.beats.length * 4);
-        return Math.max(outlets, 1) * 12000;
+        return 0;
     }
 
     get salesAchievedAmount() {
@@ -805,30 +728,6 @@ export default class r_fieldDayHome extends NavigationMixin(LightningElement) {
         if (this.dayEnded) return 'journey-state ended';
         if (this.dayStarted) return 'journey-state active';
         return 'journey-state';
-    }
-
-    get expenseTypeOptions() {
-        return [
-            { label: 'Travel', value: 'Travel' },
-            { label: 'Meal', value: 'Meal' },
-            { label: 'Parking', value: 'Parking' },
-            { label: 'Miscellaneous', value: 'Miscellaneous' }
-        ];
-    }
-
-    get hasManualExpenses() {
-        return this.manualExpenses.length > 0;
-    }
-
-    get manualExpenseTotalLabel() {
-        const total = this.manualExpenses.reduce((sum, item) => sum + item.amount, 0);
-        return this.formatINRCurrency(total);
-    }
-
-    get expenseSnapshotLabel() {
-        const autoExpense = Number(this.travelSummary?.expenseAmount || 0);
-        const manualExpense = this.manualExpenses.reduce((sum, item) => sum + item.amount, 0);
-        return this.formatINRCurrency(autoExpense + manualExpense);
     }
 
     get performanceLiftPercent() {

@@ -302,11 +302,11 @@
 }
 
 /* Color variants keyed to approval/visit status mapping */
-.bp-card--completed  { background: #2e844a; }   /* Approved / Completed */
-.bp-card--inprogress { background: #0070d2; }   /* In Progress */
-.bp-card--missed     { background: #c23934; }   /* Missed */
-.bp-card--planned    { background: #8d99a6; }   /* Before submit (Planned) */
-.bp-card--draft      { background: #e8a201; }   /* Draft/Pending Approval */
+.bp-card--completed  { background: rgba(31, 122, 74, 0.85); }   /* Approved / Completed */
+.bp-card--inprogress { background: rgba(27, 111, 209, 0.85); }  /* In Progress */
+.bp-card--missed     { background: rgba(182, 54, 47, 0.85); }   /* Missed */
+.bp-card--planned    { background: rgba(126, 136, 150, 0.85); } /* Draft (grey) */
+.bp-card--draft      { background: rgba(240, 180, 41, 0.85); }  /* Submitted/Pending (yellow) */
 
 /* Sequence number bubble (ibfsa__Sequence__c) */
 .bp-card__seq {
@@ -358,6 +358,11 @@
     text-overflow: ellipsis;
     max-width: 100%;
 }
+.bp-card__badge--draft     { background: rgba(215, 221, 230, 0.95); color: #2f3b48; }
+.bp-card__badge--submitted { background: rgba(255, 232, 176, 0.95); color: #7a4700; }
+.bp-card__badge--pending   { background: rgba(255, 232, 176, 0.95); color: #7a4700; }
+.bp-card__badge--approved  { background: rgba(207, 234, 217, 0.95); color: #1f5a34; }
+.bp-card__badge--rejected  { background: rgba(248, 201, 201, 0.95); color: #7a1f1f; }
 
 /* ── Empty State ──────────────────────────────────────────────────────── */
 .bp-empty {
@@ -652,9 +657,9 @@
     appearance: none;
     -webkit-appearance: none;
     width: 100%;
-    background: #fff;
-    border: 1px solid #dddbda;
-    border-radius: 4px;
+    background: #f7f9fc;
+    border: 1px solid #d7dde6;
+    border-radius: 8px;
     padding: 0 12px;
     height: 32px;
     font-size: 0.8125rem;
@@ -676,11 +681,11 @@ textarea.bp-field__input {
 .bp-field__input:focus {
     outline: none;
     border-color: #1b96ff;
-    box-shadow: 0 0 0 3px #d8edff;
+    box-shadow: 0 0 0 3px rgba(27, 150, 255, 0.18);
 }
 
 .bp-field__input--disabled {
-    background: #f3f2f2;
+    background: #eef1f5;
     border-color: #dddbda;
     color: #706e6b;
     cursor: not-allowed;

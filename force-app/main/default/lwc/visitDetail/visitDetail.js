@@ -61,7 +61,9 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     pageVisitId;
 
     connectedCallback() {
+        setTimeout(() => {
         this.loadAttendance();
+        }, 300)
     }
 
     get currentVisitId() {
@@ -167,6 +169,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         const { data, error } = result;
         if (data) {
             this.visit = data;
+            // Force refresh attendance state
+            this.loadAttendance();
             this.meetingNotes = this._getFieldFromRecord(data, 'Meeting_Notes__c') || '';
             this.selectedRating = Number(this._getFieldFromRecord(data, 'Rating__c')) || 0;
             this.visitFeedback = this._getFieldFromRecord(data, 'Feedback__c') || '';
