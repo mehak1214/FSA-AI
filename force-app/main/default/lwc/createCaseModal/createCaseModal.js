@@ -606,7 +606,6 @@ export default class CreateCaseModal extends LightningElement {
                 };
 
                 console.log('File ready for case attachment:', this.uploadState.fileName, `(${fileSize})`);
-                this.showToast('Success', `File '${file.name}' uploaded successfully`, 'success');
             })
             .catch(error => {
                 console.error('Error getting file size:', error);
@@ -623,8 +622,6 @@ export default class CreateCaseModal extends LightningElement {
                     contentDocumentId: file.documentId,
                     isPreUploaded: true
                 };
-                
-                this.showToast('Success', `File '${file.name}' uploaded successfully`, 'success');
             });
     }
 
@@ -752,16 +749,15 @@ export default class CreateCaseModal extends LightningElement {
      */
     handleSubmitSuccess(result) {
         if (result.success) {
-            console.log('✓ Case created successfully:', result.caseNumber);
+            console.log('✓ Case created successfully:', {
+                caseId: result.caseId,
+                caseNumber: result.caseNumber,
+                message: result.message
+            });
             
             this.modalMetrics.formSubmitted = true;
-            this.showToast(
-                'Success',
-                `Case ${result.caseNumber} created and submitted for approval!`,
-                'success'
-            );
-
-            // Dispatch event
+            
+            // Dispatch event for parent component
             this.dispatchEvent(new CustomEvent('casecreated', {
                 detail: {
                     caseId: result.caseId,

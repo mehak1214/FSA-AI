@@ -322,9 +322,12 @@ public with sharing class CreateCaseController {
                 System.debug('Warning: Could not update case status: ' + statusError.getMessage());
             }
 
+            // Query the case to get the auto-generated case number
+            Case finalCase = [SELECT Id, CaseNumber FROM Case WHERE Id = :newCase.Id LIMIT 1];
+
             result.put('success', true);
-            result.put('caseId', newCase.Id);
-            result.put('caseNumber', newCase.CaseNumber);
+            result.put('caseId', finalCase.Id);
+            result.put('caseNumber', finalCase.CaseNumber);
             result.put('message', 'Case created successfully and submitted for approval!');
 
         } catch (DmlException e) {

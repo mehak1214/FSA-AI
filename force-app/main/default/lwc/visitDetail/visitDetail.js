@@ -970,6 +970,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleCaseCreated(event) {
         const { caseId, caseNumber } = event.detail;
-        this.showToast('Success', `Case ${caseNumber} has been created and submitted for approval!`, 'success');
+        this.showToast('Success', `Case #${caseNumber} has been created and submitted for approval!`, 'success');
     }
+
 }
