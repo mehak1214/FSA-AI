@@ -113,6 +113,32 @@
     background: #17396e;
 }
 
+/* Create Case button */
+.create-case-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(180deg, #0f5abb 0%, #0a4ea8 100%);
+    color: #fff;
+    border: 1px solid #0a4ea8;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 120ms ease;
+    box-shadow: 0 2px 8px rgba(10, 78, 168, 0.15);
+    white-space: nowrap;
+    --slds-c-icon-color-foreground-default: #ffffff;
+}
+.create-case-btn:hover {
+    opacity: 0.92;
+    box-shadow: 0 4px 12px rgba(10, 78, 168, 0.25);
+}
+.create-case-btn:active {
+    transform: translateY(1px);
+}
+
 /* CARD */
 
 .card {

@@ -318,15 +318,24 @@
                         </header>
                         <div class="slds-modal__content slds-p-around_medium orders-modal-content"
                             id="visitOrdersModalContent">
-                            <c-orders-by-user visit-franchise-id={visitFranchiseId}></c-orders-by-user>
+                            <c-orders-by-user visit-franchise-id={visitFranchiseId} onorderselected={handleOrderSelected}></c-orders-by-user>
                         </div>
                         <footer class="slds-modal__footer">
+                            <template if:true={selectedOrderFromModal}>
+                                <button class="create-case-btn" onclick={handleOpenCreateCase} type="button" title="Create Support Case">
+                                    <lightning-icon icon-name="utility:case" size="small" alternative-text="Create Case"></lightning-icon>
+                                    <span>Create Case</span>
+                                </button>
+                            </template>
                             <button class="btn secondary" onclick={handleCloseOrdersModal} type="button">Close</button>
                         </footer>
                     </div>
                 </section>
             </div>
         </template>
+
+        <!-- Create Case Modal -->
+        <c-create-case-modal oncasecreated={handleCaseCreated}></c-create-case-modal>
 
     </section>
 </template>

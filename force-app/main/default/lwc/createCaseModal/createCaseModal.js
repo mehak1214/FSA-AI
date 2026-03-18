@@ -2,6 +2,7 @@ import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getPicklistMetadata from '@salesforce/apex/CreateCaseController.getPicklistMetadata';
 import getOrderInfo from '@salesforce/apex/CreateCaseController.getOrderInfo';
+import getFileSize from '@salesforce/apex/CreateCaseController.getFileSize';
 import createCase from '@salesforce/apex/CreateCaseController.createCase';
 
 /**
@@ -108,12 +109,16 @@ export default class CreateCaseModal extends LightningElement {
     
     @track uploadState = {
         fileName: '',
-        fileId: null,
+        fileBase64: null,
         fileSize: 0,
-        uploadProgress: 0,
+        fileContentType: '',
         uploadError: '',
-        isUploading: false
+        isUploading: false,
+        contentDocumentId: null,
+        isPreUploaded: false
     };
+
+
 
     /* ═══════════════════════════════════════════════════════════
        TRACKED PROPERTIES - ERROR & MODAL STATE
@@ -559,45 +564,68 @@ export default class CreateCaseModal extends LightningElement {
        FILE UPLOAD HANDLERS
        ═══════════════════════════════════════════════════════════ */
 
+
+
+
+
     /**
-     * Handle file upload completion
+     * Handle file upload from lightning-file-upload component
      */
-    handleUploadFinished(event) {
+    handleFileUploadFinished(event) {
         const uploadedFiles = event.detail.files;
 
         if (!uploadedFiles || uploadedFiles.length === 0) {
-            this.uploadState = { 
-                ...this.uploadState, 
-                uploadError: 'No file selected' 
-            };
+            console.warn('No files uploaded');
             return;
         }
 
         const file = uploadedFiles[0];
-        console.log('File upload completed:', file.name);
+        console.log('File uploaded via lightning-file-upload:', {
+            name: file.name,
+            documentId: file.documentId
+        });
 
-        // Validate file
-        const validation = this.validateFile(file);
-        if (!validation.isValid) {
-            this.uploadState = { 
-                ...this.uploadState, 
-                uploadError: validation.error 
-            };
-            this.showToast('Upload Error', validation.error, 'error');
-            return;
-        }
+        // Query file size from Salesforce
+        getFileSize({ contentDocumentId: file.documentId })
+            .then(result => {
+                const fileSize = result.size 
+                    ? this.formatFileSize(result.size)
+                    : 'Unknown size';
 
-        // Success
-        this.uploadState = {
-            fileName: file.name,
-            fileId: file.documentId,
-            fileSize: this.formatFileSize(file.size),
-            uploadProgress: 100,
-            uploadError: '',
-            isUploading: false
-        };
+                // Update upload state with file details
+                this.uploadState = {
+                    fileName: file.name,
+                    fileSize: fileSize,
+                    fileBase64: null,  // Not needed for pre-uploaded files
+                    fileContentType: 'application/octet-stream',
+                    uploadProgress: 100,
+                    uploadError: '',
+                    isUploading: false,
+                    contentDocumentId: file.documentId,  // Store for linking to case
+                    isPreUploaded: true  // Flag to indicate file was pre-uploaded
+                };
 
-        this.showToast('Success', `File '${file.name}' uploaded successfully`, 'success');
+                console.log('File ready for case attachment:', this.uploadState.fileName, `(${fileSize})`);
+                this.showToast('Success', `File '${file.name}' uploaded successfully`, 'success');
+            })
+            .catch(error => {
+                console.error('Error getting file size:', error);
+                
+                // Still set the file even if size fails
+                this.uploadState = {
+                    fileName: file.name,
+                    fileSize: 'Size unavailable',
+                    fileBase64: null,
+                    fileContentType: 'application/octet-stream',
+                    uploadProgress: 100,
+                    uploadError: '',
+                    isUploading: false,
+                    contentDocumentId: file.documentId,
+                    isPreUploaded: true
+                };
+                
+                this.showToast('Success', `File '${file.name}' uploaded successfully`, 'success');
+            });
     }
 
     /**
@@ -634,12 +662,15 @@ export default class CreateCaseModal extends LightningElement {
     handleClearFile() {
         this.uploadState = {
             fileName: '',
-            fileId: null,
+            fileBase64: null,
             fileSize: 0,
-            uploadProgress: 0,
+            fileContentType: '',
             uploadError: '',
-            isUploading: false
+            isUploading: false,
+            contentDocumentId: null,
+            isPreUploaded: false
         };
+        this.showToast('Success', 'File removed', 'success');
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -682,7 +713,8 @@ export default class CreateCaseModal extends LightningElement {
             orderId: this.orderId,
             accountId: this.accountId,
             subject: this.formData.subject,
-            uploadedFileName: this.uploadState.fileName
+            uploadedFileName: this.uploadState.fileName,
+            uploadedViaComponent: this.uploadState.isPreUploaded
         });
 
         createCase({
@@ -695,7 +727,10 @@ export default class CreateCaseModal extends LightningElement {
             caseType: this.formData.caseType,
             comments: this.formData.comments,
             currencyIsoCode: this.formData.currencyIsoCode,
-            uploadedFileId: this.uploadState.fileId || null
+            uploadedFileId: this.uploadState.isPreUploaded ? this.uploadState.contentDocumentId : null,
+            uploadFileBase64: null,
+            uploadFileName: null,
+            uploadFileContentType: null
         })
             .then(result => {
                 this.handleSubmitSuccess(result);

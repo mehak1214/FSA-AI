@@ -98,10 +98,6 @@
                     </button>
                     <h1 class="page-title">Order Details</h1>
                 </div>
-                <button class="create-case-btn" onclick={handleOpenCreateCase} type="button" title="Create Support Case">
-                    <lightning-icon icon-name="utility:case" size="small" alternative-text="Create Case"></lightning-icon>
-                    <span>Create Case</span>
-                </button>
             </div>
 
             <div class="page-panel content-panel">
@@ -158,9 +154,6 @@
             </div>
 
         </template>
-
-        <!-- Create Case Modal -->
-        <c-create-case-modal oncasecreated={handleCaseCreated}></c-create-case-modal>
 
     </section>
 </template>

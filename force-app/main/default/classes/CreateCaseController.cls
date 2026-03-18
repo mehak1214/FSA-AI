@@ -148,6 +148,36 @@ public with sharing class CreateCaseController {
     }
 
     /* =========================================================
+       GET FILE SIZE
+       ========================================================= */
+    @AuraEnabled(cacheable=false)
+    public static Map<String, Object> getFileSize(Id contentDocumentId) {
+        Map<String, Object> fileInfo = new Map<String, Object>();
+
+        try {
+            ContentVersion cv = [
+                SELECT Id, ContentDocumentId, ContentSize, FileExtension, Title
+                FROM ContentVersion 
+                WHERE ContentDocumentId = :contentDocumentId 
+                AND IsLatest = true
+                LIMIT 1
+            ];
+
+            fileInfo.put('size', cv.ContentSize);
+            fileInfo.put('extension', cv.FileExtension);
+            fileInfo.put('title', cv.Title);
+
+            System.debug('File info retrieved: ' + cv.Title + ' (' + cv.ContentSize + ' bytes)');
+
+        } catch (Exception e) {
+            System.debug('Error fetching file size: ' + e.getMessage());
+            fileInfo.put('size', 0);
+        }
+
+        return fileInfo;
+    }
+
+    /* =========================================================
        CREATE CASE
        ========================================================= */
     @AuraEnabled(cacheable=false)
@@ -161,7 +191,10 @@ public with sharing class CreateCaseController {
         String caseType,
         String comments,
         String currencyIsoCode,
-        Id uploadedFileId
+        Id uploadedFileId,
+        String uploadFileBase64,
+        String uploadFileName,
+        String uploadFileContentType
     ) {
         Map<String, Object> result = new Map<String, Object>();
 
@@ -210,24 +243,67 @@ public with sharing class CreateCaseController {
             // Link uploaded file to case if provided
             if (uploadedFileId != null) {
                 try {
-                    // Get the ContentDocument ID from ContentVersion
-                    ContentVersion cv = [
-                        SELECT ContentDocumentId 
-                        FROM ContentVersion 
-                        WHERE Id = :uploadedFileId 
-                        LIMIT 1
-                    ];
-                    
+                    // The uploadedFileId from lightning-file-upload is the ContentDocumentId
                     ContentDocumentLink cdl = new ContentDocumentLink();
-                    cdl.ContentDocumentId = cv.ContentDocumentId;
+                    cdl.ContentDocumentId = uploadedFileId;
                     cdl.LinkedEntityId = newCase.Id;
                     cdl.ShareType = 'V';  // Viewer permission
                     insert cdl;
                     
-                    System.debug('File linked to case successfully');
+                    System.debug('✓ File linked to case successfully');
                 } catch (Exception fileError) {
                     System.debug('Error linking file to case: ' + fileError.getMessage());
+                    System.debug('Stack trace: ' + fileError.getStackTraceString());
                     // Don't fail the case creation if file linking fails
+                }
+            }
+
+            // Create ContentVersion from uploaded file if provided
+            if (String.isNotBlank(uploadFileBase64) && String.isNotBlank(uploadFileName)) {
+                try {
+                    // Decode base64 to blob
+                    Blob fileBlob = EncodingUtil.base64Decode(uploadFileBase64);
+                    
+                    // Create ContentVersion
+                    ContentVersion cv = new ContentVersion();
+                    cv.Title = uploadFileName;
+                    cv.PathOnClient = uploadFileName;
+                    cv.VersionData = fileBlob;
+                    cv.IsMajorVersion = true;
+                    insert cv;
+                    
+                    System.debug('✓ File uploaded as ContentVersion: ' + cv.Id);
+                    
+                    // Get the ContentDocument ID
+                    ContentVersion insertedCV = [
+                        SELECT ContentDocumentId 
+                        FROM ContentVersion 
+                        WHERE Id = :cv.Id 
+                        LIMIT 1
+                    ];
+                    
+                    // Link file to case
+                    ContentDocumentLink cdl = new ContentDocumentLink();
+                    cdl.ContentDocumentId = insertedCV.ContentDocumentId;
+                    cdl.LinkedEntityId = newCase.Id;
+                    cdl.ShareType = 'V';  // Viewer permission
+                    insert cdl;
+                    
+                    System.debug('✓ File linked to case successfully');
+                    
+                    // Add note about file attachment
+                    String fileNote = 'Proof/Product image uploaded and attached. File: ' + uploadFileName;
+                    if (String.isNotBlank(newCase.Comments__c)) {
+                        newCase.Comments__c = newCase.Comments__c + '\n\n' + fileNote;
+                    } else {
+                        newCase.Comments__c = fileNote;
+                    }
+                    update newCase;
+                    
+                } catch (Exception fileError) {
+                    System.debug('Error processing uploaded file: ' + fileError.getMessage());
+                    System.debug('Stack trace: ' + fileError.getStackTraceString());
+                    // Don't fail case creation if file processing fails
                 }
             }
 

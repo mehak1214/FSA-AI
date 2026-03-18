@@ -492,6 +492,18 @@
     margin-top: 0.25rem;
 }
 
+/* FILE BUTTON GROUP - Upload button container */
+.file-button-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Lightning File Upload Component Override */
+.upload-file-component {
+    --sds-c-file-selector-sizing-height: 60px;
+}
+
 /* ════════════════════════════════════════════════════════════
    FILE UPLOADED DISPLAY
    ════════════════════════════════════════════════════════════ */

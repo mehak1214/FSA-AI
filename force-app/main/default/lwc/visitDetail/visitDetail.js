@@ -28,6 +28,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     isPhotoModalOpen = false;
     isSchemesModalOpen = false;
     isOrdersModalOpen = false;
+    selectedOrderFromModal = null;
     recentUploadNames = [];
     meetingNotes = '';
     meetingNotesSaving = false;
@@ -531,7 +532,12 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleCloseOrdersModal() {
         this.isOrdersModalOpen = false;
+        this.selectedOrderFromModal = null;
         this._unlockScroll();
+    }
+
+    handleOrderSelected(event) {
+        this.selectedOrderFromModal = event.detail?.order || null;
     }
 
     get orderToggleLabel() {
@@ -950,5 +956,20 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             reader.onerror = () => reject(new Error('Failed to read file'));
             reader.readAsDataURL(file);
         });
+    }
+
+    handleOpenCreateCase() {
+        const createCaseModal = this.template.querySelector('c-create-case-modal');
+        if (createCaseModal && this.selectedOrderFromModal) {
+            createCaseModal.openModal(
+                this.selectedOrderFromModal.orderId,
+                this.selectedOrderFromModal.accountId
+            );
+        }
+    }
+
+    handleCaseCreated(event) {
+        const { caseId, caseNumber } = event.detail;
+        this.showToast('Success', `Case ${caseNumber} has been created and submitted for approval!`, 'success');
     }
 }

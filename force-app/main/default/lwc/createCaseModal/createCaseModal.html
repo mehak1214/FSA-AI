@@ -239,23 +239,26 @@
                                     <span class="file-info">(Optional | Max 5MB | JPG, PNG, GIF, PDF)</span>
                                 </label>
                                 <div class="slds-form-element__control">
+                                    
+                                    <!-- No file selected - Show upload component -->
                                     <template if:false={uploadState.fileName}>
                                         <lightning-file-upload
                                             accept=".jpg,.jpeg,.png,.gif,.pdf"
-                                            onuploadfinished={handleUploadFinished}
-                                            disabled={isSaving}
+                                            onuploadfinished={handleFileUploadFinished}
+                                            disabled={uploadState.isUploading}
                                             multiple="false"
-                                            aria-describedby="file-help">
+                                            class="upload-file-component">
                                         </lightning-file-upload>
-                                        <p id="file-help" class="slds-text-body_small slds-m-top_small" style="color: var(--text-muted);">
-                                            You can attach a photo or document to support your case. Maximum file size is 5MB.
+                                        <p class="slds-text-body_small slds-m-top_small" style="color: var(--text-muted);">
+                                            You can attach a photo or document to support your case. Maximum file size is 5MB. Allowed types: JPG, PNG, GIF, PDF.
                                         </p>
                                     </template>
                                     
+                                    <!-- File selected - Show preview and remove button -->
                                     <template if:true={uploadState.fileName}>
                                         <div class="file-uploaded">
                                             <lightning-icon icon-name="utility:success" size="small" 
-                                                           alternative-text="File uploaded"></lightning-icon>
+                                                           alternative-text="File selected"></lightning-icon>
                                             <div class="file-info-box">
                                                 <div class="file-name">{uploadState.fileName}</div>
                                                 <div class="file-size">{uploadState.fileSize}</div>
@@ -264,7 +267,7 @@
                                                     onclick={handleClearFile} 
                                                     type="button"
                                                     title="Remove file"
-                                                    aria-label="Remove uploaded file">
+                                                    aria-label="Remove selected file">
                                                 <lightning-icon icon-name="utility:close" size="small" 
                                                                alternative-text="Remove"></lightning-icon>
                                             </button>
@@ -279,6 +282,8 @@
                                     </div>
                                 </template>
                             </div>
+
+
 
                             <!-- Comments Textarea -->
                             <div class="slds-form-element slds-m-bottom_medium">
