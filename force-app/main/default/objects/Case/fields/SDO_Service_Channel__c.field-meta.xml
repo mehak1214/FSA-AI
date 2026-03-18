@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SDO_Service_Channel__c</fullName>
+    <description>What: Displays an image for the channel the case came from.</description>
+    <externalId>false</externalId>
+    <formula>IMAGE( CASE( Origin, 
+&quot;Phone&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Phone.png&quot;, 
+&quot;Email&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Email.png&quot;, 
+&quot;Chat&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Chat.png&quot;, 
+&quot;Website&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Web.png&quot;, 
+&quot;Web&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Web.png&quot;,  
+&quot;Community&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Community.png&quot;, 
+&quot;Mobile Device&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Mobile.png&quot;, 
+&quot;Q&amp;A&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Automatic.png&quot;, 
+&quot;Facebook&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Facebook.png&quot;, 
+&quot;Twitter&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Twitter.png&quot;, 
+&quot;Google&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Google.png&quot;, 
+&quot;Instagram&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Instagram.png&quot;, 
+&quot;LinkedIn&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_LinkedIn.png&quot;, 
+&quot;Text&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_SMS.png&quot;, 
+&quot;SMS&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_SMS.png&quot;, 
+
+&quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Channel_Automatic.png&quot; ),&quot;&quot;,22,22)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Channel</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

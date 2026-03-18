@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SDO_Service_Cost__c</fullName>
+    <description>What: used in reports</description>
+    <formula>Case ( Origin, &apos;Phone&apos;, 3.5, &apos;Chat&apos;, 2, &apos;Email&apos;, 2, &apos;Website&apos;, 1.5, &apos;Portal&apos;, 1.5, &apos;Chatter Answer&apos;, 1.2, 1.75)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Estimated Cost</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>

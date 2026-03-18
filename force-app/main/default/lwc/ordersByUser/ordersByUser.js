@@ -18,6 +18,7 @@ export default class OrdersByUser extends LightningElement {
     @track isDetailOpen    = false;   // true = detail view, false = list view
     @track isDetailLoading = false;
     @track selectedOrder   = null;
+    @track isCreateCaseModalOpen = false;
     _visitFranchiseId      = null;
 
     @api
@@ -164,6 +165,27 @@ export default class OrdersByUser extends LightningElement {
     handleCloseDetail() {
         this.isDetailOpen  = false;
         this.selectedOrder = null;
+    }
+
+    // Handle opening Create Case modal
+    handleOpenCreateCase() {
+        const createCaseModal = this.template.querySelector('c-create-case-modal');
+        if (createCaseModal && this.selectedOrder) {
+            createCaseModal.openModal(
+                this.selectedOrder.orderId,
+                this.selectedOrder.accountId
+            );
+        }
+    }
+
+    // Handle case creation success
+    handleCaseCreated(event) {
+        const { caseId, caseNumber } = event.detail;
+        this.showToast('Success', `Case ${caseNumber} has been created and submitted for approval!`, 'success');
+    }
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
 
     /* =========================================================

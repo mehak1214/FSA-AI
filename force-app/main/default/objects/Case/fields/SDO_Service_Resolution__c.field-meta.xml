@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SDO_Service_Resolution__c</fullName>
+    <description>Who: Katie Gannon What: The customer contact outcome drafted by Einstein at the end of a conversation between agent and customer. Used in Einstein Work Summaries</description>
+    <inlineHelpText>The customer contact outcome.</inlineHelpText>
+    <label>Resolution</label>
+    <length>32768</length>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

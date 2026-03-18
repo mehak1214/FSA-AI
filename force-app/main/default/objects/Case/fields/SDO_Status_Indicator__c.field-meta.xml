@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SDO_Status_Indicator__c</fullName>
+    <description>What: used on the layout and in reports</description>
+    <externalId>false</externalId>
+    <formula>IMAGE(CASE( Status, 
+&quot;New&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_New.png&quot;, 
+&quot;Working&quot;,&quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_Working.png&quot;, 
+&quot;Waiting on customer&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_Waiting.png&quot;, 
+&quot;Response Received&quot;,&quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_Response.png&quot;, 
+&quot;Escalated&quot;, &quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_Warning.png&quot;, 
+&quot;Warning&quot;,&quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_Warning.png&quot;, 
+&quot;Violation&quot;,&quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_Warning.png&quot;, 
+&quot;https://sdo-master.s3.us-west-1.amazonaws.com/service/icons/Icon_Status_New.png&quot; ),&quot;Status&quot;,24,24)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Indicator</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

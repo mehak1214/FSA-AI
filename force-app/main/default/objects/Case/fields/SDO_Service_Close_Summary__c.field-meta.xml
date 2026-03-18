@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SDO_Service_Close_Summary__c</fullName>
+    <description>What: Short summary of actions taken to resolve the Case. Used in KCS Flows</description>
+    <inlineHelpText>Short summary of actions taken to resolve the Case.</inlineHelpText>
+    <label>Close Summary</label>
+    <length>32768</length>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>
