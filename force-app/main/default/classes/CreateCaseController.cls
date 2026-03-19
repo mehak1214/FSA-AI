@@ -249,12 +249,21 @@ public with sharing class CreateCaseController {
                 }
             }
 
+            // Assign case to Service_Team queue
+            Id queueId = getQueueIdByDeveloperName('Service_Team');
+            if (queueId != null) {
+                newCase.OwnerId = queueId;
+            }
+
             insert newCase;
-            
+
             System.debug('✓ Case created successfully');
             System.debug('  - Case ID: ' + newCase.Id);
             System.debug('  - Account ID: ' + accountId);
             System.debug('  - Account Name: ' + accountName);
+            if (queueId != null) {
+                System.debug('  - Assigned to Queue: Service_Team (ID: ' + queueId + ')');
+            }
 
             // Link uploaded file to case if provided
             if (uploadedFileId != null) {
@@ -464,6 +473,26 @@ public with sharing class CreateCaseController {
     private static Id getCaseRecordTypeId(String developerName) {
         Schema.RecordTypeInfo rtInfo = Schema.SObjectType.Case.getRecordTypeInfosByDeveloperName().get(developerName);
         return rtInfo != null ? rtInfo.getRecordTypeId() : null;
+    }
+
+    private static Id getQueueIdByDeveloperName(String queueDeveloperName) {
+        try {
+            List<Group> queues = [
+                SELECT Id
+                FROM Group
+                WHERE Type = 'Queue' AND DeveloperName = :queueDeveloperName
+                LIMIT 1
+            ];
+            if (!queues.isEmpty()) {
+                System.debug('Queue found: ' + queueDeveloperName + ' (ID: ' + queues[0].Id + ')');
+                return queues[0].Id;
+            } else {
+                System.debug('Queue not found: ' + queueDeveloperName);
+            }
+        } catch (Exception e) {
+            System.debug('Error fetching queue ID for ' + queueDeveloperName + ': ' + e.getMessage());
+        }
+        return null;
     }
 
 }
