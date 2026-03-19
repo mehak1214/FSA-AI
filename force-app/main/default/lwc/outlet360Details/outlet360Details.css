@@ -1,162 +1,224 @@
+/* ── Design tokens (matching accountRecordHub palette) ─────────── */
 :host {
+    --brand:        #0a4ea8;
+    --brand-2:      #2f74c8;
+    --brand-light:  #eef5ff;
+    --page-bg:      #eef3fb;
+    --panel-bg:     #f8fbff;
+    --panel-border: #c8d9ef;
+    --title:        #102a4c;
+    --subtle:       #476586;
+    --danger:       #c0392b;
+    --success:      #0e8a50;
+    --amber:        #d4860a;
+    --shadow:       0 2px 14px rgba(14, 45, 92, 0.10);
+    --radius:       12px;
+
     display: block;
     min-height: 100vh;
-    background: #eef3fa;
+    background: var(--page-bg);
     font-family: "Salesforce Sans", Arial, sans-serif;
 }
 
+/* ── Page wrapper ──────────────────────────────────────────────── */
 .page {
-    max-width: 1100px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 14px 14px 28px;
+    padding: 0.75rem 0.75rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
 }
 
+/* ── Header bar ────────────────────────────────────────────────── */
 .head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.head h1 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #1f2937;
-}
-
-.btn {
-    border: 1px solid #d1dbe8;
-    background: #ffffff;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #1f2937;
-    padding: 8px 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.btn.action {
-    background: #0d2e69;
-    color: #ffffff;
-    border-color: #0d2e69;
+    gap: 0.5rem;
+    padding: 0.25rem 0 0.1rem;
 }
 
 .back-btn {
     border: none;
     background: #e4ebf8;
-    border-radius: 10px;
-    width: 34px;
-    height: 34px;
-    font-size: 18px;
-    color: #1b3c7b;
-}
-
-.card {
-    background: #ffffff;
-    border: 1px solid #dce5f2;
-    border-radius: 14px;
-    padding: 12px;
-    margin-bottom: 12px;
-}
-
-.outlet-header {
-    position: relative;
-}
-
-.outlet-header h2 {
-    margin: 0 0 6px;
-    font-size: 1.2rem;
-    color: #1f2937;
-}
-
-.outlet-meta {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+    color: var(--brand);
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 0.82rem;
-    color: #4b5d73;
-    margin-bottom: 6px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────── */
+.card {
+    background: #fff;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+/* Coloured accent line at top of every card - removed */
+
+.card-inner {
+    padding: 0.8rem 0.85rem 0.85rem;
+}
+
+/* ── Outlet hero card ───────────────────────────────────────────── */
+.outlet-header { position: relative; }
+
+.outlet-hero-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.85rem 0.85rem 0.5rem;
+}
+
+.outlet-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--title);
+    line-height: 1.25;
+    flex: 1;
+    min-width: 0;
 }
 
 .outlet-address {
-    margin: 0;
-    font-size: 0.86rem;
-    color: #4b5d73;
+    margin: 0 0.85rem 0.75rem;
+    font-size: 0.78rem;
+    color: var(--subtle);
+    padding: 0.4rem 0.55rem;
+    background: var(--brand-light);
+    border-radius: 6px;
+    border-left: 3px solid var(--brand-2);
 }
 
-.card-head {
-    margin-bottom: 8px;
+/* ── Status badge ───────────────────────────────────────────────── */
+.status-pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.18rem 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.card-head h2 {
-    margin: 0;
-    font-size: 1rem;
-    color: #1f2937;
+.status-text-active   { background: #e8f8f1; color: var(--success); border-color: #a3d9be; }
+.status-text-inactive { background: #f3f3f3; color: #555;           border-color: #ccc; }
+
+.star-group { display: flex; gap: 1px; flex-shrink: 0; }
+
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 0.88rem;
+    cursor: default;
+    padding: 0;
+    line-height: 1;
 }
 
-.card-head.with-actions {
+.star-filled { color: #f59e0b; }
+.star-empty  { color: #d1d5db; }
+
+/* ── Outlet detail rows ─────────────────────────────────────────── */
+.outlet-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.5rem;
+    padding: 0 0.85rem 0.45rem;
+}
+
+.detail-item {
+    font-size: 0.8rem;
+    color: var(--subtle);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    white-space: nowrap;
+}
+
+.detail-link {
+    color: var(--brand);
+    text-decoration: none;
+}
+
+.detail-link:hover { text-decoration: underline; }
+
+.detail-sep {
+    color: #b0bec5;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+/* ── Section headings ───────────────────────────────────────────── */
+.section-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 0.5rem;
+    padding: 0.75rem 0.85rem 0.5rem;
 }
 
-.btn.refresh {
-    padding: 6px 10px;
-    font-size: 0.8rem;
+.section-title {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--title);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
-.meta {
-    margin: 0 0 8px;
-    font-size: 0.82rem;
-    color: #5b6777;
-}
-
-.meta.warn {
-    color: #8a5300;
-}
-
+/* ── KPI tiles ──────────────────────────────────────────────────── */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding: 0 0.85rem 0.85rem;
 }
 
 .kpi {
-    border: 1px solid #e4ebf5;
+    background: var(--brand-light);
+    border: 1px solid #c2d8f5;
     border-radius: 10px;
-    padding: 10px;
-    background: #f9fbfe;
+    padding: 0.6rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
-.kpi span {
-    display: block;
-    font-size: 0.75rem;
-    color: #607187;
-    margin-bottom: 5px;
+.kpi-label {
+    font-size: 0.67rem;
+    font-weight: 600;
+    color: var(--subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
 }
 
-.kpi strong {
-    font-size: 1rem;
-    color: #1d2e44;
+.kpi-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--title);
+    line-height: 1;
 }
 
-/* Payment Overview - Red values for Pending Amount and Overdue Count */
-.outlet-header + .card .kpi:nth-child(1) strong,
-.outlet-header + .card .kpi:nth-child(2) strong {
-    color: #d32f2f;
-}
+/* Payment danger values */
+.kpi-danger { color: var(--danger); }
 
+/* ── Table ──────────────────────────────────────────────────────── */
 .table-wrap {
     overflow-x: auto;
-}
-
-.modal-content {
-    max-height: 65vh;
-    overflow: auto;
+    padding: 0 0.85rem 0.85rem;
 }
 
 .summary {
@@ -164,29 +226,39 @@
     border-collapse: collapse;
 }
 
-.summary th,
-.summary td {
-    text-align: left;
-    font-size: 0.84rem;
-    padding: 8px;
-    border-bottom: 1px solid #edf1f7;
-    color: #243041;
-}
-
 .summary th {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #66758a;
+    color: var(--subtle);
+    padding: 0.4rem 0.5rem;
+    border-bottom: 2px solid var(--panel-border);
+    text-align: left;
+    background: #f4f8ff;
 }
 
+.summary td {
+    font-size: 0.78rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid #edf1f7;
+    color: #243041;
+    text-align: left;
+}
+
+.summary tr:last-child td { border-bottom: none; }
+
+/* ── Empty / error states ───────────────────────────────────────── */
 .state {
-    border: 1px solid #dce5f2;
-    border-radius: 10px;
-    background: #f8fbff;
-    color: #3d4f66;
-    padding: 10px 12px;
-    font-size: 0.86rem;
+    margin: 0 0.85rem 0.85rem;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: var(--panel-bg);
+    color: var(--subtle);
+    padding: 0.65rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
 }
 
 .state.error {
@@ -195,74 +267,118 @@
     color: #9d2f3a;
 }
 
-/* Star Rating Display */
-.rating-display {
+/* ── Action buttons ─────────────────────────────────────────────── */
+.btn {
+    border: 1px solid var(--panel-border);
+    background: #fff;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--title);
+    padding: 0.25rem 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn.refresh {
+    color: var(--brand);
+    border-color: #98b7dd;
+    background: var(--brand-light);
+}
+
+.btn.action {
+    background: linear-gradient(180deg, var(--brand-2) 0%, var(--brand) 100%);
+    color: #fff;
+    border-color: var(--brand);
+}
+
+/* ── Contacts list ──────────────────────────────────────────────── */
+.contact-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0.85rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.contact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #edf1f7;
+}
+
+.contact-item:last-child { border-bottom: none; }
+
+.contact-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: 0.72rem;
+    font-weight: 800;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.82rem;
-    color: #4b5d73;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid #c2d8f5;
 }
 
-.rating-label {
-    font-weight: 600;
-}
-
-.star-group {
+.contact-info {
     display: flex;
+    flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
-.star-btn {
-    background: none;
-    border: none;
-    font-size: 0.9rem;
-    cursor: default;
-    padding: 0;
-    line-height: 1;
+.contact-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--title);
 }
 
-.star-filled {
-    color: #f59e0b;
+.contact-title {
+    font-size: 0.72rem;
+    color: var(--subtle);
 }
 
-.star-empty {
-    color: #d1d5db;
+.contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 2px;
 }
 
-.rating-value {
-    font-weight: 600;
-    color: #243041;
-    min-width: 28px;
+.contact-link {
+    font-size: 0.73rem;
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 500;
 }
 
-/* Status Text Styling */
-.status-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.82rem;
+.contact-link:hover { text-decoration: underline; }
+
+/* ── Modal (All Orders) ─────────────────────────────────────────── */
+.modal-content {
+    max-height: 65vh;
+    overflow: auto;
 }
 
-.status-item.status-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
+/* ── Loading ────────────────────────────────────────────────────── */
+lightning-spinner {
+    margin: 2rem auto;
+    display: block;
 }
 
-.status-label {
-    display: none;
-    color: #4b5d73;
-    font-weight: 600;
-}
-
-.status-text-active {
-    color: #10b981;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-.status-text-inactive {
-    color: #4b5d73;
-    text-transform: capitalize;
+/* ── Mobile tweaks ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.35rem;
+    }
+    .kpi-value { font-size: 0.82rem; }
+    .kpi-label { font-size: 0.6rem; }
 }

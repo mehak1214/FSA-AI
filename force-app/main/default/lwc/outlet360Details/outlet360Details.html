@@ -1,10 +1,5 @@
 <template>
     <section class="page">
-        <header class="head">
-           <button class="back-btn" onclick={handleBack}>&larr;</button>
-                
-            
-        </header>
 
         <template if:true={isLoading}>
             <lightning-spinner alternative-text="Loading outlet details" size="medium"></lightning-spinner>
@@ -15,106 +10,118 @@
         </template>
 
         <template if:true={hasRecordContext}>
+
+            <!-- ── Outlet Hero Card ── -->
             <section class="card outlet-header">
-                <h2>{displayOutletName}</h2>
-                <template if:true={outletStatus}>
-                    <span class="status-item status-badge">
-                        <span class={statusTextClass}>{outletStatus}</span>
-                    </span>
-                </template>
-                <template if:true={hasOutletSubInfo}>
-                    <div class="outlet-meta">
-                        <template if:true={outletCode}>
-                            <span>Outlet Code: {outletCode}</span>
-                        </template>
-                       
-                        <template if:true={outletPhone}>
-                            <span>Phone: {outletPhone}</span>
-                        </template>
-                        <!-- Customer Rating: Weighted average of Visit Rating (60%) and Payment Rating (40%) -->
-                        <!-- Formula: (Visit Rating × 0.6) + (Payment Rating × 0.4) -->
-                        <template if:true={ratingValue}>
-                            <div class="rating-display">
-                                <span class="rating-label">Rating:</span>
-                                <div class="star-group">
-                                    <template for:each={starList} for:item="star">
-                                        <span
-                                            key={star.value}
-                                            class={star.cssClass}
-                                            title={star.label}
-                                            aria-label={star.label}>
-                                            &#9733;
-                                        </span>
-                                    </template>
-                                </div>
-                              <!-- <span class="rating-value">{customerRating}</span> -->
-                            </div>
-                        </template>
-                    </div>
-                    <template if:true={outletAddress}>
-                        <p class="outlet-address">{outletAddress}</p>
+                <!-- Row 1: Name + Status -->
+                <div class="outlet-hero-head">
+                    <h2 class="outlet-name">{displayOutletName}</h2>
+                    <template if:true={outletStatus}>
+                        <span class={statusPillClass}>{outletStatus}</span>
                     </template>
+                </div>
+
+                <!-- Row 2: Stars -->
+                <template if:true={ratingValue}>
+                    <div class="outlet-row">
+                        <div class="star-group">
+                            <template for:each={starList} for:item="star">
+                                <span key={star.value} class={star.cssClass}>&#9733;</span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Row 3: Code - Owner -->
+                <div class="outlet-row">
+                    <template if:true={outletCode}>
+                        <span class="detail-item">&#128204; {outletCode}</span>
+                    </template>
+                    <template if:true={ownerName}>
+                        <span class="detail-sep">&#8211;</span>
+                        <span class="detail-item">&#128100; {ownerName}</span>
+                    </template>
+                </div>
+
+                <!-- Row 4: Phone - Email -->
+                <div class="outlet-row">
+                    <template if:true={outletPhone}>
+                        <a href="tel:{outletPhone}" class="detail-item detail-link">&#128222; {outletPhone}</a>
+                    </template>
+                    <template if:true={ownerEmail}>
+                        <span class="detail-sep">&#8211;</span>
+                        <a href={ownerEmailHref} class="detail-item detail-link">&#9993; {ownerEmail}</a>
+                    </template>
+                </div>
+
+                <!-- Row 5: Address -->
+                <template if:true={outletAddress}>
+                    <p class="outlet-address">&#128205; {outletAddress}</p>
                 </template>
             </section>
 
+            <!-- ── Payment Overview ── -->
             <section class="card">
-                <div class="card-head">
-                    <h2>Payment Overview</h2>
+                <div class="section-head">
+                    <h2 class="section-title">Payment Overview</h2>
                 </div>
                 <div class="kpi-grid">
                     <article class="kpi">
-                        <span>Pending Amount</span>
-                        <strong>{pendingAmountLabel}</strong>
+                        <span class="kpi-label">Pending</span>
+                        <span class="kpi-value kpi-danger">{pendingAmountLabel}</span>
                     </article>
                     <article class="kpi">
-                        <span>Overdue</span>
-                        <strong>{overdueCount}</strong>
+                        <span class="kpi-label">Overdue</span>
+                        <span class="kpi-value kpi-danger">{overdueCount}</span>
                     </article>
                     <article class="kpi">
-                        <span>Last Payment</span>
-                        <strong>{lastPaymentDateLabel}</strong>
+                        <span class="kpi-label">Last Payment</span>
+                        <span class="kpi-value">{lastPaymentDateLabel}</span>
                     </article>
                 </div>
             </section>
 
+            <!-- ── Revenue & Transactions ── -->
             <section class="card">
-                <div class="card-head">
-                    <h2>Revenue & Transactions</h2>
+                <div class="section-head">
+                    <h2 class="section-title">Revenue &amp; Transactions</h2>
                 </div>
                 <div class="kpi-grid">
                     <article class="kpi">
-                        <span>Past Revenue (90 days)</span>
-                        <strong>{pastRevenueLabel}</strong>
+                        <span class="kpi-label">Revenue (90d)</span>
+                        <span class="kpi-value">{pastRevenueLabel}</span>
                     </article>
                     <article class="kpi">
-                        <span>Recent Orders</span>
-                        <strong>{ordersCount}</strong>
+                        <span class="kpi-label">Orders</span>
+                        <span class="kpi-value">{ordersCount}</span>
                     </article>
                     <article class="kpi">
-                        <span>Recent Invoices</span>
-                        <strong>{invoicesCount}</strong>
+                        <span class="kpi-label">Invoices</span>
+                        <span class="kpi-value">{invoicesCount}</span>
                     </article>
                 </div>
             </section>
 
+            <!-- ── Orders & Products tabset ── -->
             <section class="card">
                 <lightning-tabset variant="scoped">
+
                     <lightning-tab label="Order History">
-                        <div class="card-head with-actions">
-                            <h2>{ordersSectionLabel}</h2>
+                        <div class="section-head">
+                            <h2 class="section-title">{ordersSectionLabel}</h2>
                             <template if:true={showViewAllOrders}>
                                 <button class="btn refresh" type="button" onclick={handleOpenOrderModal}>View All</button>
                             </template>
                         </div>
                         <template if:true={hasRecentOrders}>
                             <div class="table-wrap">
-                                <table class="summary slds-table slds-table_cell-buffer slds-table_bordered">
+                                <table class="summary">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Order</th>
-                                            <th scope="col">Amount</th>
-                                            <th scope="col">Date</th>
-                                            <th scope="col">Status</th>
+                                            <th>Order</th>
+                                            <th>Amount</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -138,14 +145,14 @@
                     <lightning-tab label="Order Products">
                         <template if:true={hasOrderProducts}>
                             <div class="table-wrap">
-                                <table class="summary slds-table slds-table_cell-buffer slds-table_bordered">
+                                <table class="summary">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Order</th>
-                                            <th scope="col">Product</th>
-                                            <th scope="col">Qty</th>
-                                            <th scope="col">Unit Price</th>
-                                            <th scope="col">Total</th>
+                                            <th>Order</th>
+                                            <th>Product</th>
+                                            <th>Qty</th>
+                                            <th>Unit Price</th>
+                                            <th>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -166,22 +173,24 @@
                             <div class="state">No order products found for this outlet.</div>
                         </template>
                     </lightning-tab>
+
                 </lightning-tabset>
             </section>
 
+            <!-- ── Invoices ── -->
             <section class="card">
-                <div class="card-head">
-                    <h2>{invoicesSectionLabel}</h2>
+                <div class="section-head">
+                    <h2 class="section-title">{invoicesSectionLabel}</h2>
                 </div>
                 <template if:true={hasRecentInvoices}>
                     <div class="table-wrap">
-                        <table class="summary slds-table slds-table_cell-buffer slds-table_bordered">
+                        <table class="summary">
                             <thead>
                                 <tr>
-                                    <th scope="col">Invoice</th>
-                                    <th scope="col">Amount</th>
-                                    <th scope="col">Date</th>
-                                    <th scope="col">Status</th>
+                                    <th>Invoice</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -202,17 +211,52 @@
                 </template>
             </section>
 
+            <!-- ── Contacts ── -->
             <section class="card">
-                <div class="card-head with-actions">
-                    <h2>Related</h2>
-                    <button class="btn refresh" type="button" onclick={handleRefresh}>Refresh</button>
+                <div class="section-head">
+                    <h2 class="section-title">{contactsSectionLabel}</h2>
+                    <button class="btn refresh" type="button" onclick={handleRefresh}>&#8635; Refresh</button>
                 </div>
-                <div class="state">Related insights placeholder. More outlet intelligence will be added here.</div>
+                <template if:true={contactsError}>
+                    <div class="state error">{contactsError}</div>
+                </template>
+                <template if:false={contactsError}>
+                    <template if:true={hasContacts}>
+                        <ul class="contact-list">
+                            <template for:each={contacts} for:item="contact">
+                                <li key={contact.rowKey} class="contact-item">
+                                    <div class="contact-avatar">{contact.initials}</div>
+                                    <div class="contact-info">
+                                        <span class="contact-name">{contact.name}</span>
+                                        <template if:true={contact.title}>
+                                            <span class="contact-title">{contact.title}</span>
+                                        </template>
+                                        <div class="contact-links">
+                                            <template if:true={contact.phone}>
+                                                <a href={contact.phoneHref} class="contact-link">&#128222; {contact.phone}</a>
+                                            </template>
+                                            <template if:true={contact.email}>
+                                                <a href={contact.emailHref} class="contact-link">&#9993; {contact.email}</a>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                    <template if:false={hasContacts}>
+                        <div class="state">No contacts found for this outlet.</div>
+                    </template>
+                </template>
             </section>
+
         </template>
 
+        <!-- ── All Orders Modal ── -->
         <template if:true={isOrderModalOpen}>
-            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="allOrdersHeading" class="slds-modal slds-fade-in-open slds-modal_large">
+            <section role="dialog" tabindex="-1" aria-modal="true"
+                aria-labelledby="allOrdersHeading"
+                class="slds-modal slds-fade-in-open slds-modal_large">
                 <div class="slds-modal__container">
                     <header class="slds-modal__header">
                         <h2 id="allOrdersHeading" class="slds-text-heading_medium">All Orders</h2>
@@ -220,13 +264,13 @@
                     <div class="slds-modal__content slds-p-around_medium modal-content">
                         <template if:true={hasAllOrders}>
                             <div class="table-wrap">
-                                <table class="summary slds-table slds-table_cell-buffer slds-table_bordered">
+                                <table class="summary">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Order</th>
-                                            <th scope="col">Amount</th>
-                                            <th scope="col">Date</th>
-                                            <th scope="col">Status</th>
+                                            <th>Order</th>
+                                            <th>Amount</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -243,15 +287,16 @@
                             </div>
                         </template>
                         <template if:false={hasAllOrders}>
-                            <div class="state">No orders found for this outlet.</div>
+                            <div class="state">No orders found.</div>
                         </template>
                     </div>
                     <footer class="slds-modal__footer">
-                        <button class="btn refresh" type="button" onclick={handleCloseOrderModal}>Close</button>
+                        <button class="btn action" type="button" onclick={handleCloseOrderModal}>Close</button>
                     </footer>
                 </div>
             </section>
             <div class="slds-backdrop slds-backdrop_open"></div>
         </template>
+
     </section>
 </template>

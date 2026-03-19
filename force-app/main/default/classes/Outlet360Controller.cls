@@ -38,6 +38,8 @@ public with sharing class Outlet360Controller {
         @AuraEnabled public Decimal paymentRating;
         // Average of Rating field from all related Visit records
         @AuraEnabled public Decimal visitRating;
+        @AuraEnabled public String ownerName;
+        @AuraEnabled public String ownerEmail;
     }
 
     public class BusinessRecord {
@@ -281,6 +283,8 @@ public with sharing class Outlet360Controller {
         String stateField = firstExisting(fieldsMap, new List<String>{ 'ShippingState', 'BillingState' });
         String postalField = firstExisting(fieldsMap, new List<String>{ 'ShippingPostalCode', 'BillingPostalCode' });
         String countryField = firstExisting(fieldsMap, new List<String>{ 'ShippingCountry', 'BillingCountry' });
+        String ownerNameField  = firstExisting(fieldsMap, new List<String>{ 'Owner_Name__c' });
+        String ownerEmailField = firstExisting(fieldsMap, new List<String>{ 'Owner_Email__c' });
 
         List<String> selectFields = new List<String>{ 'Id' };
         if (!String.isBlank(nameField)) selectFields.add(nameField);
@@ -292,6 +296,8 @@ public with sharing class Outlet360Controller {
         if (!String.isBlank(stateField)) selectFields.add(stateField);
         if (!String.isBlank(postalField)) selectFields.add(postalField);
         if (!String.isBlank(countryField)) selectFields.add(countryField);
+        if (!String.isBlank(ownerNameField))  selectFields.add(ownerNameField);
+        if (!String.isBlank(ownerEmailField)) selectFields.add(ownerEmailField);
 
         try {
             List<SObject> rows = Database.query(
@@ -314,6 +320,8 @@ public with sharing class Outlet360Controller {
             if (!String.isBlank(postalField) && row.get(postalField) != null) addressParts.add(String.valueOf(row.get(postalField)));
             if (!String.isBlank(countryField) && row.get(countryField) != null) addressParts.add(String.valueOf(row.get(countryField)));
             response.outletAddress = addressParts.isEmpty() ? null : String.join(addressParts, ', ');
+            response.ownerName  = !String.isBlank(ownerNameField)  && row.get(ownerNameField)  != null ? String.valueOf(row.get(ownerNameField))  : null;
+            response.ownerEmail = !String.isBlank(ownerEmailField) && row.get(ownerEmailField) != null ? String.valueOf(row.get(ownerEmailField)) : null;
         } catch (Exception ex) {
             // Header info is best-effort and should not break the page.
         }

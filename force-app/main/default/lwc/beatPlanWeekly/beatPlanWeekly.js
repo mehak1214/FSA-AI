@@ -41,6 +41,7 @@ import getWeeklyVisits  from '@salesforce/apex/BeatPlanController.getWeeklyVisit
 import getOutletsForBeat from '@salesforce/apex/BeatPlanController.getOutletsForBeat';
 import getUserBeats from '@salesforce/apex/BeatPlanController.getUserBeats';
 import createVisitsAndSubmitForApproval from '@salesforce/apex/BeatPlanController.createVisitsAndSubmitForApproval';
+import resubmitRejectedVisit from '@salesforce/apex/BeatPlanController.resubmitRejectedVisit';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DAY_KEYS  = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -335,6 +336,25 @@ export default class BeatPlanWeekly extends LightningElement {
         this.selectedVisit = null;
     }
 
+    get canResubmitSelectedVisit() {
+        return this.selectedVisit?.approvalStatus === 'Rejected';
+    }
+
+    async handleResubmit() {
+        if (!this.selectedVisit?.id) return;
+        this.isLoading = true;
+        try {
+            await resubmitRejectedVisit({ visitId: this.selectedVisit.id });
+            this.showToast('Resubmitted', 'Visit resubmitted for approval.', 'success');
+            this.handleCloseModal();
+            await this.loadWeek();
+        } catch (err) {
+            this._error('Resubmit failed', err);
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
     /**
      * Add Visit:
      *  1. getBeatForWeek() → ibfsa__Beat__c.Id for this rep + week
@@ -448,7 +468,7 @@ export default class BeatPlanWeekly extends LightningElement {
         };
         this.draftVisits = [...this.draftVisits, draft];
         this.showDraftModal = false;
-        this.showSuccessToast('Draft visit added. It will be saved on Submit Beat Plan.');
+        this.showToast('Draft Added', 'Draft visit added. It will be saved on Submit Beat Plan.', 'success');
     }
 
     handleRemoveDraft(event) {
@@ -526,6 +546,8 @@ export default class BeatPlanWeekly extends LightningElement {
      */
     _enrich(v) {
         const statusLabel = v.approvalStatus || v.visitStatus || '';
+        const badgeLabel = statusLabel;
+        const badgeAction = statusLabel === 'Rejected' ? 'Re-submit' : '';
         const cardKey = this._cardClassFromApproval(statusLabel);
         const badgeCls = [
             'bp-card__badge',
@@ -538,10 +560,11 @@ export default class BeatPlanWeekly extends LightningElement {
         return {
             ...v,
             cardCls          : CARD_CSS[cardKey]                ?? CARD_CSS['card-planned'],
-            visitStatus      : statusLabel,
+            visitStatus      : badgeLabel,
             visitStatusCls   : APPROVAL_CSS[statusLabel]        ?? 'bp-pill',
             approvalStatusCls: APPROVAL_CSS[v.approvalStatus]   ?? 'bp-pill',
             badgeCls,
+            badgeAction,
             showBadge        : !v.isCompleted,
             formattedDate    : v.visitDate
                 ? new Date(v.visitDate).toLocaleDateString('en-US', {

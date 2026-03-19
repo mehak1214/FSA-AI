@@ -969,8 +969,11 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     handleCaseCreated(event) {
-        const { caseId, caseNumber } = event.detail;
-        this.showToast('Success', `Case #${caseNumber} has been created and submitted for approval!`, 'success');
+        const { caseNumber, approvalSubmitted, message } = event.detail;
+        const toastMessage = approvalSubmitted
+            ? `Case #${caseNumber} has been created and submitted for approval.`
+            : (message || `Case #${caseNumber} was created, but approval submission did not complete.`);
+        this.showToast(approvalSubmitted ? 'Success' : 'Warning', toastMessage, approvalSubmitted ? 'success' : 'warning');
     }
 
 }

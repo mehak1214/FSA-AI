@@ -1,4 +1,16 @@
 public with sharing class CreateCaseController {
+    private static final String ORDER_RETURN_CANCEL_DEVELOPER_NAME = 'Order_Return_Cancel';
+    private static final String APPROVAL_STATUS_PENDING = 'Pending';
+
+    private class ApprovalSubmissionResult {
+        public Boolean success;
+        public String message;
+
+        public ApprovalSubmissionResult(Boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+    }
 
     /* =========================================================
        PICKLIST VALUE WRAPPER
@@ -210,6 +222,7 @@ public with sharing class CreateCaseController {
                 }
             }
 
+            Id orderReturnCancelRecordTypeId = getCaseRecordTypeId(ORDER_RETURN_CANCEL_DEVELOPER_NAME);
             Case newCase = new Case();
             newCase.AccountId = accountId;
             newCase.Order__c = orderId;
@@ -219,9 +232,12 @@ public with sharing class CreateCaseController {
             newCase.Reason = reason;
             newCase.Type = caseType;
             newCase.Status = 'New';  // Default status
-            newCase.Approval_Status__c = 'Pending';  // Default approval status
+            newCase.Approval_Status__c = APPROVAL_STATUS_PENDING;
             newCase.Comments__c = comments;
             newCase.CurrencyIsoCode = currencyIsoCode;
+            if (orderReturnCancelRecordTypeId != null) {
+                newCase.RecordTypeId = orderReturnCancelRecordTypeId;
+            }
             
             // Store Account Name if the field exists
             if (String.isNotBlank(accountName)) {
@@ -308,18 +324,20 @@ public with sharing class CreateCaseController {
             }
 
             // Submit case for approval process "Order_Return_Cancel"
-            submitForApproval(newCase.Id);
-            
-            // After approval submission, update case status to reflect approval
-            // This handles cases where auto-approval is enabled
+            // Wrap in try-catch so approval failures don't fail case creation
+            Boolean approvalSubmitted = false;
+            String approvalMessage = '';
             try {
-                Case caseToUpdate = new Case(Id = newCase.Id);
-                caseToUpdate.Status = 'Resolving';
-                caseToUpdate.Approval_Status__c = 'Approved';
-                update caseToUpdate;
-                System.debug('Case status updated after approval submission');
-            } catch (Exception statusError) {
-                System.debug('Warning: Could not update case status: ' + statusError.getMessage());
+                ApprovalSubmissionResult approvalResult = submitForApproval(newCase.Id);
+                approvalSubmitted = approvalResult.success;
+                approvalMessage = approvalResult.message;
+                System.debug('Approval process submitted successfully: ' + approvalSubmitted);
+            } catch (Exception approvalError) {
+                approvalMessage = approvalError.getMessage();
+                System.debug('Warning: Approval process submission failed, but case was created');
+                System.debug('Error: ' + approvalError.getMessage());
+                // Don't throw - case is already created successfully
+                // Approval can be manually triggered later if needed
             }
 
             // Query the case to get the auto-generated case number
@@ -328,7 +346,15 @@ public with sharing class CreateCaseController {
             result.put('success', true);
             result.put('caseId', finalCase.Id);
             result.put('caseNumber', finalCase.CaseNumber);
-            result.put('message', 'Case created successfully and submitted for approval!');
+            result.put('approvalSubmitted', approvalSubmitted);
+            result.put('approvalMessage', approvalMessage);
+            result.put(
+                'message',
+                approvalSubmitted
+                    ? 'Case created successfully and submitted for approval!'
+                    : 'Case created successfully, but approval submission did not complete.'
+                        + (String.isNotBlank(approvalMessage) ? ' ' + approvalMessage : '')
+            );
 
         } catch (DmlException e) {
             System.debug('DML Error creating case: ' + e.getMessage());
@@ -346,81 +372,98 @@ public with sharing class CreateCaseController {
         return result;
     }
 
-    private static void submitForApproval(Id caseId) {
+    private static ApprovalSubmissionResult submitForApproval(Id caseId) {
+        User submitter;
         try {
-            System.debug('====== APPROVAL PROCESS DEBUG START ======');
+            System.debug('====== CASE APPROVAL PROCESS DEBUG START ======');
             System.debug('Case ID: ' + caseId);
             
-            // First, check if there are any active approval processes
-            List<ProcessDefinition> allProcesses = [
-                SELECT Id, Name, DeveloperName, State
-                FROM ProcessDefinition
-                LIMIT 100
-            ];
-            
-            System.debug('All Approval Processes Found: ' + allProcesses.size());
-            for (ProcessDefinition pd : allProcesses) {
-                System.debug('Process - Name: ' + pd.Name + ', DeveloperName: ' + pd.DeveloperName + ', State: ' + pd.State);
-            }
-            
-            // Query the approval process by developer name
-            ProcessDefinition processDef = [
-                SELECT Id, Name, State
-                FROM ProcessDefinition 
-                WHERE DeveloperName = 'Order_Return_Cancel' 
+            // Fetch the case to update approval status
+            Case caseRecord = [
+                SELECT Id, Status, Approval_Status__c, RecordTypeId
+                FROM Case
+                WHERE Id = :caseId
                 LIMIT 1
             ];
+            System.debug('Case before approval - Status: ' + caseRecord.Status + ', Approval_Status__c: ' + caseRecord.Approval_Status__c);
+            
+            Id orderReturnCancelRecordTypeId = getCaseRecordTypeId(ORDER_RETURN_CANCEL_DEVELOPER_NAME);
+            if (orderReturnCancelRecordTypeId != null && caseRecord.RecordTypeId != orderReturnCancelRecordTypeId) {
+                caseRecord.RecordTypeId = orderReturnCancelRecordTypeId;
+            }
 
-            if (processDef != null) {
-                System.debug('Process Found - ID: ' + processDef.Id + ', Name: ' + processDef.Name + ', State: ' + processDef.State);
-                
-                // Verify the case exists
-                Case caseRecord = [SELECT Id, Status, Approval_Status__c FROM Case WHERE Id = :caseId LIMIT 1];
-                System.debug('Case Status Before Approval: ' + caseRecord.Status + ', Approval Status: ' + caseRecord.Approval_Status__c);
-                
-                // Create an approval request for the case
-                Approval.ProcessSubmitRequest approvalRequest = new Approval.ProcessSubmitRequest();
-                approvalRequest.setObjectId(caseId);
-                approvalRequest.setProcessDefinitionNameOrId(processDef.Id);
-                approvalRequest.setComments('Case submitted for approval by the system');
-                approvalRequest.setSkipEntryCriteria(false);
-                
-                System.debug('Submitting approval request...');
-                
-                // Submit the approval request
-                Approval.ProcessResult processResult = Approval.process(approvalRequest);
-                
-                System.debug('Approval Process Result:');
-                System.debug('  - Instance ID: ' + processResult.getInstanceId());
-                System.debug('  - Instance Status: ' + processResult.getInstanceStatus());
-                System.debug('  - Success: ' + processResult.isSuccess());
-                
-                if (processResult.isSuccess()) {
-                    System.debug('✓ Approval request submitted successfully');
-                } else {
-                    System.debug('✗ Approval request failed');
-                    if (processResult.getErrors() != null && processResult.getErrors().size() > 0) {
-                        for (Database.Error err : processResult.getErrors()) {
-                            System.debug('Error: ' + err.getMessage());
-                        }
-                    }
-                }
+            // Keep the case aligned with the record type's restricted picklist values.
+            caseRecord.Approval_Status__c = APPROVAL_STATUS_PENDING;
+            caseRecord.Status = 'New';
+            update caseRecord;
+            System.debug('Case updated with Approval_Status__c = ' + APPROVAL_STATUS_PENDING);
+            
+            submitter = [SELECT Id, ManagerId FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1];
+            System.debug('Submitter Info - UserId: ' + submitter.Id + ', ManagerId: ' + submitter.ManagerId);
+            
+            // Submit for approval
+            System.debug('Submitting case ' + caseId + ' for approval...');
+            Approval.ProcessSubmitRequest approvalRequest = new Approval.ProcessSubmitRequest();
+            approvalRequest.setObjectId(caseId);
+            approvalRequest.setComments('Case submitted for approval by the system');
+            // Mirror the working Visit flow and let Salesforce choose the active process.
+            approvalRequest.setSkipEntryCriteria(false);
+            
+            Approval.ProcessResult processResult = Approval.process(approvalRequest);
+            
+            System.debug('Approval Result - Success: ' + processResult.isSuccess() + ', Instance ID: ' + processResult.getInstanceId());
+            
+            if (processResult.isSuccess()) {
+                System.debug('Case submitted for approval successfully');
+                System.debug('====== CASE APPROVAL PROCESS DEBUG END ======');
+                return new ApprovalSubmissionResult(true, 'Approval submitted successfully.');
             } else {
-                System.debug('✗ CRITICAL: Approval process Order_Return_Cancel not found!');
-                System.debug('Please verify the approval process exists and is active in Salesforce Setup');
+                System.debug('Approval submission returned false - approval process may not have been triggered');
+                String failureMessage = 'Approval submission failed.';
+                if (processResult.getErrors() != null && processResult.getErrors().size() > 0) {
+                    List<String> messages = new List<String>();
+                    for (Database.Error err : processResult.getErrors()) {
+                        System.debug('  Error: ' + err.getMessage());
+                        messages.add(err.getMessage());
+                    }
+                    failureMessage = String.join(messages, ' | ');
+                }
+                System.debug('====== CASE APPROVAL PROCESS DEBUG END ======');
+                return new ApprovalSubmissionResult(false, failureMessage);
+            }
+        } catch (DmlException dmlEx) {
+            String statusCode = String.valueOf(dmlEx.getDmlStatusCode(0));
+            String dmlMessage = dmlEx.getDmlMessage(0);
+            System.debug('DML Exception during approval - StatusCode: ' + statusCode + ', Message: ' + dmlMessage);
+            
+            // Handle specific approval process errors gracefully
+            if (statusCode == 'NO_APPLICABLE_PROCESS') {
+                System.debug('NO_APPLICABLE_PROCESS: Entry criteria not met');
+                System.debug('Verify: 1) Approval process entry criteria, 2) Submitter Manager is set, 3) Field values match criteria');
+                String detailMsg = 'No applicable approval process was found for this case.'
+                    + ' Verify the active approval process entry criteria for record type '
+                    + ORDER_RETURN_CANCEL_DEVELOPER_NAME
+                    + ', and confirm the submitter has a Manager set.'
+                    + ' Submitter ManagerId=' + String.valueOf(submitter != null ? submitter.ManagerId : null) + '.';
+                System.debug('====== CASE APPROVAL PROCESS DEBUG END (with DML error) ======');
+                return new ApprovalSubmissionResult(false, detailMsg);
             }
             
-            System.debug('====== APPROVAL PROCESS DEBUG END ======');
-            
-        } catch (QueryException qe) {
-            System.debug('✗ QUERY ERROR: ' + qe.getMessage());
-            System.debug('Stack trace: ' + qe.getStackTraceString());
+            // Log but don't throw - case is already created
+            System.debug('====== CASE APPROVAL PROCESS DEBUG END (with DML error) ======');
+            return new ApprovalSubmissionResult(false, dmlMessage);
         } catch (Exception e) {
-            System.debug('✗ ERROR submitting approval request: ' + e.getMessage());
-            System.debug('Stack trace: ' + e.getStackTraceString());
-            // Don't throw exception here - case is already created
-            // Just log the error for monitoring
+            System.debug('Exception during approval submission: ' + e.getMessage());
+            System.debug('Stack Trace: ' + e.getStackTraceString());
+            System.debug('====== CASE APPROVAL PROCESS DEBUG END (with error) ======');
+            // Don't throw - case is already created successfully
+            return new ApprovalSubmissionResult(false, e.getMessage());
         }
+    }
+
+    private static Id getCaseRecordTypeId(String developerName) {
+        Schema.RecordTypeInfo rtInfo = Schema.SObjectType.Case.getRecordTypeInfosByDeveloperName().get(developerName);
+        return rtInfo != null ? rtInfo.getRecordTypeId() : null;
     }
 
 }

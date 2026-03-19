@@ -762,6 +762,8 @@ export default class CreateCaseModal extends LightningElement {
                 detail: {
                     caseId: result.caseId,
                     caseNumber: result.caseNumber,
+                    approvalSubmitted: !!result.approvalSubmitted,
+                    message: result.message,
                     timestamp: new Date().toISOString()
                 },
                 bubbles: true,

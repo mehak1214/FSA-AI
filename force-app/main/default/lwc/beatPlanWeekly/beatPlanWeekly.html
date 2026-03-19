@@ -179,9 +179,16 @@
 
                                             <!-- Status (ibfsa__Visit_Status__c) -->
                                             <template if:true={cell.visit.showBadge}>
-                                                <span class={cell.visit.badgeCls}>
-                                                    {cell.visit.visitStatus}
-                                                </span>
+                                                <div class="bp-card__badge-row">
+                                                    <span class={cell.visit.badgeCls}>
+                                                        {cell.visit.visitStatus}
+                                                    </span>
+                                                    <template if:true={cell.visit.badgeAction}>
+                                                        <span class="bp-card__badge bp-card__badge--action">
+                                                            {cell.visit.badgeAction}
+                                                        </span>
+                                                    </template>
+                                                </div>
                                             </template>
 
                                         </div>
@@ -397,6 +404,9 @@
                         </div>
 
                         <footer class="bp-modal__footer">
+                            <template if:true={canResubmitSelectedVisit}>
+                                <lightning-button label="Resubmit" variant="brand" onclick={handleResubmit}></lightning-button>
+                            </template>
                             <lightning-button label="Close"
                                               onclick={handleCloseModal}>
                             </lightning-button>

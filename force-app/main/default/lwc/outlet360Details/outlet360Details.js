@@ -1,6 +1,7 @@
 import { api, LightningElement, wire } from 'lwc';
 import { NavigationMixin, CurrentPageReference } from 'lightning/navigation';
 import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360Summary';
+import { getRelatedListRecords } from 'lightning/uiRelatedListApi';
 
 export default class Outlet360Details extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -27,8 +28,49 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     outletStatus;
     outletPhone;
     outletAddress;
+    ownerName;
+    ownerEmail;
     isOrderModalOpen = false;
     _lastLoadKey;
+
+    contacts = [];
+    contactsError;
+
+    @wire(getRelatedListRecords, {
+        parentRecordId: '$recordId',
+        relatedListId: 'Contacts',
+        fields: ['Contact.Id', 'Contact.Name', 'Contact.Title', 'Contact.Phone', 'Contact.Email']
+    })
+    wiredContacts({ data, error }) {
+        if (data) {
+            this.contacts = data.records.map(r => {
+                const f = r.fields;
+                const phone = f.Phone?.value;
+                const email = f.Email?.value;
+                const name = f.Name?.value || '--';
+                const initials = name
+                    .split(' ')
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map(w => w[0].toUpperCase())
+                    .join('');
+                return {
+                    rowKey: f.Id?.value || r.id,
+                    name,
+                    initials,
+                    title: f.Title?.value || null,
+                    phone: phone || null,
+                    email: email || null,
+                    phoneHref: phone ? `tel:${phone}` : null,
+                    emailHref: email ? `mailto:${email}` : null
+                };
+            });
+            this.contactsError = null;
+        } else if (error) {
+            this.contacts = [];
+            this.contactsError = error?.body?.message || 'Unable to load contacts.';
+        }
+    }
     pendingAmount = 0;
     overdueCount = 0;
     lastPaymentDate = null;
@@ -101,6 +143,20 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
 
     get displayOutletName() {
         return this.outletName || 'Outlet';
+    }
+
+    get avatarLetter() {
+        return this.outletName ? this.outletName.charAt(0).toUpperCase() : 'O';
+    }
+
+    get ownerEmailHref() {
+        return this.ownerEmail ? `mailto:${this.ownerEmail}` : null;
+    }
+
+    get statusPillClass() {
+        if (!this.outletStatus) return 'status-pill';
+        const s = this.outletStatus.toLowerCase().trim();
+        return s === 'active' ? 'status-pill status-text-active' : 'status-pill status-text-inactive';
     }
 
     get hasOutletSubInfo() {
@@ -203,6 +259,14 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         return (this.totalOrdersCount || 0) > 5;
     }
 
+    get hasContacts() {
+        return this.contacts.length > 0;
+    }
+
+    get contactsSectionLabel() {
+        return `Contacts (${this.contacts.length})`;
+    }
+
     loadData() {
         if (!this.hasRecordContext) {
             return;
@@ -232,6 +296,8 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                 this.outletStatus = result?.outletStatus;
                 this.outletPhone = result?.outletPhone;
                 this.outletAddress = result?.outletAddress;
+                this.ownerName = result?.ownerName;
+                this.ownerEmail = result?.ownerEmail;
                 this.pastRevenue = result?.pastRevenue || 0;
                 this.ordersCount = result?.ordersCount || 0;
                 this.totalOrdersCount = result?.totalOrdersCount || this.ordersCount;
@@ -280,6 +346,8 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                 this.outletStatus = null;
                 this.outletPhone = null;
                 this.outletAddress = null;
+                this.ownerName = null;
+                this.ownerEmail = null;
                 this.recentOrders = [];
                 this.allOrders = [];
                 this.orderProducts = [];
