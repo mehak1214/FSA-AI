@@ -27,6 +27,7 @@
     z-index: 9001;
     width: 100%;
     max-width: 100%;
+    height: 100vh;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -38,6 +39,7 @@
     z-index: 9001;
     width: 100%;
     max-width: 100%;
+    height: 100vh;
     overflow: hidden;
 }
 
@@ -45,7 +47,8 @@
     background: #ffffff;
     border-radius: 8px;
     box-shadow: var(--modal-shadow);
-    max-height: 90vh;
+    height: 100%;
+    max-height: 100vh;
     overflow: hidden;
     animation: slideDown 0.3s ease-out;
     display: flex;
@@ -58,7 +61,8 @@
 .modal-container-mobile {
     display: flex;
     flex-direction: column;
-    max-height: 90vh;
+    height: 100%;
+    max-height: 100vh;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -71,11 +75,13 @@
     .slds-modal__container {
         width: 600px;
         max-width: 90vw;
+        max-height: 100vh;
     }
 
     .modal-container-mobile {
         width: 600px;
         max-width: 90vw;
+        max-height: 100vh;
     }
 }
 
@@ -189,7 +195,9 @@
    ════════════════════════════════════════════════════════════ */
 
 .slds-backdrop {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     z-index: 9000;
     animation: fadeIn 0.2s ease-out;
     position: fixed;
@@ -707,8 +715,9 @@
         max-width: 100%;
         height: 100%;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        align-items: stretch;
+        justify-content: stretch;
+        padding: 0;
     }
 
     .modal-container-mobile {
@@ -721,6 +730,9 @@
 
     .slds-modal__container {
         border-radius: 0;
+        width: 100%;
+        height: 100vh;
+        max-height: 100vh;
     }
 
     .slds-modal__header {
@@ -812,6 +824,7 @@
         align-items: center;
         flex-wrap: nowrap;
         overflow-x: hidden;
+        margin-top: auto;
     }
 
     .slds-button {
