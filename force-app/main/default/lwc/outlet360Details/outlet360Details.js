@@ -11,6 +11,9 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     recentOrders = [];
     allOrders = [];
     orderProducts = [];
+    allOrderProducts = [];
+    cases = [];
+    allCases = [];
     recentInvoices = [];
     isLoading = false;
     loadError;
@@ -20,6 +23,10 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     pastRevenue = 0;
     ordersCount = 0;
     totalOrdersCount = 0;
+    orderProductsCount = 0;
+    totalOrderProductsCount = 0;
+    casesCount = 0;
+    totalCasesCount = 0;
     invoicesCount = 0;
     ordersObjectApiName;
     invoicesObjectApiName;
@@ -31,6 +38,8 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     ownerName;
     ownerEmail;
     isOrderModalOpen = false;
+    isProductModalOpen = false;
+    isCaseModalOpen = false;
     _lastLoadKey;
 
     contacts = [];
@@ -175,6 +184,10 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         return this.orderProducts.length > 0;
     }
 
+    get hasCases() {
+        return this.cases.length > 0;
+    }
+
     get hasRecentInvoices() {
         return this.recentInvoices.length > 0;
     }
@@ -189,6 +202,10 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
 
     get invoicesSectionLabel() {
         return `Invoices (${this.invoicesCount})`;
+    }
+
+    get casesSectionLabel() {
+        return `Cases (${this.totalCasesCount || this.casesCount})`;
     }
 
     get pendingAmountLabel() {
@@ -257,6 +274,14 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
 
     get showViewAllOrders() {
         return (this.totalOrdersCount || 0) > 5;
+    }
+
+    get showViewAllOrderProducts() {
+        return (this.totalOrderProductsCount || 0) > 5;
+    }
+
+    get showViewAllCases() {
+        return (this.totalCasesCount || 0) > 5;
     }
 
     get hasContacts() {
@@ -328,6 +353,26 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                     unitPriceLabel: this.formatCurrency(item.unitPrice),
                     totalPriceLabel: this.formatCurrency(item.totalPrice)
                 }));
+                this.allOrderProducts = (result?.allOrderProducts || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `all-order-product-${item.orderItemId || index}`,
+                    unitPriceLabel: this.formatCurrency(item.unitPrice),
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.orderProductsCount = result?.orderProductsCount || 0;
+                this.totalOrderProductsCount = result?.totalOrderProductsCount || this.orderProductsCount;
+                this.cases = (result?.cases || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `case-${item.caseId || index}`,
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.allCases = (result?.allCases || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `all-case-${item.caseId || index}`,
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.casesCount = result?.casesCount || 0;
+                this.totalCasesCount = result?.totalCasesCount || this.casesCount;
                 this.scannedRelationships = result?.scannedRelationships || 0;
                 this.totalRelationships = result?.totalRelationships || 0;
                 this.isTruncated = !!result?.isTruncated;
@@ -351,10 +396,17 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                 this.recentOrders = [];
                 this.allOrders = [];
                 this.orderProducts = [];
+                this.allOrderProducts = [];
+                this.orderProductsCount = 0;
+                this.totalOrderProductsCount = 0;
+                this.cases = [];
+                this.allCases = [];
                 this.recentInvoices = [];
                 this.pastRevenue = 0;
                 this.ordersCount = 0;
                 this.totalOrdersCount = 0;
+                this.casesCount = 0;
+                this.totalCasesCount = 0;
                 this.invoicesCount = 0;
                 this.scannedRelationships = 0;
                 this.totalRelationships = 0;
@@ -401,6 +453,22 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
 
     handleCloseOrderModal() {
         this.isOrderModalOpen = false;
+    }
+
+    handleOpenProductModal() {
+        this.isProductModalOpen = true;
+    }
+
+    handleCloseProductModal() {
+        this.isProductModalOpen = false;
+    }
+
+    handleOpenCaseModal() {
+        this.isCaseModalOpen = true;
+    }
+
+    handleCloseCaseModal() {
+        this.isCaseModalOpen = false;
     }
 
     formatCurrency(value) {

@@ -109,9 +109,6 @@
                     <lightning-tab label="Order History">
                         <div class="section-head">
                             <h2 class="section-title">{ordersSectionLabel}</h2>
-                            <template if:true={showViewAllOrders}>
-                                <button class="btn refresh" type="button" onclick={handleOpenOrderModal}>View All</button>
-                            </template>
                         </div>
                         <template if:true={hasRecentOrders}>
                             <div class="table-wrap">
@@ -136,6 +133,11 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <template if:true={showViewAllOrders}>
+                                <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
+                                    <button class="btn refresh" type="button" onclick={handleOpenOrderModal}>View All Orders</button>
+                                </div>
+                            </template>
                         </template>
                         <template if:false={hasRecentOrders}>
                             <div class="state">No orders found for this outlet.</div>
@@ -143,6 +145,9 @@
                     </lightning-tab>
 
                     <lightning-tab label="Order Products">
+                        <div class="section-head">
+                            <h2 class="section-title">Order Products</h2>
+                        </div>
                         <template if:true={hasOrderProducts}>
                             <div class="table-wrap">
                                 <table class="summary">
@@ -168,9 +173,58 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <template if:true={showViewAllOrderProducts}>
+                                <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
+                                    <button class="btn refresh" type="button" onclick={handleOpenProductModal}>View All Products</button>
+                                </div>
+                            </template>
                         </template>
                         <template if:false={hasOrderProducts}>
                             <div class="state">No order products found for this outlet.</div>
+                        </template>
+                    </lightning-tab>
+
+                    <lightning-tab label="Cases">
+                        <div class="section-head">
+                            <h2 class="section-title">{casesSectionLabel}</h2>
+                        </div>
+                        <template if:true={hasCases}>
+                            <div class="table-wrap">
+                                <table class="summary">
+                                    <thead>
+                                        <tr>
+                                            <th>Case Number</th>
+                                            <th>Order</th>
+                                            <th>Case Type</th>
+                                            <th>Case Reason</th>
+                                            <th>Solution Required</th>
+                                            <th>Total Price</th>
+                                            <th>Owner</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={cases} for:item="item">
+                                            <tr key={item.rowKey}>
+                                                <td>{item.caseNumber}</td>
+                                                <td>{item.orderName}</td>
+                                                <td>{item.caseType}</td>
+                                                <td>{item.caseReason}</td>
+                                                <td>{item.solutionRequired}</td>
+                                                <td>{item.totalPriceLabel}</td>
+                                                <td>{item.ownerName}</td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <template if:true={showViewAllCases}>
+                                <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
+                                    <button class="btn refresh" type="button" onclick={handleOpenCaseModal}>View All Cases</button>
+                                </div>
+                            </template>
+                        </template>
+                        <template if:false={hasCases}>
+                            <div class="state">No cases found for this outlet.</div>
                         </template>
                     </lightning-tab>
 
@@ -292,6 +346,106 @@
                     </div>
                     <footer class="slds-modal__footer">
                         <button class="btn action" type="button" onclick={handleCloseOrderModal}>Close</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- ── All Order Products Modal ── -->
+        <template if:true={isProductModalOpen}>
+            <section role="dialog" tabindex="-1" aria-modal="true"
+                aria-labelledby="allProductsHeading"
+                class="slds-modal slds-fade-in-open slds-modal_large">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="allProductsHeading" class="slds-text-heading_medium">All Order Products</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium modal-content">
+                        <template if:true={allOrderProducts}>
+                            <div class="table-wrap">
+                                <table class="summary">
+                                    <thead>
+                                        <tr>
+                                            <th>Order</th>
+                                            <th>Product</th>
+                                            <th>Qty</th>
+                                            <th>Unit Price</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={allOrderProducts} for:item="item">
+                                            <tr key={item.rowKey}>
+                                                <td>{item.orderName}</td>
+                                                <td>{item.productName}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>{item.unitPriceLabel}</td>
+                                                <td>{item.totalPriceLabel}</td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                        <template if:false={allOrderProducts}>
+                            <div class="state">No products found.</div>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="btn action" type="button" onclick={handleCloseProductModal}>Close</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- ── All Cases Modal ── -->
+        <template if:true={isCaseModalOpen}>
+            <section role="dialog" tabindex="-1" aria-modal="true"
+                aria-labelledby="allCasesHeading"
+                class="slds-modal slds-fade-in-open slds-modal_large">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="allCasesHeading" class="slds-text-heading_medium">All Cases</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium modal-content">
+                        <template if:true={allCases}>
+                            <div class="table-wrap">
+                                <table class="summary">
+                                    <thead>
+                                        <tr>
+                                            <th>Case Number</th>
+                                            <th>Order</th>
+                                            <th>Case Type</th>
+                                            <th>Case Reason</th>
+                                            <th>Solution Required</th>
+                                            <th>Total Price</th>
+                                            <th>Owner</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={allCases} for:item="item">
+                                            <tr key={item.rowKey}>
+                                                <td>{item.caseNumber}</td>
+                                                <td>{item.orderName}</td>
+                                                <td>{item.caseType}</td>
+                                                <td>{item.caseReason}</td>
+                                                <td>{item.solutionRequired}</td>
+                                                <td>{item.totalPriceLabel}</td>
+                                                <td>{item.ownerName}</td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                        <template if:false={allCases}>
+                            <div class="state">No cases found.</div>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="btn action" type="button" onclick={handleCloseCaseModal}>Close</button>
                     </footer>
                 </div>
             </section>

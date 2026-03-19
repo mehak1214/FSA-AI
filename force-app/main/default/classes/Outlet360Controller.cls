@@ -30,6 +30,13 @@ public with sharing class Outlet360Controller {
         @AuraEnabled public List<BusinessRecord> recentOrders;
         @AuraEnabled public List<BusinessRecord> allOrders;
         @AuraEnabled public List<OrderProductRecord> orderProducts;
+        @AuraEnabled public List<OrderProductRecord> allOrderProducts;
+        @AuraEnabled public Integer orderProductsCount;
+        @AuraEnabled public Integer totalOrderProductsCount;
+        @AuraEnabled public List<CaseRecord> cases;
+        @AuraEnabled public List<CaseRecord> allCases;
+        @AuraEnabled public Integer casesCount;
+        @AuraEnabled public Integer totalCasesCount;
         @AuraEnabled public List<BusinessRecord> recentInvoices;
         @AuraEnabled public Decimal pendingAmount;
         @AuraEnabled public Integer overdueCount;
@@ -57,6 +64,18 @@ public with sharing class Outlet360Controller {
         @AuraEnabled public String productName;
         @AuraEnabled public Decimal quantity;
         @AuraEnabled public Decimal unitPrice;
+        @AuraEnabled public Decimal totalPrice;
+    }
+
+    public class CaseRecord {
+        @AuraEnabled public Id caseId;
+        @AuraEnabled public Id orderId;
+        @AuraEnabled public String caseNumber;
+        @AuraEnabled public String orderName;
+        @AuraEnabled public String caseType;
+        @AuraEnabled public String caseReason;
+        @AuraEnabled public String solutionRequired;
+        @AuraEnabled public String ownerName;
         @AuraEnabled public Decimal totalPrice;
     }
 
@@ -102,6 +121,13 @@ public with sharing class Outlet360Controller {
             response.recentOrders = new List<BusinessRecord>();
             response.allOrders = new List<BusinessRecord>();
             response.orderProducts = new List<OrderProductRecord>();
+            response.allOrderProducts = new List<OrderProductRecord>();
+            response.orderProductsCount = 0;
+            response.totalOrderProductsCount = 0;
+            response.cases = new List<CaseRecord>();
+            response.allCases = new List<CaseRecord>();
+            response.casesCount = 0;
+            response.totalCasesCount = 0;
             response.recentInvoices = new List<BusinessRecord>();
             response.pendingAmount = 0;
             response.overdueCount = 0;
@@ -162,6 +188,8 @@ public with sharing class Outlet360Controller {
             populateOutletHeader(response, recordId, resolvedObjectApiName, globalDescribe);
             // Populate business sections (orders/invoices/revenue) after generic related-list summary.
             populateBusinessSummary(response, recordId, globalDescribe);
+            // Populate cases associated with the outlet
+            populateCases(response, recordId, globalDescribe);
             // Populate payment summary.
             populatePaymentSummary(response, recordId, globalDescribe);
             // Calculate payment rating: average of Payment_Score__c from Payment records
@@ -501,10 +529,11 @@ public with sharing class Outlet360Controller {
                 (!String.isBlank(totalPriceField) ? (', ' + totalPriceField) : '') +
                 ' FROM OrderItem' +
                 ' WHERE OrderId IN :orderIds' +
-                ' ORDER BY CreatedDate DESC LIMIT 200';
+                ' ORDER BY CreatedDate DESC LIMIT 5';
 
             try {
                 List<SObject> rows = Database.query(soql);
+                response.orderProductsCount = rows.size();
                 for (SObject row : rows) {
                     OrderProductRecord item = new OrderProductRecord();
                     item.orderItemId = (Id) row.get('Id');
@@ -518,6 +547,37 @@ public with sharing class Outlet360Controller {
                     item.unitPrice = !String.isBlank(unitPriceField) ? toDecimal(row.get(unitPriceField)) : 0;
                     item.totalPrice = !String.isBlank(totalPriceField) ? toDecimal(row.get(totalPriceField)) : 0;
                     response.orderProducts.add(item);
+                }
+            } catch (Exception ex) {
+                response.orderProductsCount = 0;
+            }
+
+            // Query all order products for modal/view all
+            String allProductsSoql =
+                'SELECT Id, OrderId, ' + orderNameExpr + ', ' + productNameExpr +
+                (!String.isBlank(quantityField) ? (', ' + quantityField) : '') +
+                (!String.isBlank(unitPriceField) ? (', ' + unitPriceField) : '') +
+                (!String.isBlank(totalPriceField) ? (', ' + totalPriceField) : '') +
+                ' FROM OrderItem' +
+                ' WHERE OrderId IN :orderIds' +
+                ' ORDER BY CreatedDate DESC LIMIT 200';
+
+            try {
+                List<SObject> allRows = Database.query(allProductsSoql);
+                response.totalOrderProductsCount = allRows.size();
+                for (SObject row : allRows) {
+                    OrderProductRecord item = new OrderProductRecord();
+                    item.orderItemId = (Id) row.get('Id');
+                    item.orderId = (Id) row.get('OrderId');
+                    SObject orderObj = row.getSObject('Order');
+                    item.orderName = orderObj != null ? String.valueOf(orderObj.get('OrderNumber')) : null;
+                    SObject pricebookEntry = row.getSObject('PricebookEntry');
+                    SObject product = pricebookEntry != null ? pricebookEntry.getSObject('Product2') : null;
+                    item.productName = product != null ? String.valueOf(product.get('Name')) : null;
+                    item.quantity = !String.isBlank(quantityField) ? toDecimal(row.get(quantityField)) : 0;
+                    item.unitPrice = !String.isBlank(unitPriceField) ? toDecimal(row.get(unitPriceField)) : 0;
+                    item.totalPrice = !String.isBlank(totalPriceField) ? toDecimal(row.get(totalPriceField)) : 0;
+                    response.allOrderProducts.add(item);
                 }
             } catch (Exception ex) {
                 response.orderProducts = new List<OrderProductRecord>();
@@ -574,6 +634,88 @@ public with sharing class Outlet360Controller {
         // } catch (Exception ex) {
         //     response.orderProducts = new List<OrderProductRecord>();
         // }
+    }
+
+    private static void populateCases(
+        Outlet360Response response,
+        Id recordId,
+        Map<String, Schema.SObjectType> globalDescribe
+    ) {
+        if (response == null || recordId == null) {
+            return;
+        }
+
+        // Check if Case object exists in the org
+        if (!globalDescribe.containsKey('Case')) {
+            return;
+        }
+
+        try {
+            // Query recent cases (5 most recent)
+            List<Case> recentCaseRows = [
+                SELECT Id, CaseNumber, Type, Reason, Solution_Required__c, Total_Price__c,
+                       Order__c, Order__r.OrderNumber, OwnerId, Owner.Name, AccountId
+                FROM Case
+                WHERE AccountId = :recordId
+                ORDER BY CreatedDate DESC
+                LIMIT 5
+            ];
+
+            response.casesCount = recentCaseRows.size();
+
+            // Build recent case records
+            for (Case caseRecord : recentCaseRows) {
+                response.cases.add(buildCaseRecord(caseRecord));
+            }
+
+            // Query all cases for modal/view all
+            List<Case> allCaseRows = [
+                SELECT Id, CaseNumber, Type, Reason, Solution_Required__c, Total_Price__c,
+                       Order__c, Order__r.OrderNumber, OwnerId, Owner.Name, AccountId
+                FROM Case
+                WHERE AccountId = :recordId
+                ORDER BY CreatedDate DESC
+                LIMIT 200
+            ];
+
+            response.totalCasesCount = allCaseRows.size();
+
+            // Build all case records
+            for (Case caseRecord : allCaseRows) {
+                response.allCases.add(buildCaseRecord(caseRecord));
+            }
+        } catch (Exception ex) {
+            // Case data is best-effort and should not break the page
+            System.debug('Error loading cases: ' + ex.getMessage());
+            response.cases = new List<CaseRecord>();
+            response.allCases = new List<CaseRecord>();
+        }
+    }
+
+    private static CaseRecord buildCaseRecord(Case caseRecord) {
+        CaseRecord item = new CaseRecord();
+        item.caseId = caseRecord.Id;
+        item.caseNumber = caseRecord.CaseNumber;
+
+        // If case has an Order reference, use the Order Number; otherwise use Case Number
+        if (caseRecord.Order__c != null && caseRecord.Order__r != null &&
+            String.isNotBlank(caseRecord.Order__r.OrderNumber)) {
+            item.orderName = caseRecord.Order__r.OrderNumber;
+        } else {
+            item.orderName = '--';
+        }
+
+        item.caseType = caseRecord.Type != null ? String.valueOf(caseRecord.Type) : '';
+        item.caseReason = caseRecord.Reason != null ? String.valueOf(caseRecord.Reason) : '';
+        item.solutionRequired = caseRecord.Solution_Required__c != null
+            ? String.valueOf(caseRecord.Solution_Required__c)
+            : '';
+        item.ownerName = caseRecord.Owner != null && String.isNotBlank(caseRecord.Owner.Name)
+            ? caseRecord.Owner.Name
+            : '';
+        item.totalPrice = caseRecord.Total_Price__c != null ? caseRecord.Total_Price__c : 0;
+
+        return item;
     }
 
     private static void populatePaymentSummary(
