@@ -316,14 +316,14 @@
                 <!-- MODAL FOOTER -->
                 <!-- ═══════════════════════════════════════════ -->
                 <footer class="slds-modal__footer modal-footer-mobile" role="contentinfo">
-                    <button class="slds-button slds-button_neutral" 
+                    <button class="slds-button slds-button_neutral modal-action-btn modal-action-btn--cancel" 
                             type="button"
                             onclick={handleCloseModal}
                             disabled={isSaving}
                             aria-label="Cancel and close the case creation form">
                         Cancel
                     </button>
-                    <button class="slds-button slds-button_brand" 
+                    <button class="slds-button slds-button_brand modal-action-btn modal-action-btn--submit" 
                             type="submit"
                             onclick={handleSaveCase}
                             disabled={hasValidationDisabled}
