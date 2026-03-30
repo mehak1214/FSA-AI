@@ -42,6 +42,11 @@ export default class PlaceOrder extends LightningElement {
     selectedDistributor;
     selectedSchemeId = null;
 
+    @track isCartModalOpen = false;
+    @track isCartButtonHidden = false;
+    @track showCartRemoveBtn = false;
+    @track cartLongPressTimer = null;
+
     paymentModes = [{ label: 'Cash', value: 'Cash' }, { label: 'UPI', value: 'UPI' }, { label: 'Card', value: 'Card' }];
     cardOptions = [{ label: 'Visa', value: 'Visa' }, { label: 'MasterCard', value: 'MasterCard' }, { label: 'RuPay', value: 'RuPay'}];
 
@@ -50,6 +55,36 @@ export default class PlaceOrder extends LightningElement {
     set franchiseId(value) {
         this._franchiseId = value;
         if (value) { this.selectedFranchise = value; }
+    }
+
+    @api visitId;
+
+    /**
+     * Called by the parent dialog when it opens, so re-opening after a
+     * completed order always starts at step 1 with a clean slate.
+     */
+    @api
+    reset() {
+        this.currentStep      = 1;
+        this.selectedOrderType = undefined;
+        this.selectedDistributor = undefined;
+        this.selectedSchemeId = null;
+        this.addressReady = false;
+        this.address = {
+            shippingStreet: '', shippingCity: '', shippingState: '',
+            shippingPostalCode: '', shippingCountry: '',
+            billingStreet: '', billingCity: '', billingState: '',
+            billingPostalCode: '', billingCountry: '',
+            contactName: '', phone: ''
+        };
+        this.payment = {
+            amount: 0, mode: 'Cash', cardNumber: '',
+            cardHolder: '', cardExpiry: '', cardType: '', upiId: ''
+        };
+        this.isBillingSame = false;
+        // Reset product quantities to 0 so the grid looks fresh
+        this.sampleProducts  = this.sampleProducts.map(p  => ({ ...p, quantity: 0 }));
+        this.regularProducts = this.regularProducts.map(p => ({ ...p, quantity: 0 }));
     }
 
     get stepOne() { return this.currentStep === 1; }
@@ -64,6 +99,68 @@ export default class PlaceOrder extends LightningElement {
     get isCard() { return this.payment.mode === 'Card'; }
     get isUPI() { return this.payment.mode === 'UPI'; }
     get isFranchiseLocked() { return !!this.franchiseId; }
+
+    // ─── UI-only getters for checkout-style redesign ──────────────────────
+
+    // Nav step CSS classes
+    _navStepCls(n) {
+        const cur = this.currentStep;
+        if (cur > n) return 'step-item step-done';
+        if (cur === n) return 'step-item step-active';
+        return 'step-item step-pending';
+    }
+    get step1NavClass()       { return this._navStepCls(1); }
+    get step2NavClass()       { return this._navStepCls(2); }
+    get step3NavClass()       { return this._navStepCls(3); }
+    get confirmStepNavClass() {
+        const n = this.isSampleOrder ? 3 : 4;
+        return this._navStepCls(n);
+    }
+    get confirmStepNum() { return this.isSampleOrder ? '3' : '4'; }
+
+    // Product card class (highlights cards that have qty > 0)
+    get displayedProducts() {
+        return this.currentProducts.map(p => {
+            let stockLabel = null;
+            let stockLabelClass = 'stock-label';
+            if (this.isSampleOrder) {
+                const stock = p.quantityOnHand;
+                if (stock != null && stock > 0) {
+                    stockLabel = `${stock} in stock`;
+                    stockLabelClass = 'stock-label stock-available';
+                } else {
+                    stockLabel = 'Out of stock';
+                    stockLabelClass = 'stock-label stock-out';
+                }
+            }
+            return {
+                ...p,
+                stockLabel,
+                stockLabelClass,
+                cardClass: p.quantity > 0 ? 'product-card has-qty' : 'product-card'
+            };
+        });
+    }
+
+    // Payment card / radio classes for the styled payment selector
+    get cashCardClass() { return this.payment.mode === 'Cash' ? 'pm-card pm-selected' : 'pm-card'; }
+    get upiCardClass()  { return this.payment.mode === 'UPI'  ? 'pm-card pm-selected' : 'pm-card'; }
+    get cardCardClass() { return this.payment.mode === 'Card' ? 'pm-card pm-selected' : 'pm-card'; }
+    get cashRadioClass() { return this.payment.mode === 'Cash' ? 'pm-radio pm-radio-on' : 'pm-radio'; }
+    get upiRadioClass()  { return this.payment.mode === 'UPI'  ? 'pm-radio pm-radio-on' : 'pm-radio'; }
+    get cardRadioClass() { return this.payment.mode === 'Card' ? 'pm-radio pm-radio-on' : 'pm-radio'; }
+
+    // Payment method click handlers (replaces lightning-combobox for payment)
+    selectCash() { this.payment = { ...this.payment, mode: 'Cash' }; }
+    selectUPI()  { this.payment = { ...this.payment, mode: 'UPI' };  }
+    selectCard() { this.payment = { ...this.payment, mode: 'Card' }; }
+
+    // Whether any products are selected (for side-panel hint)
+    get hasSelectedItems() { return this.selectedItemsForSummary.length > 0; }
+
+    // Success screen text
+    get successTitle()    { return this.isSampleOrder ? 'Sample Request Submitted!' : 'Order Placed Successfully!'; }
+    get successSubtitle() { return this.isSampleOrder ? 'Your free samples are confirmed.' : 'Your order is confirmed and being processed.'; }
 
     @wire(getObjectInfo, { objectApiName: ORDER_OBJECT })
     orderObjectInfo;
@@ -162,7 +259,13 @@ export default class PlaceOrder extends LightningElement {
         }
     }
 
-    handlePrev() { this.currentStep -= 1; }
+    handlePrev() {
+        this.currentStep -= 1;
+        // Reset cart state when going back to ensure cart button is visible
+        this.isCartButtonHidden = false;
+        this.isCartModalOpen = false;
+        this.showCartRemoveBtn = false;
+    }
 
     handleOrderTypeChange(event) {
         this.selectedOrderType = event.detail.value;
@@ -198,7 +301,13 @@ export default class PlaceOrder extends LightningElement {
             }
         }
     }
-    handleDistributorChange(event) { this.selectedDistributor = event.detail.value; }
+    handleDistributorChange(event) {
+        this.selectedDistributor = event.detail.value;
+        // Reset cart state when distributor changes
+        this.isCartButtonHidden = false;
+        this.isCartModalOpen = false;
+        this.showCartRemoveBtn = false;
+    }
 
     handleAddressChange(event) {
         const field = event.target.name;
@@ -289,8 +398,18 @@ export default class PlaceOrder extends LightningElement {
                     value: scheme.value,
                     discount: scheme.discount
                 }));
-                if (!this.availableSchemes.length) this.selectedSchemeId = null;
-                else if (!this.selectedSchemeId) this.selectedSchemeId = this.availableSchemes[0].value;
+                if (!this.availableSchemes.length) {
+                    // No schemes qualify for this qty — clear selection
+                    this.selectedSchemeId = null;
+                } else {
+                    // Keep the current selection only if it still exists in the
+                    // updated list (e.g. user manually picked a scheme earlier).
+                    // Otherwise auto-select the first (best) available scheme.
+                    const stillValid = this.availableSchemes.some(s => s.value === this.selectedSchemeId);
+                    if (!stillValid) {
+                        this.selectedSchemeId = this.availableSchemes[0].value;
+                    }
+                }
             });
     }
 
@@ -310,7 +429,8 @@ export default class PlaceOrder extends LightningElement {
             selectedProducts: selectedItems,
             selectedSchemeId: this.selectedSchemeId ? String(this.selectedSchemeId) : null,
             addressData: this.address,
-            paymentData: this.payment
+            paymentData: this.payment,
+            visitId: this.visitId || null
         })
         .then((result) => {
             // For Sample Orders, success is currentStep=3; for Regular Orders, currentStep=4
@@ -375,23 +495,7 @@ export default class PlaceOrder extends LightningElement {
         if (this.selectedOrderType === 'Regular Order') return this.regularProducts;
         return [];
     }
-    get displayedProducts() {
-        return this.currentProducts.map(p => {
-            let stockLabel = null;
-            let stockLabelClass = 'stock-label';
-            if (this.isSampleOrder) {
-                const stock = p.quantityOnHand;
-                if (stock != null && stock > 0) {
-                    stockLabel = `${stock} in stock`;
-                    stockLabelClass = 'stock-label stock-available';
-                } else {
-                    stockLabel = 'Out of stock';
-                    stockLabelClass = 'stock-label stock-out';
-                }
-            }
-            return { ...p, stockLabel, stockLabelClass };
-        });
-    }
+
 
     get isSampleOrder() {
         return this.selectedOrderType === 'Sample Order';
@@ -399,6 +503,114 @@ export default class PlaceOrder extends LightningElement {
 
     get isRegularOrder() {
         return this.selectedOrderType === 'Regular Order';
+    }
+
+    get shouldShowSelectProducts() {
+        // Show products section if:
+        // 1. Sample Order is selected, OR
+        // 2. Regular Order is selected AND a distributor is chosen
+        if (this.isSampleOrder) return true;
+        if (this.isRegularOrder && this.selectedDistributor) return true;
+        return false;
+    }
+
+    get canGoBack() {
+        return this.currentStep > 1;
+    }
+
+    get canProceedNext() {
+        return this.hasSelectedItems;
+    }
+
+    get isBackButtonDisabled() {
+        return !this.canGoBack;
+    }
+
+    get isNextButtonDisabled() {
+        return !this.canProceedNext;
+    }
+
+    get shouldShowFooter() {
+        // Show footer only when dealer is selected or products are selected
+        return this.selectedDistributor || this.isSampleOrder || this.hasSelectedItems;
+    }
+
+    get checkoutLayoutClass() {
+        let classes = 'checkout-layout step-one-layout';
+        if (this.shouldShowFooter) {
+            classes += ' has-footer';
+        }
+        return classes;
+    }
+
+    get cartSummaryClass() {
+        return this.isCartSummaryExpanded ? 'price-card price-card-pinned' : 'price-card price-card-pinned collapsed';
+    }
+
+    get cartToggleIcon() {
+        return this.isCartSummaryExpanded ? '▼' : '▶';
+    }
+
+    get cartToggleTitle() {
+        return this.isCartSummaryExpanded ? 'Collapse cart summary' : 'Expand cart summary';
+    }
+
+    get cartItemCount() {
+        return this.selectedItemsForSummary.length;
+    }
+
+    get floatingCartBtnClass() {
+        const classes = ['floating-cart-btn'];
+        if (this.showCartRemoveBtn) {
+            classes.push('show-remove-btn');
+        }
+        return classes.join(' ');
+    }
+
+    handleCartLongPressStart() {
+        // Start a timer for long press (700ms)
+        this.cartLongPressTimer = setTimeout(() => {
+            this.showCartRemoveBtn = true;
+        }, 700);
+    }
+
+    handleCartLongPressEnd() {
+        // Clear timer if mouse/touch released before 700ms
+        if (this.cartLongPressTimer) {
+            clearTimeout(this.cartLongPressTimer);
+            this.cartLongPressTimer = null;
+        }
+    }
+
+    handleCartLongPressCancel() {
+        // Clear timer if mouse leaves or touch is cancelled
+        if (this.cartLongPressTimer) {
+            clearTimeout(this.cartLongPressTimer);
+            this.cartLongPressTimer = null;
+        }
+        this.showCartRemoveBtn = false;
+    }
+
+    removeCartButton() {
+        this.isCartButtonHidden = true;
+        this.showCartRemoveBtn = false;
+    }
+
+    toggleCartModal() {
+        // Don't open modal if remove button is showing
+        if (this.showCartRemoveBtn) return;
+        this.isCartModalOpen = !this.isCartModalOpen;
+    }
+
+    closeCartModal() {
+        this.isCartModalOpen = false;
+        // Show cart button again when modal is closed
+        this.isCartButtonHidden = false;
+        this.showCartRemoveBtn = false;
+    }
+
+    toggleCartSummary() {
+        this.isCartSummaryExpanded = !this.isCartSummaryExpanded;
     }
 
     setCurrentProducts(updatedProducts) {

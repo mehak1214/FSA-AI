@@ -1,206 +1,542 @@
 <template>
-    <lightning-card >
-        
-        <template if:true={stepOne}>
-            <div class="slds-p-around_medium">
-                <lightning-combobox label="Select Order Type" value={selectedOrderType} options={orderTypeOptions} onchange={handleOrderTypeChange}></lightning-combobox>
-                <lightning-combobox label="Select Franchise" value={selectedFranchise} options={franchiseOptions} onchange={handleFranchiseChange} disabled={isFranchiseLocked} class="slds-m-top_small"></lightning-combobox>
-                <template if:true={isRegularOrder}>
-                    <lightning-combobox label="Select Dealer/Distributor" value={selectedDistributor} options={distributorOptions} onchange={handleDistributorChange} class="slds-m-top_small"></lightning-combobox>
-                </template>
+    <div class="page-bg">
+
+        <!-- ===== TOP NAV ===== -->
+        <div class="top-nav">
+            <div class="nav-brand">
+                <div class="brand-icon">🧾</div>
+                <div>
+                    <div class="brand-title">Place Order</div>
+                    <div class="brand-sub">Review &amp; confirm your order</div>
+                </div>
             </div>
 
-            <div class="slds-grid slds-wrap slds-p-around_medium">
-                <template for:each={displayedProducts} for:item="prod">
-                    <div key={prod.productId} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-p-around_small">
-                        <div class="slds-box slds-text-align_center">
-                            <template if:true={prod.imageUrl}><img src={prod.imageUrl} class="product-image"/></template>
-                            <h3 class="slds-text-heading_small slds-m-top_small">{prod.productName}</h3>
-                            <template if:true={prod.stockLabel}>
-                                <p class={prod.stockLabelClass}>{prod.stockLabel}</p>
-                            </template>
-                            <div class="slds-m-top_small">
-                                <lightning-button-icon icon-name="utility:dash" data-id={prod.productId} onclick={decreaseQty}></lightning-button-icon>
-                                <span class="slds-m-horizontal_small slds-text-heading_medium">{prod.quantity}</span>
-                                <lightning-button-icon icon-name="utility:add" data-id={prod.productId} onclick={increaseQty}></lightning-button-icon>
-                            </div>
-                        </div>
+            <!-- Order type badge -->
+            <template if:true={isSampleOrder}>
+                <div class="order-type-badge sample-badge-nav">🎁 Sample Order</div>
+            </template>
+            <template if:false={isSampleOrder}>
+                <template if:true={isRegularOrder}>
+                    <div class="order-type-badge regular-badge-nav">🛒 Regular Order</div>
+                </template>
+            </template>
+
+            <!-- Step indicators -->
+            <div class="nav-steps">
+                <!-- Step 1 -->
+                <div class={step1NavClass}>
+                    <span class="step-num">1</span>
+                    <span class="step-lbl">Products</span>
+                </div>
+                <div class="step-connector"></div>
+                <!-- Step 2 -->
+                <div class={step2NavClass}>
+                    <span class="step-num">2</span>
+                    <span class="step-lbl">Details</span>
+                </div>
+                <!-- Payment step only for Regular -->
+                <template if:true={isRegularOrder}>
+                    <div class="step-connector"></div>
+                    <div class={step3NavClass}>
+                        <span class="step-num">3</span>
+                        <span class="step-lbl">Payment</span>
                     </div>
                 </template>
+                <div class="step-connector"></div>
+                <div class={confirmStepNavClass}>
+                    <span class="step-num">{confirmStepNum}</span>
+                    <span class="step-lbl">Confirm</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sample free banner -->
+        <template if:true={isSampleOrder}>
+            <div class="free-banner">
+                <span class="free-banner-icon">🎁</span>
+                <div>
+                    <strong>Sample Order — 100% Free</strong>
+                    <span class="free-banner-sub"> · No payment required · Products are for evaluation only</span>
+                </div>
             </div>
         </template>
 
-        <template if:true={stepTwo}>
-            <div class="slds-p-around_medium">
-                <div class="summary-box">
-                    <h3>Order Summary</h3>
-                    <template for:each={selectedItemsForSummary} for:item="item">
-                        <div key={item.productId} class="summary-item-block">
-                            <div class={item.summaryRowClass}>
-                                <div class="summary-col">
-                                    <div class="col-label">Product</div>
-                                    <div class="col-value">{item.productName}</div>
+        <!-- ===== STEP 1: Select Order Type + Products ===== -->
+        <template if:true={stepOne}>
+            <div class={checkoutLayoutClass}>
+                <div class="main-col">
+
+                    <!-- Order Config Card - Full width until distributor selected -->
+                    <div class="section-card order-config-card">
+                        <div class="section-header">
+                            <span class="section-icon">⚙️</span>
+                            <span class="section-title">Order Configuration</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <lightning-combobox
+                                        label="Order Type"
+                                        value={selectedOrderType}
+                                        options={orderTypeOptions}
+                                        onchange={handleOrderTypeChange}>
+                                    </lightning-combobox>
                                 </div>
-                                <div class="summary-col">
-                                    <div class="col-label">Qty</div>
-                                    <lightning-input 
-                                        type="number" 
-                                        variant="label-hidden" 
-                                        data-id={item.productId} 
-                                        value={item.quantity} 
-                                        onchange={handleSummaryQtyChange}
-                                        class="qty-input-small">
-                                    </lightning-input>
+                                <div class="field-group">
+                                    <lightning-combobox
+                                        label="Franchise"
+                                        value={selectedFranchise}
+                                        options={franchiseOptions}
+                                        onchange={handleFranchiseChange}
+                                        disabled={isFranchiseLocked}>
+                                    </lightning-combobox>
                                 </div>
-                                <template if:false={isSampleOrder}>
-                                    <div class="summary-col">
-                                        <div class="col-label">Price</div>
-                                        <div class="col-value">{item.unitPriceDisplay}</div>
+                            </div>
+                            <template if:true={isRegularOrder}>
+                                <div class="field-row single">
+                                    <div class="field-group dropdown-container">
+                                        <lightning-combobox
+                                            label="Dealer / Distributor"
+                                            value={selectedDistributor}
+                                            options={distributorOptions}
+                                            onchange={handleDistributorChange}
+                                            class="distributor-dropdown">
+                                        </lightning-combobox>
                                     </div>
-                                    <div class="summary-col">
-                                        <div class="col-label">Subtotal</div>
-                                        <div class="col-value">{item.lineTotalDisplay}</div>
-                                    </div>
-                                    <div class="summary-col">
-                                        <div class="col-label discount">Discount</div>
-                                        <div class="col-value discount">{item.discountAmountDisplay}</div>
-                                    </div>
-                                    <div class="summary-col">
-                                        <div class="col-label">Total</div>
-                                        <div class="col-value">{item.discountedTotalDisplay}</div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Products Card - Show only if distributor selected -->
+                    <template if:true={shouldShowSelectProducts}>
+                        <div class="section-card">
+                            <div class="section-header">
+                                <span class="section-icon">📦</span>
+                                <span class="section-title">Select Products</span>
+                            </div>
+                            <div class="products-grid">
+                                <template for:each={displayedProducts} for:item="prod">
+                                    <div key={prod.productId} class={prod.cardClass}>
+                                        <template if:true={prod.imageUrl}>
+                                            <img src={prod.imageUrl} class="product-image" alt={prod.productName} />
+                                        </template>
+                                        <p class="product-name">{prod.productName}</p>
+                                        <template if:true={prod.stockLabel}>
+                                            <span class={prod.stockLabelClass}>{prod.stockLabel}</span>
+                                        </template>
+                                        <div class="qty-ctrl">
+                                            <button class="iq-btn" data-id={prod.productId} onclick={decreaseQty}>−</button>
+                                            <span class="iq-val">{prod.quantity}</span>
+                                            <button class="iq-btn" data-id={prod.productId} onclick={increaseQty}>+</button>
+                                        </div>
                                     </div>
                                 </template>
                             </div>
                         </div>
                     </template>
 
-                    <template if:true={isRegularOrder}>
-                        <div class="slds-m-top_medium slds-border_top slds-p-top_medium">
-                            <h3 class="Apply Scheme">Apply Scheme</h3>
-                            <lightning-combobox class="scheme-option" value={selectedSchemeId} options={availableSchemes} onchange={handleSummarySchemeChange}></lightning-combobox>
+                </div>
+
+                <!-- Floating Cart Button - Long Press to Remove -->
+                <template if:true={hasSelectedItems}>
+                    <template if:false={isCartButtonHidden}>
+                        <div class="floating-cart-container">
+                            <button 
+                                class="floating-cart-btn"
+                                onclick={toggleCartModal}
+                                onmousedown={handleCartLongPressStart}
+                                onmouseup={handleCartLongPressEnd}
+                                onmouseleave={handleCartLongPressCancel}
+                                ontouchstart={handleCartLongPressStart}
+                                ontouchend={handleCartLongPressEnd}
+                                ontouchcancel={handleCartLongPressCancel}
+                                title="View cart - Long press to remove">
+                                <span class="cart-icon">🛒</span>
+                                <span class="cart-badge">{cartItemCount}</span>
+                            </button>
+                            <template if:true={showCartRemoveBtn}>
+                                <button class="cart-remove-btn" onclick={removeCartButton} title="Remove cart">
+                                    ✕
+                                </button>
+                            </template>
                         </div>
+                    </template>
+                </template>
+            </div>
+
+            <!-- Cart Modal Overlay -->
+            <template if:true={isCartModalOpen}>
+                <div class="cart-modal-overlay" onclick={closeCartModal}></div>
+                <div class="cart-modal-panel">
+                    <div class="cart-modal-header">
+                        <h3>Shopping Cart</h3>
+                        <button class="modal-close-btn" onclick={closeCartModal} title="Close cart">✕</button>
+                    </div>
+                    <div class="cart-modal-content">
+                        <template if:true={hasSelectedItems}>
+                            <template for:each={selectedItemsForSummary} for:item="item">
+                                <div key={item.productId} class="cart-item">
+                                    <div class="cart-item-info">
+                                        <span class="cart-item-name">{item.productName}</span>
+                                        <span class="cart-item-qty">Qty: {item.quantity}</span>
+                                    </div>
+                                    <template if:false={isSampleOrder}>
+                                        <div class="cart-item-price">₹{item.discountedTotalDisplay}</div>
+                                    </template>
+                                </div>
+                            </template>
+                            <div class="cart-divider"></div>
+                            <div class="cart-total-section">
+                                <template if:false={isSampleOrder}>
+                                    <div class="cart-summary-line">
+                                        <span>Subtotal</span>
+                                        <span>₹{selectedItemsSubtotalDisplay}</span>
+                                    </div>
+                                    <div class="cart-summary-line">
+                                        <span>Discount</span>
+                                        <span class="discount-text">-₹{selectedItemsTotalDiscountDisplay}</span>
+                                    </div>
+                                    <div class="cart-divider"></div>
+                                    <div class="cart-total-line">
+                                        <span>Total</span>
+                                        <span>₹{computedTotalPriceDisplay}</span>
+                                    </div>
+                                </template>
+                                <template if:true={isSampleOrder}>
+                                    <div class="cart-total-line free-total">
+                                        <span>Total Payable</span>
+                                        <span>₹0.00</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Footer with Navigation Buttons - Show only when dealer selected or products exist -->
+            <template if:true={shouldShowFooter}>
+                <div class="step-footer">
+                    <template if:true={hasSelectedItems}>
+                        <button class="btn-secondary" onclick={handlePrev} disabled={isBackButtonDisabled}>← Back</button>
+                    <button class="btn-primary" onclick={handleNext} disabled={isNextButtonDisabled}>Next →</button>
+                    </template>
+                </div>
+            </template>
+        </template>
+
+        <!-- ===== STEP 2: Order Summary + Address ===== -->
+        <template if:true={stepTwo}>
+            <div class="checkout-layout">
+                <div class="main-col">
+
+                    <!-- Order Summary table -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <span class="section-icon">📋</span>
+                            <span class="section-title">Order Summary</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="summary-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Qty</th>
+                                        <template if:false={isSampleOrder}>
+                                            <th>Unit Price</th>
+                                            <th>Subtotal</th>
+                                            <th class="discount-col">Discount</th>
+                                            <th class="total-col">Total</th>
+                                        </template>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={selectedItemsForSummary} for:item="item">
+                                        <tr key={item.productId}>
+                                            <td>{item.productName}</td>
+                                            <td>
+                                                <lightning-input
+                                                    type="number"
+                                                    variant="label-hidden"
+                                                    data-id={item.productId}
+                                                    value={item.quantity}
+                                                    onchange={handleSummaryQtyChange}
+                                                    class="qty-input-small">
+                                                </lightning-input>
+                                            </td>
+                                            <template if:false={isSampleOrder}>
+                                                <td>₹{item.unitPriceDisplay}</td>
+                                                <td>₹{item.lineTotalDisplay}</td>
+                                                <td class="discount-col">-₹{item.discountAmountDisplay}</td>
+                                                <td class="total-col">₹{item.discountedTotalDisplay}</td>
+                                            </template>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Scheme selector (Regular only) -->
+                        <template if:true={isRegularOrder}>
+                            <div class="scheme-row">
+                                <div class="scheme-row-label">🏷️ Apply Scheme</div>
+                                <lightning-combobox
+                                    value={selectedSchemeId}
+                                    options={availableSchemes}
+                                    onchange={handleSummarySchemeChange}>
+                                </lightning-combobox>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Address -->
+                    <template if:true={addressReady}>
+                        <div class="section-card">
+                            <div class="section-header">
+                                <span class="section-icon">👤</span>
+                                <span class="section-title">Contact Details</span>
+                            </div>
+                            <div class="section-body">
+                                <div class="field-row">
+                                    <div class="field-group">
+                                        <lightning-input label="Name" name="contactName" value={address.contactName} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="Phone" name="phone" value={address.phone} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="section-header">
+                                <span class="section-icon">🚚</span>
+                                <span class="section-title">Shipping Address</span>
+                            </div>
+                            <div class="section-body">
+                                <div class="field-row">
+                                    <div class="field-group">
+                                        <lightning-input label="Street" name="shippingStreet" value={address.shippingStreet} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="City" name="shippingCity" value={address.shippingCity} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="State" name="shippingState" value={address.shippingState} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="Postal Code" name="shippingPostalCode" value={address.shippingPostalCode} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="Country" name="shippingCountry" value={address.shippingCountry} onchange={handleAddressChange}></lightning-input>
+                                    </div>
+                                </div>
+                                <div style="margin-top:8px;">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label="Billing address same as Shipping"
+                                        checked={isBillingSame}
+                                        onchange={handleSameAddress}>
+                                    </lightning-input>
+                                </div>
+                            </div>
+                        </div>
+
+                        <template if:false={isBillingSame}>
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <span class="section-icon">🏢</span>
+                                    <span class="section-title">Billing Address</span>
+                                    <span class="optional-tag">Different</span>
+                                </div>
+                                <div class="section-body">
+                                    <div class="field-row">
+                                        <div class="field-group">
+                                            <lightning-input label="Street" name="billingStreet" value={address.billingStreet} onchange={handleAddressChange}></lightning-input>
+                                        </div>
+                                        <div class="field-group">
+                                            <lightning-input label="City" name="billingCity" value={address.billingCity} onchange={handleAddressChange}></lightning-input>
+                                        </div>
+                                        <div class="field-group">
+                                            <lightning-input label="State" name="billingState" value={address.billingState} onchange={handleAddressChange}></lightning-input>
+                                        </div>
+                                        <div class="field-group">
+                                            <lightning-input label="Postal Code" name="billingPostalCode" value={address.billingPostalCode} onchange={handleAddressChange}></lightning-input>
+                                        </div>
+                                        <div class="field-group">
+                                            <lightning-input label="Country" name="billingCountry" value={address.billingCountry} onchange={handleAddressChange}></lightning-input>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </template>
                 </div>
 
-                <template if:true={addressReady}>
-                <div class="slds-grid slds-wrap slds-gutters slds-m-top_large">
+                <!-- Side summary -->
+                <div class="side-col">
+                    <div class="price-card">
+                        <div class="price-card-header"><span>📦</span><span>Order at a Glance</span></div>
+                        <template for:each={selectedItemsForSummary} for:item="item">
+                            <div key={item.productId} class="mini-item">
+                                <span class="mini-item-name">{item.productName}</span>
+                                <span class="mini-item-qty">×{item.quantity}</span>
+                            </div>
+                        </template>
+                        <div class="price-divider"></div>
+                        <template if:false={isSampleOrder}>
+                            <div class="price-line"><span>Subtotal</span><span>₹{selectedItemsSubtotalDisplay}</span></div>
+                            <div class="price-line discount"><span>Discount</span><span>-₹{selectedItemsTotalDiscountDisplay}</span></div>
+                            <div class="price-divider"></div>
+                            <div class="price-total-line"><span>Grand Total</span><span>₹{computedTotalPriceDisplay}</span></div>
+                        </template>
+                        <template if:true={isSampleOrder}>
+                            <div class="price-total-line free-total-line"><span>Total Payable</span><span class="free-total-val">₹0.00</span></div>
+                        </template>
+                    </div>
+                </div>
+            </div>
 
-                     <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                        <div class="address-box">                          
-                            <h3>Contact Details</h3>
-                            <lightning-input label="Name" name="contactName" value={address.contactName} onchange={handleAddressChange}></lightning-input>
-                            <lightning-input label="Phone" name="phone" value={address.phone} onchange={handleAddressChange}></lightning-input>                            
+            <!-- Footer with Navigation Buttons -->
+            <div class="step-footer">
+                <button class="btn-secondary" onclick={handlePrev}>← Back</button>
+                <template if:true={showNextButton}>
+                    <button class="btn-primary" onclick={handleNext}>Next →</button>
+                </template>
+                <template if:true={showPlaceOrder}>
+                    <button class="btn-place-order" onclick={saveOrder}>
+                        <span>🎁</span><span>Submit Sample Request</span>
+                    </button>
+                </template>
+            </div>
+        </template>
+
+        <!-- ===== STEP 3: Payment (Regular Orders Only) ===== -->
+        <template if:true={stepThree}>
+            <div class="checkout-layout">
+                <div class="main-col">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <span class="section-icon">💳</span>
+                            <span class="section-title">Payment Method</span>
                         </div>
+                        <div class="payment-methods">
+                            <div class={cashCardClass} onclick={selectCash}>
+                                <span class="pm-icon">💵</span>
+                                <div class="pm-info">
+                                    <p class="pm-name">Cash</p>
+                                    <p class="pm-desc">Pay in cash at time of delivery</p>
+                                </div>
+                                <span class={cashRadioClass}></span>
+                            </div>
+                            <div class={upiCardClass} onclick={selectUPI}>
+                                <span class="pm-icon">📱</span>
+                                <div class="pm-info">
+                                    <p class="pm-name">UPI</p>
+                                    <p class="pm-desc">Pay instantly via UPI ID</p>
+                                </div>
+                                <span class={upiRadioClass}></span>
+                            </div>
+                            <div class={cardCardClass} onclick={selectCard}>
+                                <span class="pm-icon">💳</span>
+                                <div class="pm-info">
+                                    <p class="pm-name">Card</p>
+                                    <p class="pm-desc">Visa, MasterCard or RuPay</p>
+                                </div>
+                                <span class={cardRadioClass}></span>
+                            </div>
+                        </div>
+
+                        <!-- UPI extra -->
+                        <template if:true={isUPI}>
+                            <div class="payment-extra">
+                                <lightning-input label="UPI ID" name="upiId" value={payment.upiId} onchange={handlePaymentChange}></lightning-input>
+                            </div>
+                        </template>
+
+                        <!-- Card extra -->
+                        <template if:true={isCard}>
+                            <div class="payment-extra">
+                                <div class="field-row">
+                                    <div class="field-group">
+                                        <lightning-input label="Card Number" name="cardNumber" value={payment.cardNumber} onchange={handlePaymentChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="Card Holder" name="cardHolder" value={payment.cardHolder} onchange={handlePaymentChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-input label="Expiry (MM/YY)" name="cardExpiry" value={payment.cardExpiry} onchange={handlePaymentChange}></lightning-input>
+                                    </div>
+                                    <div class="field-group">
+                                        <lightning-combobox label="Card Type" name="cardType" value={payment.cardType} options={cardOptions} onchange={handlePaymentChange}></lightning-combobox>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Side: totals -->
+                <div class="side-col">
+                    <div class="price-card">
+                        <div class="price-card-header"><span>💰</span><span>Amount Due</span></div>
+                        <div class="price-line"><span>Subtotal</span><span>₹{selectedItemsSubtotalDisplay}</span></div>
+                        <div class="price-line discount"><span>Discount</span><span>-₹{selectedItemsTotalDiscountDisplay}</span></div>
+                        <div class="price-divider"></div>
+                        <div class="price-total-line"><span>Total Payable</span><span>₹{computedTotalPriceDisplay}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer with Navigation Buttons -->
+            <div class="step-footer">
+                <button class="btn-secondary" onclick={handlePrev}>← Back</button>
+                <template if:true={showNextButton}>
+                    <button class="btn-primary" onclick={handleNext}>Review Order →</button>
+                </template>
+                <template if:true={showPlaceOrder}>
+                    <button class="btn-place-order" onclick={saveOrder}>
+                        <span>✅</span><span>Place Order</span>
+                    </button>
+                </template>
+            </div>
+        </template>
+
+        <!-- ===== STEP 4 / SUCCESS ===== -->
+        <template if:true={stepFour}>
+            <div class="success-page">
+                <div class="success-card">
+                    <!-- Animated checkmark -->
+                    <div class="success-checkmark">
+                        <div class="check-icon"></div>
                     </div>
 
-                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
-                        <div class="address-box">
-                            
-                            <h3>Shipping Address</h3>
-                            <lightning-input label="Street" name="shippingStreet" value={address.shippingStreet} onchange={handleAddressChange}></lightning-input>
-                            <lightning-input label="City" name="shippingCity" value={address.shippingCity} onchange={handleAddressChange}></lightning-input>
-                            <lightning-input label="State" name="shippingState" value={address.shippingState} onchange={handleAddressChange}></lightning-input>
-                            <lightning-input label="Postal Code" name="shippingPostalCode" value={address.shippingPostalCode} onchange={handleAddressChange}></lightning-input>
-                            <lightning-input label="Country" name="shippingCountry" value={address.shippingCountry} onchange={handleAddressChange}></lightning-input>
-                        </div>
-                    </div>
-                    <div class="slds-col slds-size_1-of-1 slds-m-top_medium">
-                        <lightning-input type="checkbox" label="Billing address same as Shipping" checked={isBillingSame} onchange={handleSameAddress}></lightning-input>
-                    </div>
-                    <template if:false={isBillingSame}>
-                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2 slds-m-top_medium">
-                            <div class="address-box">
-                                <h3>Billing Address</h3>
-                                <lightning-input label="Street" name="billingStreet" value={address.billingStreet} onchange={handleAddressChange}></lightning-input>
-                                <lightning-input label="City" name="billingCity" value={address.billingCity} onchange={handleAddressChange}></lightning-input>
-                                <lightning-input label="State" name="billingState" value={address.billingState} onchange={handleAddressChange}></lightning-input>
-                                <lightning-input label="Postal Code" name="billingPostalCode" value={address.billingPostalCode} onchange={handleAddressChange}></lightning-input>
-                                <lightning-input label="Country" name="billingCountry" value={address.billingCountry} onchange={handleAddressChange}></lightning-input>
+                    <h2 class="success-title">{successTitle}</h2>
+                    <p class="success-sub">{successSubtitle}</p>
+
+                    <template if:false={isSampleOrder}>
+                        <div class="success-order-detail">
+                            <div class="success-detail-row">
+                                <span>Total Amount</span>
+                                <span>₹{orderAmt}</span>
+                            </div>
+                            <div class="success-detail-row">
+                                <span>Payment Mode</span>
+                                <span>{payment.mode}</span>
                             </div>
                         </div>
                     </template>
-                </div>
-                </template>
-            </div>
-        </template>
 
-        <template if:true={stepThree}>
-            <div class="slds-p-around_medium">
-                <div class="invoice-totals slds-m-bottom_medium">
-                    <div class="slds-grid slds-grid_align-spread"><span>Subtotal:</span><span>{selectedItemsSubtotalDisplay}</span></div>
-                    <div class="slds-grid slds-grid_align-spread"><span>Discount:</span><span>{selectedItemsTotalDiscountDisplay}</span></div>
-                    <div class="slds-grid slds-grid_align-spread slds-text-bold"><span>Grand Total:</span><span>{computedTotalPriceDisplay}</span></div>
-                </div>
-
-                <div class="address-box">
-                    <h3>Payment</h3>
-                    <lightning-combobox label="Payment Mode" name="mode" value={payment.mode} options={paymentModes} onchange={handlePaymentChange}></lightning-combobox>
-                    <template if:true={isCard}>
-                        <lightning-input label="Card Number" name="cardNumber" value={payment.cardNumber} onchange={handlePaymentChange}></lightning-input>
-                        <lightning-input label="Card Holder" name="cardHolder" value={payment.cardHolder} onchange={handlePaymentChange}></lightning-input>
-                        <lightning-input label="Expiry (MM/YY)" name="cardExpiry" value={payment.cardExpiry} onchange={handlePaymentChange}></lightning-input>
-                        <lightning-combobox label="Card Type" name="cardType" value={payment.cardType} options={cardOptions} onchange={handlePaymentChange}></lightning-combobox>
-                    </template>
-                    <template if:true={isUPI}>
-                        <lightning-input label="UPI ID" name="upiId" value={payment.upiId} onchange={handlePaymentChange}></lightning-input>
-                    </template>
-                    <lightning-input type="number" label="Amount to Pay" name="amount" value={payment.amount} onchange={handlePaymentChange} class="slds-m-top_medium">₹</lightning-input>
-                </div>
-            </div>
-        </template>
-
-        <template if:true={stepFour}>
-            <div class="success-container slds-text-align_center slds-p-vertical_xx-large">
-                <div class="success-checkmark">
-                    <div class="check-icon">
-                        <span class="icon-line line-tip"></span>
-                        <span class="icon-line line-long"></span>
-                        <div class="icon-circle"></div>
-                        <div class="icon-fix"></div>
+                    <div class="success-note" if:true={isSampleOrder}>
+                        🕐 Our team will review your sample request and confirm dispatch within 24–48 hours.
+                    </div>
+                    <div class="success-note" if:false={isSampleOrder}>
+                        📧 Your order has been confirmed and is being processed. Expected delivery in 3–5 business days.
                     </div>
                 </div>
-
-                <h2 class="success-title slds-m-top_large">Order Placed Successfully!</h2>
-                <p class="success-subtitle slds-m-bottom_large">Your order <strong>#{generatedOrderId}</strong> has been confirmed.</p>
-
-                <template if:false={isSampleOrder}>
-                    <div class="order-summary-card slds-m-around_large">
-                        <div class="slds-grid slds-grid_align-spread slds-p-vertical_x-small border-bottom">
-                            <span class="label">Total Amount</span>
-                            <span class="value">₹{orderAmt}</span>
-                        </div>
-                        <div class="slds-grid slds-grid_align-spread slds-p-vertical_x-small">
-                            <span class="label">Payment Mode</span>
-                            <span class="value">{payment.mode}</span>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- <div class="slds-m-top_xx-large">
-                    <button class="btn primary slds-m-right_small" onclick={handleCreateNewOrder}>
-                        Create Another Order
-                    </button>
-                    <button class="btn outline" onclick={handleClose}>
-                        Back to Dashboard
-                    </button>
-                </div> -->
             </div>
         </template>
 
-        <template if:false={stepFour}>
-            <div class="slds-p-around_medium slds-grid slds-grid_align-spread slds-border_top slds-m-top_medium">
-                </div>
-        </template>
-
-        <template if:false={stepFour}>
-            <div class="slds-p-around_medium slds-grid slds-grid_align-spread slds-border_top slds-m-top_medium">
-                <div><template if:false={stepOne}><button class="btn" onclick={handlePrev}>Back</button></template></div>
-                <div>
-                    <template if:true={showNextButton}><button class="btn primary" onclick={handleNext}>Next</button></template>
-                    <template if:true={showPlaceOrder}><button class="btn primary" onclick={saveOrder}>Place Order</button></template>
-                </div>
-            </div>
-        </template>
-        
-    </lightning-card>
+    </div>
 </template>
