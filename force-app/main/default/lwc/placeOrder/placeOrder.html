@@ -22,32 +22,34 @@
             </template>
 
             <!-- Step indicators -->
-            <div class="nav-steps">
-                <!-- Step 1 -->
-                <div class={step1NavClass}>
-                    <span class="step-num">1</span>
-                    <span class="step-lbl">Products</span>
-                </div>
-                <div class="step-connector"></div>
-                <!-- Step 2 -->
-                <div class={step2NavClass}>
-                    <span class="step-num">2</span>
-                    <span class="step-lbl">Details</span>
-                </div>
-                <!-- Payment step only for Regular -->
-                <template if:true={isRegularOrder}>
-                    <div class="step-connector"></div>
-                    <div class={step3NavClass}>
-                        <span class="step-num">3</span>
-                        <span class="step-lbl">Payment</span>
+            <template if:true={selectedOrderType}>
+                <div class="nav-steps">
+                    <!-- Step 1 -->
+                    <div class={step1NavClass}>
+                        <span class="step-num">1</span>
+                        <span class="step-lbl">Products</span>
                     </div>
-                </template>
-                <div class="step-connector"></div>
-                <div class={confirmStepNavClass}>
-                    <span class="step-num">{confirmStepNum}</span>
-                    <span class="step-lbl">Confirm</span>
+                    <div class="step-connector"></div>
+                    <!-- Step 2 -->
+                    <div class={step2NavClass}>
+                        <span class="step-num">2</span>
+                        <span class="step-lbl">Details</span>
+                    </div>
+                    <!-- Payment step only for Regular -->
+                    <template if:true={isRegularOrder}>
+                        <div class="step-connector"></div>
+                        <div class={step3NavClass}>
+                            <span class="step-num">3</span>
+                            <span class="step-lbl">Payment</span>
+                        </div>
+                    </template>
+                    <div class="step-connector"></div>
+                    <div class={confirmStepNavClass}>
+                        <span class="step-num">{confirmStepNum}</span>
+                        <span class="step-lbl">Confirm</span>
+                    </div>
                 </div>
-            </div>
+            </template>
         </div>
 
         <!-- Sample free banner -->
@@ -406,7 +408,7 @@
                 </template>
                 <template if:true={showPlaceOrder}>
                     <button class="btn-place-order" onclick={saveOrder}>
-                        <span>🎁</span><span>Submit Sample Request</span>
+                        <span>Place Sample Order</span>
                     </button>
                 </template>
             </div>
@@ -529,7 +531,7 @@
                     </template>
 
                     <div class="success-note" if:true={isSampleOrder}>
-                        🕐 Our team will review your sample request and confirm dispatch within 24–48 hours.
+                        Samples will be delivered as per the request. Thank you!
                     </div>
                     <div class="success-note" if:false={isSampleOrder}>
                         📧 Your order has been confirmed and is being processed. Expected delivery in 3–5 business days.

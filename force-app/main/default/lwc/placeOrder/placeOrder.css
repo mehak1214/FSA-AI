@@ -927,7 +927,23 @@ lightning-combobox::part(dropdown) {
         max-height: 500px;
         max-width: none;
     }
-    .nav-steps { display: none; }
+    .nav-steps { 
+        gap: 4px;
+        padding: 0;
+        justify-content: flex-start;
+        padding-left: 12px;
+    }
+    .step-item {
+        font-size: 11px;
+        min-width: 50px;
+    }
+    .step-num {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    .step-lbl { display: none; }
+    .step-connector { min-width: 8px; }
     .products-grid { grid-template-columns: repeat(2, 1fr); }
     .address-grid { grid-template-columns: 1fr; }
     .field-row { grid-template-columns: 1fr; }

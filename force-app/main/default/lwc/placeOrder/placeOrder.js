@@ -36,11 +36,10 @@ export default class PlaceOrder extends LightningElement {
     @track distributorOptions = [];
     @track availableSchemes = [];
     @track orderTypeOptions = [];
-    
-    selectedOrderType;
-    selectedFranchise;
-    selectedDistributor;
-    selectedSchemeId = null;
+    @track selectedOrderType = 'Sample Order';
+    @track selectedFranchise;
+    @track selectedDistributor;
+    @track selectedSchemeId = null;
 
     @track isCartModalOpen = false;
     @track isCartButtonHidden = false;
@@ -159,8 +158,8 @@ export default class PlaceOrder extends LightningElement {
     get hasSelectedItems() { return this.selectedItemsForSummary.length > 0; }
 
     // Success screen text
-    get successTitle()    { return this.isSampleOrder ? 'Sample Request Submitted!' : 'Order Placed Successfully!'; }
-    get successSubtitle() { return this.isSampleOrder ? 'Your free samples are confirmed.' : 'Your order is confirmed and being processed.'; }
+    get successTitle()    { return this.isSampleOrder ? 'Sample Order Placed !' : 'Order Placed Successfully!'; }
+    get successSubtitle() { return this.isSampleOrder ? 'Your order is confirmed and being processed.' : 'Your order is confirmed and being processed.'; }
 
     @wire(getObjectInfo, { objectApiName: ORDER_OBJECT })
     orderObjectInfo;
