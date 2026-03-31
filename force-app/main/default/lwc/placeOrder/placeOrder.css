@@ -2,6 +2,7 @@
 :host {
     display: block;
     font-family: 'Segoe UI', system-ui, sans-serif;
+    scrollbar-gutter: stable;
 }
 
 /* ===== Override lightning-card to match checkout card style ===== */
@@ -17,6 +18,8 @@ lightning-card {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 /* ===== Top Nav ===== */
@@ -64,7 +67,7 @@ lightning-card {
 .nav-steps {
     display: flex; align-items: center; gap: 6px;
     flex-wrap: nowrap;
-    overflow-x: auto;
+    overflow-x: hidden;
     padding: 4px 0;
     flex: 1;
     justify-content: center;
