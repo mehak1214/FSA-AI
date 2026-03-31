@@ -30,6 +30,9 @@ lightning-card {
     box-shadow: 0 2px 8px rgba(0,0,0,.2);
     gap: 16px;
     flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .nav-brand {
@@ -324,21 +327,23 @@ lightning-combobox::part(dropdown) {
 
 /* ===== Summary Table (Step 2) ===== */
 .summary-table {
-    width: 100%; border-collapse: collapse;
+    width: 100%; border-collapse: collapse; table-layout: fixed;
 }
 
 .summary-table th {
-    font-size: 10px; font-weight: 700; color: #888;
+    font-size: 9px; font-weight: 700; color: #888;
     text-transform: uppercase; letter-spacing: .4px;
     padding: 8px 10px; background: #f5f8fd;
-    border-bottom: 1px solid #eef2f7; text-align: left;
+    border-bottom: 1px solid #eef2f7; text-align: left; word-break: break-word;
 }
 
 .summary-table td {
-    font-size: 12px; font-weight: 600; color: #1a1a2e;
-    padding: 10px 10px;
+    font-size: 10px; font-weight: 600; color: #1a1a2e;
+    padding: 8px 6px;
     border-bottom: 1px solid #f0f4fa;
     vertical-align: middle;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .summary-table tr:last-child td { border-bottom: none; }
@@ -347,7 +352,8 @@ lightning-combobox::part(dropdown) {
 
 .qty-input-small {
     --slds-c-input-color-border: #d0dce8;
-    width: 72px;
+    width: 45px;
+    padding: 0 4px;
 }
 
 /* ===== Address Section (Step 2) ===== */

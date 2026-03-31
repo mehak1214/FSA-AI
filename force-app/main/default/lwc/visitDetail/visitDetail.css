@@ -1,6 +1,14 @@
+/* ── Design tokens ── */
 :host {
+    --brand:        #0a4ea8;
+    --brand-2:      #2f74c8;
+    --brand-light:  #eef5ff;
+    --panel-border: #c8d9ef;
+    --title:        #102a4c;
+    --subtle:       #476586;
+    --page-bg:      #eef3fa;
     display: block;
-    background: #eef3fa;
+    background: var(--page-bg);
     min-height: 100vh;
     font-family: "Salesforce Sans", Arial, sans-serif;
 }
@@ -10,7 +18,6 @@
 }
 
 /* SHEET WRAPPER */
-
 .sheet {
     width: 100%;
     max-width: 980px;
@@ -18,19 +25,24 @@
     padding: 12px 14px 28px;
 }
 
-/* HERO */
-
+/* ── HERO card ── */
 .hero {
     background: #ffffff;
-    border: 1px solid #e6ecf3;
-    border-radius: 18px;
-    padding: 14px 16px;
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    box-shadow: 0 2px 14px rgba(14, 45, 92, 0.08);
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
+/* Row 1: back btn + status + thumb */
 .hero-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 6px;
 }
 
 .hero-top-right {
@@ -39,54 +51,154 @@
     gap: 8px;
 }
 
+/* Back button */
+.back-btn {
+    border: none;
+    background: #e4ebf8;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    color: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.back-btn:hover { background: #cddaf5; }
+
+/* Status badge */
+.status-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--panel-border);
+    background: #f5f8fc;
+    white-space: nowrap;
+}
+.status-badge.completed   { background: #dcfce7; color: #166534; border-color: #a3d9be; }
+.status-badge.in-progress { background: #e0e7ff; color: #3730a3; border-color: #a5b4fc; }
+.status-badge.cancelled   { background: #ffe4e6; color: #9f1239; border-color: #fca5a5; }
+.status-badge.draft       { background: var(--brand-light); color: var(--brand); border-color: #c2d8f5; }
+
+/* Outlet photo thumb */
 .hero-thumb {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
     overflow: hidden;
-    border: 1px solid #e6ecf3;
+    border: 1px solid var(--panel-border);
+    flex-shrink: 0;
 }
+.hero-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-.hero-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.badge-label {
-    font-size: 11px;
-    color: #64748b;
-    font-weight: 600;
-    margin-right: 6px;
-}
-
-/* HERO BODY */
-
-.hero-body {
-    margin-top: 10px;
-}
-
-.eyebrow {
+/* Eyebrow — visit name + sequence */
+.hero-eyebrow {
     margin: 0;
-    font-size: 11px;
-    color: #64748b;
-}
-
-.eyebrow-name {
+    font-size: 0.72rem;
+    color: var(--subtle);
     font-weight: 600;
 }
+.hero-eyebrow-name { color: var(--brand); }
+.hero-eyebrow-seq  { color: var(--subtle); }
 
-.title {
-    margin: 4px 0;
-    font-size: 18px;
-    font-weight: 600;
+/* Outlet name */
+.hero-outlet-name {
+    margin: 2px 0 0;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--title);
+    line-height: 1.25;
 }
 
-.address {
+/* Outlet link button — styled as a hyperlink so it looks tappable */
+.outlet-link {
+    background: none;
+    border: none;
+    padding: 0;
     margin: 0;
-    font-size: 13px;
-    color: #64748b;
+    font-size: inherit;
+    font-weight: inherit;
+    color: var(--brand);
+    cursor: pointer;
+    text-align: left;
+    line-height: inherit;
+    text-decoration: underline;
+    text-decoration-color: rgba(10, 78, 168, 0.35);
+    text-underline-offset: 3px;
+    transition: color 0.15s, text-decoration-color 0.15s;
 }
+.outlet-link:hover:not(:disabled) {
+    color: var(--brand-2);
+    text-decoration-color: var(--brand-2);
+}
+.outlet-link:disabled {
+    cursor: default;
+    color: var(--title);
+    text-decoration: none;
+}
+
+/* Phone row */
+.hero-detail-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.5rem;
+    margin-top: 2px;
+}
+
+.hero-detail-item {
+    font-size: 0.78rem;
+    color: var(--subtle);
+    font-weight: 500;
+}
+
+.hero-detail-link {
+    color: var(--brand);
+    text-decoration: none;
+}
+.hero-detail-link:hover { text-decoration: underline; }
+
+/* Address pill — matches outlet360Details .outlet-address */
+.hero-address {
+    margin: 4px 0 0;
+    font-size: 0.76rem;
+    color: var(--subtle);
+    padding: 0.38rem 0.55rem;
+    background: var(--brand-light);
+    border-radius: 6px;
+    border-left: 3px solid var(--brand-2);
+    line-height: 1.4;
+}
+
+/* Directions button row */
+.hero-actions { margin-top: 6px; }
+
+.map-mini-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--brand-light);
+    border: 1px solid #c2d8f5;
+    border-radius: 999px;
+    padding: 0.28rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--brand);
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    --slds-c-icon-color-foreground-default: var(--brand);
+}
+.map-mini-btn:hover:not(:disabled) {
+    background: #dbeafe;
+    box-shadow: 0 2px 8px rgba(10, 78, 168, 0.12);
+}
+.map-mini-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.map-mini-label { line-height: 1; }
 
 /* BUTTONS */
 
@@ -217,29 +329,6 @@
     font-size: 12px;
 }
 
-/* STATUS BADGE */
-
-.status-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid #e6ecf3;
-    background: #f5f8fc;
-}
-
-.status-badge.completed {
-    background: #dcfce7;
-}
-
-.status-badge.in-progress {
-    background: #e0e7ff;
-}
-
-.status-badge.cancelled {
-    background: #ffe4e6;
-}
-
 /* RATING */
 
 .star-group {
@@ -269,48 +358,120 @@
     border-radius: 10px;
 }
 
-/* MODAL */
+/* ── Visit Detail dialogs (native <dialog> — matches outlet360 design) ── */
 
-.modal-layer {
-    position: fixed;
-    inset: 0;
-    z-index: 9000;
-    display: flex;
-    justify-content: center;
+.vd-dialog[open] {
+    padding: 0; margin: 0; border: none; background: transparent;
+    width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
 }
 
-.modal-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(15,23,42,.45);
+.vd-dialog::backdrop { display: none; }
+
+.vd-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(8, 28, 60, 0.55);
+    backdrop-filter: blur(2px);
 }
 
-.modal-dialog {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    height: 100%;
+/* Default shell — photo modal */
+.vd-shell {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    background: #f8fbff;
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(8, 28, 60, 0.22);
+    width: min(520px, 96vw);
+    max-height: 88vh;
+    overflow: hidden;
 }
 
-.slds-modal__container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+/* Wide shell — schemes and order (more content needs room) */
+.vd-dialog-wide .vd-shell {
+    width: min(700px, 96vw);
+    max-height: 90vh;
 }
 
-.slds-modal__header {
-    background: #17396e;
-    color: white;
+/* Header */
+.vd-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 1rem 1rem 0.7rem;
+    border-bottom: 1px solid #c8d9ef;
+    background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+    flex-shrink: 0;
 }
 
-.slds-modal__content {
-    background: #eef3fa;
-    flex: 1;
-    overflow-y: auto;
+.vd-title-row { display: flex; flex-direction: column; gap: 4px; }
+
+.vd-badge {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: #0a4ea8; background: #eef5ff;
+    border: 1px solid #c2d8f5; border-radius: 999px;
+    padding: 0.18rem 0.6rem; display: inline-block;
 }
 
-.slds-modal__footer {
-    background: #f0f5fc;
+.vd-title { margin: 0; font-size: 1.05rem; font-weight: 800; color: #102a4c; }
+
+.vd-close-btn {
+    border: none; background: #e4ebf8; border-radius: 50%;
+    width: 30px; height: 30px; font-size: 0.75rem; color: #1b3c7b;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Body */
+.vd-body {
+    flex: 1; overflow-y: auto;
+    padding: 1rem;
+}
+
+/* Flush body — no padding; child component fills edge-to-edge */
+.vd-body-flush { padding: 0; }
+
+/* Empty state */
+.vd-empty {
+    text-align: center; padding: 2rem;
+    color: #476586; font-size: 0.85rem;
+}
+
+/* Footer */
+.vd-footer {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 0.5rem; padding: 0.75rem 1rem;
+    border-top: 1px solid #c8d9ef;
+    background: #f4f8fe; flex-shrink: 0;
+}
+
+.vd-btn-secondary {
+    border: 1px solid #c8d9ef; background: #fff; color: #102a4c;
+    border-radius: 999px; padding: 0.38rem 0.85rem;
+    font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+
+.vd-btn-primary {
+    border: none;
+    background: linear-gradient(180deg, #2f74c8 0%, #0a4ea8 100%);
+    color: #fff; border-radius: 999px; padding: 0.38rem 1rem;
+    font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+
+.vd-btn-danger {
+    border: none;
+    background: linear-gradient(180deg, #e05555 0%, #c0392b 100%);
+    color: #fff; border-radius: 999px; padding: 0.38rem 1rem;
+    font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+
+/* Mobile bottom-sheet */
+@media (max-width: 480px) {
+    .vd-dialog[open] { align-items: flex-end; }
+    .vd-shell,
+    .vd-dialog-wide .vd-shell {
+        width: 100vw;
+        max-height: 92dvh;
+        border-radius: 14px 14px 0 0;
+    }
 }
 
 /* MOBILE */
@@ -329,4 +490,242 @@ grid-template-columns:1fr;
 gap:6px;
 }
 
+}
+/* ── Tasks ───────────────────────────────────────────────────────────────────── */
+
+.task-count-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--subtle);
+    background: var(--brand-light);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+}
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Each task row */
+.task-item {
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Red left-accent for mandatory tasks */
+.task-item--mandatory {
+    border-left: 3px solid #dc2626;
+}
+
+/* Tappable header */
+.task-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 12px;
+    cursor: pointer;
+    background: #f8fbff;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.task-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.task-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 2px;
+}
+
+.task-status {
+    display: inline-block;
+    font-size: 0.63rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.task-status--pending {
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fde047;
+}
+
+.task-status--completed {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.task-status--blocked {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.task-mandatory-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    white-space: nowrap;
+}
+
+.task-type {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--title);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.task-id {
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    color: var(--subtle);
+    margin: 0;
+}
+
+.task-chevron {
+    font-size: 9px;
+    color: var(--subtle);
+    flex-shrink: 0;
+    margin-top: 3px;
+    transition: transform 0.15s;
+}
+
+/* Expanded body */
+.task-body {
+    padding: 12px;
+    border-top: 1px solid var(--panel-border);
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.task-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12px;
+}
+
+.task-detail-label {
+    font-size: 11px;
+    color: var(--subtle);
+    font-weight: 600;
+    margin: 0 0 3px;
+}
+
+.task-detail-value {
+    font-size: 12px;
+    color: var(--title);
+    font-weight: 500;
+}
+
+/* Manager instructions box */
+.task-instructions-box {
+    background: var(--brand-light);
+    border-left: 3px solid var(--brand-2);
+    border-radius: 0 7px 7px 0;
+    padding: 9px 11px;
+}
+
+.task-instructions-text {
+    font-size: 12px;
+    color: var(--title);
+    line-height: 1.55;
+    margin: 3px 0 0;
+    white-space: pre-wrap;
+}
+
+/* Exception / block reason box */
+.task-exception-box {
+    background: #fef9c3;
+    border-left: 3px solid #fbbf24;
+    border-radius: 0 7px 7px 0;
+    padding: 9px 11px;
+}
+
+.task-exception-text {
+    font-size: 12px;
+    color: #78350f;
+    line-height: 1.55;
+    margin: 3px 0 0;
+}
+
+/* Action buttons inside expanded task */
+.task-action-row {
+    display: flex;
+    gap: 8px;
+}
+
+.task-btn {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    min-height: 44px; /* accessible touch target */
+}
+
+.task-btn:active { transform: scale(0.97); }
+.task-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.task-btn--complete {
+    background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+    color: #ffffff;
+}
+
+.task-btn--block {
+    background: #ffffff;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+
+/* Empty state */
+.task-empty {
+    text-align: center;
+    font-size: 13px;
+    color: var(--subtle);
+    padding: 14px 0 6px;
+    margin: 0;
+}
+
+/* Block-task dialog content */
+.block-task-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--title);
+    margin: 0 0 2px;
+}
+
+.block-task-sub {
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    color: var(--subtle);
+    margin: 0 0 14px;
+}
+
+.block-reason-wrap {
+    margin-top: 4px;
 }

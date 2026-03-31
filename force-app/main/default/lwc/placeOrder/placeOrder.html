@@ -239,17 +239,17 @@
                             <span class="section-icon">📋</span>
                             <span class="section-title">Order Summary</span>
                         </div>
-                        <div style="overflow-x:auto;">
+                        <div style="width: 100%; overflow: visible;">
                             <table class="summary-table">
                                 <thead>
                                     <tr>
-                                        <th>Product</th>
-                                        <th>Qty</th>
+                                        <th style="width: 40%;">Product</th>
+                                        <th style="width: 10%; text-align: center;">Qty</th>
                                         <template if:false={isSampleOrder}>
-                                            <th>Unit Price</th>
-                                            <th>Subtotal</th>
-                                            <th class="discount-col">Discount</th>
-                                            <th class="total-col">Total</th>
+                                            <th style="width: 12%; text-align: right;">Unit Price</th>
+                                            <th style="width: 12%; text-align: right;">Subtotal</th>
+                                            <th style="width: 13%; text-align: right;">Discount</th>
+                                            <th style="width: 13%; text-align: right;">Total</th>
                                         </template>
                                     </tr>
                                 </thead>
@@ -257,7 +257,7 @@
                                     <template for:each={selectedItemsForSummary} for:item="item">
                                         <tr key={item.productId}>
                                             <td>{item.productName}</td>
-                                            <td>
+                                            <td style="text-align: center;">
                                                 <lightning-input
                                                     type="number"
                                                     variant="label-hidden"
@@ -268,10 +268,10 @@
                                                 </lightning-input>
                                             </td>
                                             <template if:false={isSampleOrder}>
-                                                <td>₹{item.unitPriceDisplay}</td>
-                                                <td>₹{item.lineTotalDisplay}</td>
-                                                <td class="discount-col">-₹{item.discountAmountDisplay}</td>
-                                                <td class="total-col">₹{item.discountedTotalDisplay}</td>
+                                                <td style="text-align: right;">₹{item.unitPriceDisplay}</td>
+                                                <td style="text-align: right;">₹{item.lineTotalDisplay}</td>
+                                                <td class="discount-col" style="text-align: right;">-₹{item.discountAmountDisplay}</td>
+                                                <td class="total-col" style="text-align: right;">₹{item.discountedTotalDisplay}</td>
                                             </template>
                                         </tr>
                                     </template>

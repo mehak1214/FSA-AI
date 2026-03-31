@@ -114,6 +114,7 @@ public with sharing class VisitController {
             snapshot.plannedVisits = row.Planned_Visits__c;
             snapshot.visitCompletionPercent = row.Visit_Completion__c;
             snapshot.performanceRating = row.Performance_Rating__c;
+            snapshot.incentiveAmount = (row.Actual_Sales__c == null) ? 0 : (row.Actual_Sales__c * 0.05);
         }
 
         return snapshot;
@@ -186,7 +187,12 @@ public with sharing class VisitController {
                    Sequence__c, Visit_Date__c,
                    Check_In_Time__c, Check_Out_Time__c,
                    Actual_Duration__c,
-                   Outlet1__r.Name, Outlet1__r.Phone
+                   Outlet1__r.Name, Outlet1__r.Phone,
+                   Outlet1__r.ShippingStreet, Outlet1__r.ShippingCity,
+                   Outlet1__r.ShippingState, Outlet1__r.ShippingPostalCode,
+                   Outlet1__r.ShippingCountry,
+                   Outlet1__r.Outlet_Location__Latitude__s,
+                   Outlet1__r.Outlet_Location__Longitude__s
             FROM Visit__c
             WHERE Sales_Rep__c = :UserInfo.getUserId()
             AND Visit_Date__c = :visitDate
@@ -210,7 +216,12 @@ public with sharing class VisitController {
                    Sequence__c,
                    Check_In_Time__c, Check_Out_Time__c,
                    Actual_Duration__c,
-                   Outlet1__r.Name, Outlet1__r.Phone
+                   Outlet1__r.Name, Outlet1__r.Phone,
+                   Outlet1__r.ShippingStreet, Outlet1__r.ShippingCity,
+                   Outlet1__r.ShippingState, Outlet1__r.ShippingPostalCode,
+                   Outlet1__r.ShippingCountry,
+                   Outlet1__r.Outlet_Location__Latitude__s,
+                   Outlet1__r.Outlet_Location__Longitude__s
             FROM Visit__c
             WHERE Sales_Rep__c = :UserInfo.getUserId()
             AND Visit_Date__c = :visitDate
@@ -236,7 +247,12 @@ public with sharing class VisitController {
                    Check_In_Time__c, Check_Out_Time__c,
                    Actual_Duration__c,
                    Meeting_Notes__c, rating__c, feedback__c,
-                   Outlet1__r.Name, Outlet1__r.Phone
+                   Outlet1__r.Name, Outlet1__r.Phone,
+                   Outlet1__r.ShippingStreet, Outlet1__r.ShippingCity,
+                   Outlet1__r.ShippingState, Outlet1__r.ShippingPostalCode,
+                   Outlet1__r.ShippingCountry,
+                   Outlet1__r.Outlet_Location__Latitude__s,
+                   Outlet1__r.Outlet_Location__Longitude__s
             FROM Visit__c
             WHERE Id = :visitId
             LIMIT 1
@@ -455,4 +471,88 @@ public with sharing class VisitController {
             LIMIT 1
         ];
     }
+
+    /* =========================================================
+       TODAY VISIT STATUS CHECK (for End Day pre-flight)
+    ========================================================= */
+    @AuraEnabled
+    public static VisitStatusCheckResult getTodayVisitStatusCheck() {
+
+        Id userId = UserInfo.getUserId();
+        Date today = Date.today();
+
+        List<Visit__c> todayVisits = [
+            SELECT Id, Name, Visit_Status__c, Outlet1__r.Name
+            FROM Visit__c
+            WHERE Sales_Rep__c = :userId
+            AND Visit_Date__c = :today
+            ORDER BY Sequence__c NULLS LAST, Name
+        ];
+
+        VisitStatusCheckResult result = new VisitStatusCheckResult();
+
+        for (Visit__c v : todayVisits) {
+            String status = v.Visit_Status__c;
+
+            if (status == 'In Progress') {
+                VisitSummary vs = new VisitSummary();
+                vs.Id = v.Id;
+                vs.Name = v.Name;
+                vs.outletName = v.Outlet1__r != null ? v.Outlet1__r.Name : '';
+                result.inProgressVisit = vs;
+                return result;
+            }
+
+            if (status == 'Approved') {
+                VisitSummary vs = new VisitSummary();
+                vs.Id = v.Id;
+                vs.Name = v.Name;
+                vs.outletName = v.Outlet1__r != null ? v.Outlet1__r.Name : '';
+                result.draftVisits.add(vs);
+            }
+        }
+
+        return result;
+    }
+
+    public class VisitStatusCheckResult {
+        @AuraEnabled public VisitSummary inProgressVisit;
+        @AuraEnabled public List<VisitSummary> draftVisits = new List<VisitSummary>();
+    }
+
+    public class VisitSummary {
+        @AuraEnabled public Id Id;
+        @AuraEnabled public String Name;
+        @AuraEnabled public String outletName;
+    }
+
+    /* =========================================================
+       MARK DRAFT VISITS AS MISSED
+    ========================================================= */
+    @AuraEnabled
+    public static void markDraftVisitsAsMissed(List<Id> visitIds) {
+
+        if (visitIds == null || visitIds.isEmpty()) return;
+
+        Id userId = UserInfo.getUserId();
+        Date today = Date.today();
+
+        List<Visit__c> toUpdate = [
+            SELECT Id, Visit_Status__c
+            FROM Visit__c
+            WHERE Id IN :visitIds
+            AND Sales_Rep__c = :userId
+            AND Visit_Date__c = :today
+            AND Visit_Status__c = 'Approved'
+        ];
+
+        for (Visit__c v : toUpdate) {
+            v.Visit_Status__c = 'Missed';
+        }
+
+        if (!toUpdate.isEmpty()) {
+            update toUpdate;
+        }
+    }
+
 }

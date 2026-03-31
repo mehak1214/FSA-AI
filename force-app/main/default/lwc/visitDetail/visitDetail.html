@@ -8,22 +8,12 @@
         <div class="sheet">
             <!-- Hero / Header -->
             <div class="hero">
+
+                <!-- Row 1: Back + Status badge + Outlet photo -->
                 <div class="hero-top">
-
-                    <button class="back-btn" onclick={handleClose}>&larr;</button>
-
-
-                  <!--   <button class="icon-pill" onclick={handleClose} type="button" title="Back">
-                        <lightning-icon icon-name="utility:chevronleft" size="x-small"></lightning-icon>
-                        <span>Back</span>
-                    </button> -->
-
-
+                    <button class="back-btn" onclick={handleClose} title="Back">&#8592;</button>
                     <div class="hero-top-right">
-                        <div class="hero-badges">
-                            <span class="badge-label">Visit Status</span>
-                            <span class={statusBadgeClass}>{visitStatus}</span>
-                        </div>
+                        <span class={statusBadgeClass}>{visitStatus}</span>
                         <template if:true={hasOutletPhoto}>
                             <div class="hero-thumb">
                                 <img src={outletPhotoUrl} alt="Outlet photo" />
@@ -32,30 +22,43 @@
                     </div>
                 </div>
 
-                <div class="hero-body">
-                    <div class="hero-text">
-                        <p class="eyebrow">
-                            <span class="eyebrow-name">{visitName}</span>
-                            <template if:true={sequenceLabel}> · Visit #{sequenceLabel}</template>
-                        </p>
-                        <h2 class="title">
-                            <button type="button" class="outlet-link" onclick={handleOpenOutlet360}
-                                disabled={outletLinkDisabled} title="Open Outlet 360">
-                                {outletName}
-                            </button>
-                        </h2>
-                        <p class="address">{outletAddress}</p>
+                <!-- Row 2: Eyebrow — visit name + sequence -->
+                <p class="hero-eyebrow">
+                    <span class="hero-eyebrow-name">{visitName}</span>
+                    <template if:true={sequenceLabel}>
+                        <span class="hero-eyebrow-seq"> · Visit #{sequenceLabel}</span>
+                    </template>
+                </p>
 
-                        <div class="hero-actions">
-                            <button class="map-mini-btn" onclick={navigateToMap} type="button" disabled={mapDisabled}
-                                title="Directions">
-                                <lightning-icon icon-name="utility:location" size="x-small"></lightning-icon>
-                                <span class="map-mini-label">Directions</span>
-                            </button>
-                        </div>
+                <!-- Row 3: Outlet name (tappable) -->
+                <h2 class="hero-outlet-name">
+                    <button type="button" class="outlet-link" onclick={handleOpenOutlet360}
+                        disabled={outletLinkDisabled} title="Open Outlet 360">
+                        {outletName}
+                    </button>
+                </h2>
+
+                <!-- Row 4: Phone -->
+                <template if:true={outletPhone}>
+                    <div class="hero-detail-row">
+                        <a href="tel:{outletPhone}" class="hero-detail-item hero-detail-link">&#128222; {outletPhone}</a>
                     </div>
+                </template>
 
+                <!-- Row 5: Address -->
+                <template if:true={hasAddress}>
+                    <p class="hero-address">&#128205; {outletAddress}</p>
+                </template>
+
+                <!-- Row 6: Directions button -->
+                <div class="hero-actions">
+                    <button class="map-mini-btn" onclick={navigateToMap} type="button" disabled={mapDisabled}
+                        title="Directions">
+                        <lightning-icon icon-name="utility:location" size="x-small"></lightning-icon>
+                        <span class="map-mini-label">Directions</span>
+                    </button>
                 </div>
+
             </div>
 
             <div class="content">
@@ -143,6 +146,90 @@
                     </div>
                 </div>
 
+                <!-- Tasks -->
+                <template if:true={showTasksCard}>
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="card-title">Tasks</span>
+                            <span class="task-count-badge">{taskCountLabel}</span>
+                        </div>
+                        <template if:true={isLoadingTasks}>
+                            <lightning-spinner alternative-text="Loading tasks" size="small" variant="brand"></lightning-spinner>
+                        </template>
+                        <template if:false={isLoadingTasks}>
+                            <template if:true={hasTasks}>
+                                <div class="task-list">
+                                    <template for:each={decoratedTasks} for:item="task">
+                                        <div key={task.Id} class={task.itemClass}>
+
+                                            <!-- Always-visible header row -->
+                                            <div class="task-header" data-id={task.Id} onclick={handleTaskToggle}>
+                                                <div class="task-left">
+                                                    <div class="task-badges">
+                                                        <span class={task.statusBadgeClass}>{task.Status__c}</span>
+                                                        <template if:true={task.Is_Mandatory__c}>
+                                                            <span class="task-mandatory-badge">Mandatory</span>
+                                                        </template>
+                                                    </div>
+                                                    <p class="task-type">{task.Task_Type__c}</p>
+                                                    <p class="task-id">{task.Name}</p>
+                                                </div>
+                                                <span class="task-chevron">{task.chevron}</span>
+                                            </div>
+
+                                            <!-- Expanded body -->
+                                            <template if:true={task.isExpanded}>
+                                                <div class="task-body">
+                                                    <div class="task-detail-row">
+                                                        <span class="task-detail-label">Asset</span>
+                                                        <span class="task-detail-value">{task.assetName}</span>
+                                                    </div>
+
+                                                    <template if:true={task.hasInstructions}>
+                                                        <div class="task-instructions-box">
+                                                            <p class="task-detail-label">Manager instructions</p>
+                                                            <p class="task-instructions-text">{task.Manager_Instructions__c}</p>
+                                                        </div>
+                                                    </template>
+
+                                                    <template if:true={task.isBlocked}>
+                                                        <div class="task-exception-box">
+                                                            <p class="task-detail-label">Block reason</p>
+                                                            <p class="task-exception-text">{task.Exception_Reason__c}</p>
+                                                        </div>
+                                                    </template>
+
+                                                    <template if:true={task.isPending}>
+                                                        <div class="task-action-row">
+                                                            <button
+                                                                class="task-btn task-btn--complete"
+                                                                data-id={task.Id}
+                                                                onclick={handleCompleteTask}
+                                                                disabled={isActingOnTask}>
+                                                                ✓ Mark complete
+                                                            </button>
+                                                            <button
+                                                                class="task-btn task-btn--block"
+                                                                data-id={task.Id}
+                                                                onclick={handleOpenBlockDialog}>
+                                                                Block
+                                                            </button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template if:false={hasTasks}>
+                                <p class="task-empty">No tasks assigned for this visit.</p>
+                            </template>
+                        </template>
+                    </div>
+                </template>
+
                 <div class="card">
                     <div class="card-head with-actions">
                         <span class="card-title">Meeting Notes</span>
@@ -229,113 +316,132 @@
         <!-- END .sheet — modals are intentionally outside the scrollable sheet
              so they stay fixed to the viewport on mobile -->
 
-        <!-- Photo modal -->
-        <template if:true={isPhotoModalOpen}>
-            <div class="modal-layer">
-                <div class="modal-backdrop" onclick={handleClosePhotoModal}></div>
-                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitPhotoModalHeading"
-                    class="modal-dialog">
-                    <div class="slds-modal__container">
-                        <div class="slds-modal__content slds-p-around_medium" id="visitPhotoModalContent">
-                            <template if:true={hasVisitPhoto}>
-                                <img src={imageUrl} alt="Visit Photo" class="photo-preview" />
-                            </template>
-                            <template if:false={hasVisitPhoto}>
-                                <p>No photo available.</p>
-                            </template>
-                        </div>
-                        <footer class="slds-modal__footer">
-                            <button class="btn danger" onclick={handleDeletePhoto} type="button">
-                                Delete Photo
-                            </button>
-                            <button class="btn secondary" onclick={handleClosePhotoModal} type="button">Close</button>
-                        </footer>
+        <!-- Block-task dialog -->
+        <dialog class="vd-dialog block-task-dialog" onclose={handleBlockDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseBlockDialog}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Task</span>
+                        <h2 class="vd-title">Block task</h2>
                     </div>
-                </section>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseBlockDialog} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={blockingTask}>
+                        <p class="block-task-name">{blockingTask.Task_Type__c}</p>
+                        <p class="block-task-sub">{blockingTask.Name}</p>
+                        <div class="block-reason-wrap">
+                            <lightning-textarea
+                                label="Reason for blocking"
+                                value={blockReason}
+                                onchange={handleBlockReasonChange}
+                                placeholder="Describe why the retailer refused or what is blocking this task..."
+                                rows="4"
+                                required>
+                            </lightning-textarea>
+                        </div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseBlockDialog}>Cancel</button>
+                    <button class="vd-btn-danger" type="button" onclick={handleConfirmBlock} disabled={isActingOnTask}>
+                        <template if:true={isActingOnTask}>Saving...</template>
+                        <template if:false={isActingOnTask}>Confirm block</template>
+                    </button>
+                </footer>
             </div>
-        </template>
+        </dialog>
+
+        <!-- Photo modal -->
+        <dialog class="vd-dialog photo-dialog" onclose={handleClosePhotoModal}>
+            <div class="vd-backdrop" onclick={handleClosePhotoModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Visit</span>
+                        <h2 class="vd-title">Visit Photo</h2>
+                    </div>
+                    <button class="vd-close-btn" type="button" onclick={handleClosePhotoModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={hasVisitPhoto}>
+                        <img src={imageUrl} alt="Visit Photo" class="photo-preview" />
+                    </template>
+                    <template if:false={hasVisitPhoto}>
+                        <div class="vd-empty">No photo available.</div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleClosePhotoModal}>Close</button>
+                    <button class="vd-btn-danger" type="button" onclick={handleDeletePhoto}>Delete Photo</button>
+                </footer>
+            </div>
+        </dialog>
 
         <!-- Schemes modal -->
-        <template if:true={isSchemesModalOpen}>
-            <div class="modal-layer">
-                <div class="modal-backdrop" onclick={handleCloseSchemesModal}></div>
-                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitSchemesModalHeading"
-                    class="modal-dialog">
-                    <div class="slds-modal__container">
-                        <header class="slds-modal__header">
-                            <h2 id="visitSchemesModalHeading" class="slds-text-heading_medium">Schemes</h2>
-                        </header>
-                        <div class="slds-modal__content slds-p-around_medium schemes-modal-content"
-                            id="visitSchemesModalContent">
-                            <c-view-schemes></c-view-schemes>
-                        </div>
-                        <footer class="slds-modal__footer">
-                            <button class="btn secondary" onclick={handleCloseSchemesModal} type="button">Close</button>
-                        </footer>
+        <dialog class="vd-dialog vd-dialog-wide schemes-dialog" onclose={handleSchemesDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseSchemesModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Schemes</span>
+                        <h2 class="vd-title">Schemes</h2>
                     </div>
-                </section>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseSchemesModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body vd-body-flush">
+                    <c-view-schemes></c-view-schemes>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseSchemesModal}>Close</button>
+                </footer>
             </div>
-        </template>
+        </dialog>
 
         <!-- Order modal -->
-        <template if:true={showOrderPanel}>
-            <div class="modal-layer">
-                <div class="modal-backdrop" onclick={handleToggleOrderPanel}></div>
-                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitOrderModalHeading"
-                    class="modal-dialog">
-                    <div class="slds-modal__container">
-                        <header class="slds-modal__header">
-                            <h2 id="visitOrderModalHeading" class="slds-text-heading_medium">Create Order</h2>
-                        </header>
-                        <div class="slds-modal__content slds-p-around_medium order-modal-content"
-                            id="visitOrderModalContent">
-                            <c-place-order franchise-id={visitFranchiseId} onordercreated={handleOrderCreated}>
-                            </c-place-order>
-                        </div>
-                        <footer class="slds-modal__footer">
-                            <button class="btn secondary" onclick={handleToggleOrderPanel} type="button">Close</button>
-                        </footer>
+        <dialog class="vd-dialog vd-dialog-wide order-dialog" onclose={handleOrderDialogClose}>
+            <div class="vd-backdrop" onclick={handleToggleOrderPanel}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Order</span>
+                        <h2 class="vd-title">Create Order</h2>
                     </div>
-                </section>
+                    <button class="vd-close-btn" type="button" onclick={handleToggleOrderPanel} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body vd-body-flush">
+                    <c-place-order franchise-id={visitFranchiseId} visit-id={currentVisitId} onordercreated={handleOrderCreated}>
+                    </c-place-order>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleToggleOrderPanel}>Close</button>
+                </footer>
             </div>
-        </template>
+        </dialog>
 
-        <!-- Orders View modal -->
-        <template if:true={isOrdersModalOpen}>
-            <div class="modal-layer">
-                <div class="modal-backdrop" onclick={handleCloseOrdersModal}></div>
-                <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="visitOrdersModalHeading"
-                    class="modal-dialog">
-                    <div class="slds-modal__container">
-                        <header class="slds-modal__header">
-                            <!-- <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
-                                title="Close" onclick={handleCloseOrdersModal}>
-                                <lightning-icon icon-name="utility:close" alternative-text="close" variant="brand"
-                                    size="small"></lightning-icon>
-                                <span class="slds-assistive-text">Close</span>
-                            </button> -->
-                            <h2 id="visitOrdersModalHeading" class="slds-text-heading_medium">My Orders</h2>
-                        </header>
-                        <div class="slds-modal__content slds-p-around_medium orders-modal-content"
-                            id="visitOrdersModalContent">
-                            <c-orders-by-user visit-franchise-id={visitFranchiseId} onorderselected={handleOrderSelected}></c-orders-by-user>
-                        </div>
-                        <footer class="slds-modal__footer">
-                            <template if:true={selectedOrderFromModal}>
-                                <button class="create-case-btn" onclick={handleOpenCreateCase} type="button" title="Create Support Case">
-                                    <!-- <lightning-icon icon-name="utility:case" size="small" alternative-text="Create Case"></lightning-icon> -->
-                                    <span>Create Case</span>
-                                </button>
-                            </template>
-                            <button class="btn secondary" onclick={handleCloseOrdersModal} type="button">Close</button>
-                        </footer>
+        <!-- Orders View dialog -->
+        <dialog class="vd-dialog vd-dialog-wide orders-dialog" onclose={handleOrdersDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseOrdersModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Orders</span>
+                        <h2 class="vd-title">My Orders</h2>
                     </div>
-                </section>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseOrdersModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body vd-body-flush">
+                    <c-orders-by-user visit-franchise-id={visitFranchiseId} onorderselected={handleOrderSelected}></c-orders-by-user>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseOrdersModal}>Close</button>
+                </footer>
             </div>
-        </template>
+        </dialog>
 
-        <!-- Create Case Modal -->
-        <c-create-case-modal oncasecreated={handleCaseCreated}></c-create-case-modal>
+        <!-- orderDetail popup — opens when an order card is tapped -->
+        <c-order-detail onclose={handleOrderDetailClose}></c-order-detail>
 
     </section>
 </template>

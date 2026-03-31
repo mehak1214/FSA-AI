@@ -12,6 +12,8 @@ import getVisitPhoto from '@salesforce/apex/VisitController.getVisitPhoto';
 import getOutletPhoto from '@salesforce/apex/VisitController.getOutletPhoto';
 import saveMeetingNotes from '@salesforce/apex/VisitController.saveMeetingNotes';
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
+import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
+import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
 
 export default class VisitDetail extends NavigationMixin(LightningElement) {
     _visit;
@@ -28,7 +30,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     isPhotoModalOpen = false;
     isSchemesModalOpen = false;
     isOrdersModalOpen = false;
-    selectedOrderFromModal = null;
     recentUploadNames = [];
     meetingNotes = '';
     meetingNotesSaving = false;
@@ -38,6 +39,13 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     visitFeedback = '';
     ratingFeedbackSaving = false;
     ratingFeedbackSaved = false;
+    // Tasks
+    tasks = [];
+    isLoadingTasks = false;
+    expandedTaskId = null;
+    blockingTask = null;
+    blockReason = '';
+    isActingOnTask = false;
 
     @api
     get visit() {
@@ -76,11 +84,17 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         return this._getField('Outlet1__r');
     }
 
+    static DEFAULT_LAT = 18.54944;
+    static DEFAULT_LON = 73.79127;
+
     get outletCoordinates() {
         // Supports namespaced and unpackaged location field variants.
+        // Falls back to default coordinates when fields are empty.
         const account = this.outletAccount;
-        const lat = account?.ibfsa__Outlet_Location__Latitude__s ?? account?.Outlet_Location__Latitude__s;
-        const lon = account?.ibfsa__Outlet_Location__Longitude__s ?? account?.Outlet_Location__Longitude__s;
+        const rawLat = account?.ibfsa__Outlet_Location__Latitude__s ?? account?.Outlet_Location__Latitude__s;
+        const rawLon = account?.ibfsa__Outlet_Location__Longitude__s ?? account?.Outlet_Location__Longitude__s;
+        const lat = (rawLat === null || rawLat === undefined) ? VisitDetail.DEFAULT_LAT : rawLat;
+        const lon = (rawLon === null || rawLon === undefined) ? VisitDetail.DEFAULT_LON : rawLon;
         return { lat, lon };
     }
 
@@ -106,7 +120,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         );
 
         // Close modal
-        this.showOrderPanel = false;
+        const orderDlg = this.template.querySelector('dialog.order-dialog');
+        if (orderDlg && orderDlg.open) { orderDlg.close(); this._unlockScroll(); }
 
         // Optional: refresh parent visit
         this.refreshVisitData({ showErrorToast: false });
@@ -142,6 +157,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             .then(([, att]) => {
                 this.dayStarted = !!att;
                 this.dayEnded = !!(att?.End_Time__c || att?.ibfsa__End_Time__c);
+                this.loadVisitTasks();
                 this.dispatchEvent(new CustomEvent('refresh'));
             })
             .catch(err => {
@@ -181,6 +197,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             this.checkForVisitPhoto();
             // Load account/outlet photo
             this.loadOutletPhoto();
+            // Load tasks for this visit
+            this.loadVisitTasks();
             return;
         }
 
@@ -272,27 +290,28 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     get outletAddress() {
         const account = this.outletAccount;
-        if (!account || !account.ShippingAddress) {
-            return 'No Address Provided';
-        }
-        
-        // Handle the case where ShippingAddress might be an object with address components
-        if (typeof account.ShippingAddress === 'object' && account.ShippingAddress !== null) {
-            const addr = account.ShippingAddress;
-            const addressParts = [];
-            
-            // Build address from components
-            if (addr.street) addressParts.push(addr.street);
-            if (addr.city) addressParts.push(addr.city);
-            if (addr.state) addressParts.push(addr.state);
-            if (addr.postalCode) addressParts.push(addr.postalCode);
-            if (addr.country) addressParts.push(addr.country);
-            
-            return addressParts.join(', ');
-        }
-        
-        // If it's already a string, return as-is
-        return account.ShippingAddress;
+        if (!account) return null;
+
+        // When returned from Apex @AuraEnabled, related-record fields come back
+        // as flat properties (ShippingStreet, ShippingCity…), NOT as a compound
+        // ShippingAddress object. Try both namespaced and unnamespaced variants.
+        const street  = account.ShippingStreet     ?? account.ibfsa__ShippingStreet     ?? '';
+        const city    = account.ShippingCity       ?? account.ibfsa__ShippingCity       ?? '';
+        const state   = account.ShippingState      ?? account.ibfsa__ShippingState      ?? '';
+        const postal  = account.ShippingPostalCode ?? account.ibfsa__ShippingPostalCode ?? '';
+        const country = account.ShippingCountry    ?? account.ibfsa__ShippingCountry    ?? '';
+
+        const parts = [street, city, state, postal, country].filter(v => v && v.trim());
+        return parts.length ? parts.join(', ') : null;
+    }
+
+    get hasAddress() {
+        const address = this.outletAddress;
+        return !!address;
+    }
+
+    get outletPhone() {
+        return this.outletAccount?.Phone || null;
     }
 
     get visitStatus() {
@@ -387,8 +406,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     get mapDisabled() {
-        const { lat, lon } = this.outletCoordinates;
-        return lat === null || lat === undefined || lon === null || lon === undefined;
+        return false; // Always enabled — falls back to default coordinates if outlet has none
     }
 
     get hasRecentUploads() {
@@ -457,12 +475,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     navigateToMap(event) {
         event?.stopPropagation();
         const { lat, lon } = this.outletCoordinates;
-
-        if (lat === null || lat === undefined || lon === null || lon === undefined) {
-            this.showToast('Location unavailable', 'Outlet location not available.', 'error');
-            return;
-        }
-
         const mapUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
         window.open(mapUrl, '_blank');
     }
@@ -507,41 +519,83 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     handleToggleOrderPanel() {
-        this.showOrderPanel = !this.showOrderPanel;
-        if (this.showOrderPanel) {
-            this._lockScroll();
+        const dlg = this.template.querySelector('dialog.order-dialog');
+        if (!dlg) return;
+        if (dlg.open) {
+            dlg.close();
+            this._unlockScroll();
         } else {
+            // Reset placeOrder to step 1 before opening so a fresh form
+            // is always shown, even after a previously completed order.
+            const placeOrder = this.template.querySelector('c-place-order');
+            if (placeOrder) placeOrder.reset();
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    // Esc key fires native 'close' event — just sync scroll lock, don't re-toggle
+    handleOrderDialogClose() {
+        this._unlockScroll();
+    }
+
+    handleOpenSchemesModal() {
+        const dlg = this.template.querySelector('dialog.schemes-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    handleCloseSchemesModal() {
+        const dlg = this.template.querySelector('dialog.schemes-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
             this._unlockScroll();
         }
     }
 
-    handleOpenSchemesModal() {
-        this.isSchemesModalOpen = true;
-        this._lockScroll();
-    }
-
-    handleCloseSchemesModal() {
-        this.isSchemesModalOpen = false;
+    // Esc key sync handler for schemes dialog
+    handleSchemesDialogClose() {
         this._unlockScroll();
     }
 
     handleOpenOrdersModal() {
-        this.isOrdersModalOpen = true;
-        this._lockScroll();
+        const dlg = this.template.querySelector('dialog.orders-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
     }
 
     handleCloseOrdersModal() {
-        this.isOrdersModalOpen = false;
-        this.selectedOrderFromModal = null;
+        const dlg = this.template.querySelector('dialog.orders-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+    }
+
+    // Esc key sync — don't re-invoke close logic
+    handleOrdersDialogClose() {
         this._unlockScroll();
     }
 
     handleOrderSelected(event) {
-        this.selectedOrderFromModal = event.detail?.order || null;
+        const order = event.detail?.order || null;
+        // Open orderDetail popup when a card is tapped
+        if (order?.orderId) {
+            const orderDetail = this.template.querySelector('c-order-detail');
+            if (orderDetail) orderDetail.openForOrder(order.orderId);
+        }
+    }
+
+    handleOrderDetailClose() {
+        // no-op — orderDetail manages its own close
     }
 
     get orderToggleLabel() {
-        return this.showOrderPanel ? 'Hide Order' : 'Create Order';
+        return 'Create Order';
     }
 
     handleVisitFileUploadFinished(event) {
@@ -697,6 +751,132 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             });
     }
 
+    // ─── Tasks ────────────────────────────────────────────────────────────────
+
+    loadVisitTasks() {
+        const visitId = this.currentVisitId;
+        if (!visitId) return;
+        this.isLoadingTasks = true;
+        getVisitTasks({ visitId })
+            .then(data => {
+                this.tasks = data || [];
+                this.isLoadingTasks = false;
+            })
+            .catch(() => {
+                this.isLoadingTasks = false;
+            });
+    }
+
+    get decoratedTasks() {
+        return this.tasks.map(t => ({
+            ...t,
+            assetName        : t.Related_Asset__r ? t.Related_Asset__r.Name : '—',
+            hasInstructions  : !!t.Manager_Instructions__c,
+            isPending        : t.Status__c === 'Pending',
+            isCompleted      : t.Status__c === 'Completed',
+            isBlocked        : t.Status__c === 'Blocked/Retailer Refused',
+            isExpanded       : this.expandedTaskId === t.Id,
+            chevron          : this.expandedTaskId === t.Id ? '▲' : '▼',
+            statusBadgeClass : this._taskStatusClass(t.Status__c),
+            itemClass        : t.Is_Mandatory__c ? 'task-item task-item--mandatory' : 'task-item',
+        }));
+    }
+
+    _taskStatusClass(status) {
+        const map = {
+            'Pending'                 : 'task-status task-status--pending',
+            'Completed'               : 'task-status task-status--completed',
+            'Blocked/Retailer Refused': 'task-status task-status--blocked',
+        };
+        return map[status] || 'task-status';
+    }
+
+    get hasTasks()       { return this.tasks.length > 0; }
+    get showTasksCard()  { return this.isLoadingTasks || this.tasks.length > 0; }
+    get taskCountLabel() {
+        const pending = this.tasks.filter(t => t.Status__c === 'Pending').length;
+        const total   = this.tasks.length;
+        return pending > 0 ? `${pending} of ${total} pending` : `${total} done`;
+    }
+
+    handleTaskToggle(event) {
+        const taskId = event.currentTarget.dataset.id;
+        this.expandedTaskId = this.expandedTaskId === taskId ? null : taskId;
+    }
+
+    handleCompleteTask(event) {
+        const taskId = event.currentTarget.dataset.id;
+        this.isActingOnTask = true;
+        updateTaskStatus({ taskId, status: 'Completed', exceptionReason: '' })
+            .then(() => {
+                this.isActingOnTask = false;
+                this.expandedTaskId = null;
+                this.showToast('Task completed', 'Task marked as complete.', 'success');
+                this.loadVisitTasks();
+            })
+            .catch(err => {
+                this.isActingOnTask = false;
+                this.showToast('Error', err?.body?.message || 'Could not complete task.', 'error');
+            });
+    }
+
+    handleOpenBlockDialog(event) {
+        const taskId = event.currentTarget.dataset.id;
+        this.blockingTask = this.tasks.find(t => t.Id === taskId) || null;
+        this.blockReason  = '';
+        const dlg = this.template.querySelector('dialog.block-task-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    handleCloseBlockDialog() {
+        const dlg = this.template.querySelector('dialog.block-task-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+        this.blockingTask = null;
+        this.blockReason  = '';
+    }
+
+    handleBlockDialogClose() {
+        this._unlockScroll();
+    }
+
+    handleBlockReasonChange(event) {
+        this.blockReason = event?.target?.value || '';
+    }
+
+    handleConfirmBlock() {
+        if (!this.blockingTask) return;
+        if (!this.blockReason?.trim()) {
+            this.showToast('Reason required', 'Please enter a reason for blocking this task.', 'warning');
+            return;
+        }
+        const taskId = this.blockingTask.Id;
+        this.isActingOnTask = true;
+        updateTaskStatus({
+            taskId,
+            status          : 'Blocked/Retailer Refused',
+            exceptionReason : this.blockReason.trim(),
+        })
+            .then(() => {
+                this.isActingOnTask = false;
+                this.handleCloseBlockDialog();
+                this.expandedTaskId = null;
+                this.showToast('Task blocked', 'Task marked as blocked.', 'info');
+                this.loadVisitTasks();
+            })
+            .catch(err => {
+                this.isActingOnTask = false;
+                this.showToast('Error', err?.body?.message || 'Could not block task.', 'error');
+            });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     showToast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
@@ -779,18 +959,23 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     // Modal handlers
     handleOpenPhotoModal = () => {
-        // Only open if we actually have a photo URL/id
         if (this.hasVisitPhoto && this.imageUrl) {
-            this.isPhotoModalOpen = true;
-            this._lockScroll();
+            const dlg = this.template.querySelector('dialog.photo-dialog');
+            if (dlg && !dlg.open) {
+                dlg.showModal();
+                this._lockScroll();
+            }
         } else {
             this.showToast('No photo', 'No visit photo available to view.', 'info');
         }
     };
 
     handleClosePhotoModal = () => {
-        this.isPhotoModalOpen = false;
-        this._unlockScroll();
+        const dlg = this.template.querySelector('dialog.photo-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
     };
 
     // Delete the visit photo
@@ -803,8 +988,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                     this.showToast('Success', 'Photo deleted successfully.', 'success');
                     this.hasVisitPhoto = false;
                     this.imageUrl = undefined;
-                    this.isPhotoModalOpen = false;
-                    this._unlockScroll();
+                    this.handleClosePhotoModal();
                     this.isLoading = false;
                     // Refresh the page to show updated state
                     this.dispatchEvent(new CustomEvent('refresh'));
@@ -860,8 +1044,9 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                     // Update the image URL to reflect the newly uploaded photo
                     const timestamp = new Date().getTime();
                     this.imageUrl = `/sfc/servlet.shepherd/version/download/${this.selectedPhotoId}?v=${timestamp}`;
-                    // Ensure modal is closed after upload (user can open to view)
-                    this.isPhotoModalOpen = false;
+                    // Ensure modal is closed after upload
+                    const photoDlg = this.template.querySelector('dialog.photo-dialog');
+                    if (photoDlg && photoDlg.open) { photoDlg.close(); this._unlockScroll(); }
                 }
 
                 this.showToast('Photo uploaded', 'Image attached to visit.', 'success');
@@ -956,24 +1141,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             reader.onerror = () => reject(new Error('Failed to read file'));
             reader.readAsDataURL(file);
         });
-    }
-
-    handleOpenCreateCase() {
-        const createCaseModal = this.template.querySelector('c-create-case-modal');
-        if (createCaseModal && this.selectedOrderFromModal) {
-            createCaseModal.openModal(
-                this.selectedOrderFromModal.orderId,
-                this.selectedOrderFromModal.accountId
-            );
-        }
-    }
-
-    handleCaseCreated(event) {
-        const { caseNumber, approvalSubmitted, message } = event.detail;
-        const toastMessage = approvalSubmitted
-            ? `Case #${caseNumber} has been created and submitted for approval.`
-            : (message || `Case #${caseNumber} was created, but approval submission did not complete.`);
-        this.showToast(approvalSubmitted ? 'Success' : 'Warning', toastMessage, approvalSubmitted ? 'success' : 'warning');
     }
 
 }
