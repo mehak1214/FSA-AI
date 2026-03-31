@@ -3,6 +3,9 @@
     display: block;
     font-family: 'Segoe UI', system-ui, sans-serif;
     scrollbar-gutter: stable;
+    /* Use overflow-x: clip instead of hidden — clip does not create a new scroll container,
+       so position:sticky on top-nav and step-footer continues to work correctly */
+    overflow-x: clip;
 }
 
 /* ===== Override lightning-card to match checkout card style ===== */
@@ -19,7 +22,7 @@ lightning-card {
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow-x: hidden;
+    /* overflow-x: hidden removed — it breaks position:sticky on top-nav and step-footer */
 }
 
 /* ===== Top Nav ===== */
@@ -822,8 +825,9 @@ lightning-combobox::part(dropdown) {
 .step-footer {
     display: flex; gap: 12px; padding: 16px 20px;
     background: #fff; border-top: 1px solid #eef2f7;
-    position: sticky; bottom: 0; z-index: 50;
+    position: sticky; bottom: 0; z-index: 100;
     justify-content: flex-end; align-items: center;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.06);
 }
 
 .step-footer .btn-secondary {
