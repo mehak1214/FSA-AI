@@ -325,35 +325,89 @@ lightning-combobox::part(dropdown) {
     line-height: 30px; padding: 0 4px;
 }
 
-/* ===== Summary Table (Step 2) ===== */
-.summary-table {
-    width: 100%; border-collapse: collapse; table-layout: fixed;
+/* ===== Summary Items List (Step 2) ===== */
+.summary-items-list {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 14px 16px;
 }
 
-.summary-table th {
-    font-size: 9px; font-weight: 700; color: #888;
-    text-transform: uppercase; letter-spacing: .4px;
-    padding: 8px 10px; background: #f5f8fd;
-    border-bottom: 1px solid #eef2f7; text-align: left; word-break: break-word;
+.summary-item-card {
+    background: #f5f8fd;
+    border: 1px solid #e0e8f4;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 10px;
 }
 
-.summary-table td {
-    font-size: 10px; font-weight: 600; color: #1a1a2e;
-    padding: 8px 6px;
-    border-bottom: 1px solid #f0f4fa;
-    vertical-align: middle;
+.item-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+
+.item-name {
+    font-size: 13px; font-weight: 700; color: #1a3a6b;
+    flex: 1;
     word-break: break-word;
-    overflow-wrap: break-word;
 }
 
-.summary-table tr:last-child td { border-bottom: none; }
-.summary-table .discount-col { color: #27ae60; }
-.summary-table .total-col    { font-weight: 700; color: #1a3a6b; }
+.item-qty-ctrl {
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
 
-.qty-input-small {
+.qty-label {
+    font-size: 11px; font-weight: 600; color: #666;
+    text-transform: uppercase; letter-spacing: .3px;
+}
+
+.qty-input-summary {
     --slds-c-input-color-border: #d0dce8;
-    width: 45px;
+    width: 50px;
     padding: 0 4px;
+}
+
+.item-breakdown {
+    display: flex; flex-direction: column; gap: 8px;
+    font-size: 11px; color: #555;
+}
+
+.breakdown-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+
+.breakdown-label {
+    font-weight: 600; color: #666;
+    flex-shrink: 0;
+}
+
+.breakdown-value {
+    font-weight: 600; color: #1a3a6b;
+    text-align: right;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.breakdown-row.discount-row .breakdown-value {
+    color: #27ae60;
+    font-weight: 700;
+}
+
+.breakdown-divider {
+    height: 1px; background: #d0dce8;
+    margin: 4px 0;
+}
+
+.breakdown-row.total-row {
+    margin-top: 4px;
+}
+
+.breakdown-row.total-row .breakdown-label {
+    font-size: 12px; font-weight: 700; color: #1a3a6b;
+}
+
+.breakdown-row.total-row .total-value {
+    font-size: 13px; font-weight: 700; color: #1a3a6b;
+    background: #e8eef7; padding: 4px 8px; border-radius: 6px;
 }
 
 /* ===== Address Section (Step 2) ===== */

@@ -233,50 +233,52 @@
             <div class="checkout-layout">
                 <div class="main-col">
 
-                    <!-- Order Summary table -->
+                    <!-- Order Summary Cards -->
                     <div class="section-card">
                         <div class="section-header">
                             <span class="section-icon">📋</span>
                             <span class="section-title">Order Summary</span>
                         </div>
-                        <div style="width: 100%; overflow: visible;">
-                            <table class="summary-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40%;">Product</th>
-                                        <th style="width: 10%; text-align: center;">Qty</th>
-                                        <template if:false={isSampleOrder}>
-                                            <th style="width: 12%; text-align: right;">Unit Price</th>
-                                            <th style="width: 12%; text-align: right;">Subtotal</th>
-                                            <th style="width: 13%; text-align: right;">Discount</th>
-                                            <th style="width: 13%; text-align: right;">Total</th>
-                                        </template>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template for:each={selectedItemsForSummary} for:item="item">
-                                        <tr key={item.productId}>
-                                            <td>{item.productName}</td>
-                                            <td style="text-align: center;">
-                                                <lightning-input
-                                                    type="number"
-                                                    variant="label-hidden"
-                                                    data-id={item.productId}
-                                                    value={item.quantity}
-                                                    onchange={handleSummaryQtyChange}
-                                                    class="qty-input-small">
-                                                </lightning-input>
-                                            </td>
-                                            <template if:false={isSampleOrder}>
-                                                <td style="text-align: right;">₹{item.unitPriceDisplay}</td>
-                                                <td style="text-align: right;">₹{item.lineTotalDisplay}</td>
-                                                <td class="discount-col" style="text-align: right;">-₹{item.discountAmountDisplay}</td>
-                                                <td class="total-col" style="text-align: right;">₹{item.discountedTotalDisplay}</td>
-                                            </template>
-                                        </tr>
+                        <div class="summary-items-list">
+                            <template for:each={selectedItemsForSummary} for:item="item">
+                                <div key={item.productId} class="summary-item-card">
+                                    <div class="item-header">
+                                        <span class="item-name">{item.productName}</span>
+                                        <div class="item-qty-ctrl">
+                                            <span class="qty-label">Qty:</span>
+                                            <lightning-input
+                                                type="number"
+                                                variant="label-hidden"
+                                                data-id={item.productId}
+                                                value={item.quantity}
+                                                onchange={handleSummaryQtyChange}
+                                                class="qty-input-summary">
+                                            </lightning-input>
+                                        </div>
+                                    </div>
+                                    <template if:false={isSampleOrder}>
+                                        <div class="item-breakdown">
+                                            <div class="breakdown-row">
+                                                <span class="breakdown-label">Unit Price × Qty</span>
+                                                <span class="breakdown-value">₹{item.unitPriceDisplay} × {item.quantity}</span>
+                                            </div>
+                                            <div class="breakdown-row">
+                                                <span class="breakdown-label">Subtotal</span>
+                                                <span class="breakdown-value">₹{item.lineTotalDisplay}</span>
+                                            </div>
+                                            <div class="breakdown-row discount-row">
+                                                <span class="breakdown-label">Discount</span>
+                                                <span class="breakdown-value discount-value">-₹{item.discountAmountDisplay}</span>
+                                            </div>
+                                            <div class="breakdown-divider"></div>
+                                            <div class="breakdown-row total-row">
+                                                <span class="breakdown-label">Total</span>
+                                                <span class="breakdown-value total-value">₹{item.discountedTotalDisplay}</span>
+                                            </div>
+                                        </div>
                                     </template>
-                                </tbody>
-                            </table>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Scheme selector (Regular only) -->
