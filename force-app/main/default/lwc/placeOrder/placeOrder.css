@@ -435,9 +435,9 @@ lightning-combobox::part(dropdown) {
 }
 
 .scheme-row-label {
-    font-size: 11px; font-weight: 700; color: #1a3a6b;
+    font-size: 14px; font-weight: 700; color: #1a3a6b;
     text-transform: uppercase; letter-spacing: .4px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 /* ===== Payment Methods (Step 3) ===== */
