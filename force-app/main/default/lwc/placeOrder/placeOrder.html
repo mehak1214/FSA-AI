@@ -230,6 +230,8 @@
 
         <!-- ===== STEP 2: Order Summary + Address ===== -->
         <template if:true={stepTwo}>
+            <div class="step-wrapper">
+            <div class="step-content">
             <div class="checkout-layout">
                 <div class="main-col">
 
@@ -401,6 +403,7 @@
                     </div>
                 </div>
             </div>
+            </div><!-- /.step-content -->
 
             <!-- Footer with Navigation Buttons -->
             <div class="step-footer">
@@ -414,10 +417,11 @@
                     </button>
                 </template>
             </div>
+            </div><!-- /.step-wrapper -->
         </template>
-
-        <!-- ===== STEP 3: Payment (Regular Orders Only) ===== -->
         <template if:true={stepThree}>
+            <div class="step-wrapper">
+            <div class="step-content">
             <div class="checkout-layout">
                 <div class="main-col">
                     <div class="section-card">
@@ -492,6 +496,7 @@
                     </div>
                 </div>
             </div>
+            </div><!-- /.step-content -->
 
             <!-- Footer with Navigation Buttons -->
             <div class="step-footer">
@@ -505,6 +510,7 @@
                     </button>
                 </template>
             </div>
+            </div><!-- /.step-wrapper -->
         </template>
 
         <!-- ===== STEP 4 / SUCCESS ===== -->

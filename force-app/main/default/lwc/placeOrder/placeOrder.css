@@ -821,6 +821,30 @@ lightning-combobox::part(dropdown) {
 }
 .btn-secondary:hover { background: #f0f5fb; }
 
+/* ===== Step Wrapper — makes sticky footer always sit at viewport bottom ===== */
+/*
+   "position: sticky; bottom: 0" only sticks when the footer can actually
+   scroll within its scroll container.  If the step content is SHORT
+   (e.g. the Payment screen) the footer has nothing to scroll past and
+   ends up floating in the middle of the page.
+
+   The fix: wrap each step's content + footer in a .step-wrapper that
+   uses flex-direction:column and flex:1.  Because .page-bg is already
+   display:flex / flex-direction:column / min-height:100vh, the wrapper
+   expands to fill all remaining space.  Inside it, .step-content gets
+   flex:1 (pushes the footer down) while .step-footer stays at the bottom.
+*/
+.step-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;          /* grow to fill all space below the top-nav        */
+    min-height: 0;    /* prevent flex overflow in Safari                  */
+}
+
+.step-content {
+    flex: 1;          /* push footer to the bottom even with little content */
+}
+
 /* ===== Step Footer with Navigation ===== */
 .step-footer {
     display: flex; gap: 12px; padding: 16px 20px;
