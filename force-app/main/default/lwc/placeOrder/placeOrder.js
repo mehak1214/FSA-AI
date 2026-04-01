@@ -15,6 +15,47 @@ import placeOrder from '@salesforce/apex/PlaceOrderController.placeOrder';
 import getAccountAddress from '@salesforce/apex/PlaceOrderController.getAccountAddress';
 
 export default class PlaceOrder extends LightningElement {
+
+    // ─── Background scroll lock ───────────────────────────────────────────────
+    // Walk up from the host element to find the nearest ancestor that is
+    // actually scrollable, then freeze it. This works regardless of which
+    // Salesforce shell (LEX, Communities, Mobile) is hosting the modal.
+    _lockedEl = null;
+    _savedOverflow = '';
+
+    connectedCallback() {
+        // Find the closest scrollable ancestor of this component's host node
+        const scrollParent = this._getScrollParent(this.template.host);
+        if (scrollParent) {
+            this._lockedEl      = scrollParent;
+            this._savedOverflow = scrollParent.style.overflow;
+            scrollParent.style.overflow = 'hidden';
+        }
+    }
+
+    disconnectedCallback() {
+        if (this._lockedEl) {
+            this._lockedEl.style.overflow = this._savedOverflow;
+            this._lockedEl = null;
+        }
+    }
+
+    _getScrollParent(el) {
+        if (!el) return null;
+        let node = el.parentElement;
+        while (node && node !== document.body) {
+            const { overflow, overflowY } = window.getComputedStyle(node);
+            const isScrollable = /(auto|scroll)/.test(overflow + overflowY);
+            if (isScrollable && node.scrollHeight > node.clientHeight) {
+                return node;
+            }
+            node = node.parentElement;
+        }
+        // Fallback to body if no scrollable ancestor found
+        return document.body;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     _franchiseId;
     @track currentStep = 1; 
 
