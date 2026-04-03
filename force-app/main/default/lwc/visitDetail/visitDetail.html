@@ -434,28 +434,37 @@
                         </button>
                     </template>
 
-                    <!-- File attachments -->
-                    <div class="notes-upload">
-                        <lightning-file-upload
-                            label="Attach files to this visit"
-                            record-id={currentVisitId}
-                            multiple
-                            onuploadfinished={handleVisitFileUploadFinished}>
-                        </lightning-file-upload>
-                    </div>
-
-                    <!-- Recently uploaded files list -->
-                    <template if:true={hasRecentUploads}>
-                        <div class="notes-uploaded-files">
-                            <p class="notes-upload-label">Recently attached:</p>
-                            <template for:each={recentUploadNames} for:item="name">
-                                <div key={name} class="notes-uploaded-file">
-                                    <span class="notes-file-icon">📎</span>
-                                    <span class="notes-file-name">{name}</span>
-                                </div>
-                            </template>
+                    <!-- File attachments + recently uploaded — single visual block -->
+                    <div class="notes-attachments-block">
+                        <div class="notes-attachments-header">
+                            <span class="notes-attachments-title">Attachments</span>
                         </div>
-                    </template>
+
+                        <!-- Recently uploaded files list with delete -->
+                        <template if:true={hasRecentUploads}>
+                            <div class="notes-uploaded-files">
+                                <template for:each={recentUploadFiles} for:item="file">
+                                    <div key={file.documentId} class="notes-uploaded-file">
+                                        <span class="notes-file-icon">📎</span>
+                                        <span class="notes-file-name">{file.name}</span>
+                                        <button class="notes-file-remove-btn" type="button"
+                                            data-id={file.documentId}
+                                            onclick={handleRemoveAttachment}
+                                            title="Remove attachment">✕</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <div class="notes-upload-btn-wrap">
+                            <lightning-file-upload
+                                label="Attach files to this visit"
+                                record-id={currentVisitId}
+                                multiple
+                                onuploadfinished={handleVisitFileUploadFinished}>
+                            </lightning-file-upload>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Rating & Feedback -->

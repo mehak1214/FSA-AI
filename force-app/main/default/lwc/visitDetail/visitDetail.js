@@ -11,6 +11,7 @@ import deleteVisitPhoto from '@salesforce/apex/VisitController.deleteVisitPhoto'
 import getVisitPhoto from '@salesforce/apex/VisitController.getVisitPhoto';
 import getOutletPhoto from '@salesforce/apex/VisitController.getOutletPhoto';
 import saveMeetingNotes from '@salesforce/apex/VisitController.saveMeetingNotes';
+import deleteAttachment from '@salesforce/apex/VisitController.deleteAttachment';
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
 import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
 import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
@@ -31,7 +32,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     isPhotoModalOpen = false;
     isSchemesModalOpen = false;
     isOrdersModalOpen = false;
-    recentUploadNames = [];
+    recentUploadFiles = [];  // [{name, documentId}]
     meetingNotes = '';
     meetingNotesSaving = false;
     // Notes tile state
@@ -569,10 +570,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         return false; // Always enabled — falls back to default coordinates if outlet has none
     }
 
-    get hasRecentUploads() {
-        return this.recentUploadNames.length > 0;
-    }
-
     handleClose() {
         this.dispatchEvent(new CustomEvent('close', { bubbles: true, composed: true }));
 
@@ -765,10 +762,25 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleVisitFileUploadFinished(event) {
         const files = event.detail?.files || [];
-        const newNames = files.map(file => file.name);
-        this.recentUploadNames = [...this.recentUploadNames, ...newNames];
+        const newFiles = files.map(f => ({ name: f.name, documentId: f.documentId }));
+        this.recentUploadFiles = [...this.recentUploadFiles, ...newFiles];
         const count = files.length;
         this.showToast('Upload complete', `${count} file(s) attached to this visit.`, 'success');
+    }
+
+    handleRemoveAttachment(event) {
+        const documentId = event.currentTarget.dataset.id;
+        const file = this.recentUploadFiles.find(f => f.documentId === documentId);
+        if (!file) return;
+
+        deleteAttachment({ contentDocumentId: documentId })
+            .then(() => {
+                this.recentUploadFiles = this.recentUploadFiles.filter(f => f.documentId !== documentId);
+                this.showToast('Removed', `"${file.name}" has been deleted.`, 'success');
+            })
+            .catch(err => {
+                this.showToast('Delete failed', err?.body?.message || 'Unable to remove attachment.', 'error');
+            });
     }
 
     // ─── Meeting Notes tile helpers ───────────────────────────────────────────
@@ -910,7 +922,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     get hasRecentUploads() {
-        return this.recentUploadNames && this.recentUploadNames.length > 0;
+        return this.recentUploadFiles && this.recentUploadFiles.length > 0;
     }
 
     get notesInputLabel() {

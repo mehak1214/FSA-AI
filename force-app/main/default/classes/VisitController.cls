@@ -447,6 +447,18 @@ public with sharing class VisitController {
     }
 
     /* =========================================================
+       DELETE ATTACHMENT (by ContentDocumentId)
+    ========================================================= */
+    @AuraEnabled
+    public static void deleteAttachment(Id contentDocumentId){
+        delete [
+            SELECT Id
+            FROM ContentDocument
+            WHERE Id = :contentDocumentId
+        ];
+    }
+
+    /* =========================================================
        GET OUTLET PHOTO
     ========================================================= */
     @AuraEnabled(cacheable=true)

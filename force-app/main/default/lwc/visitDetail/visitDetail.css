@@ -981,50 +981,96 @@ gap:6px;
     line-height: 1;
 }
 
-/* File upload section */
-.notes-upload {
-    margin-top: 8px;
-    padding-top: 12px;
-    border-top: 1px solid #e8eef7;
+/* ── Attachments block (integrated inside Meeting Notes card) ────────────── */
+
+.notes-attachments-block {
+    margin-top: 16px;
+    border: 1px solid #d9e4f2;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8fbff;
 }
 
-/* Recently uploaded files */
-.notes-uploaded-files {
-    margin-top: 10px;
+.notes-attachments-header {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: #eef3fa;
+    border-bottom: 1px solid #d9e4f2;
 }
 
-.notes-upload-label {
+.notes-attachments-title {
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     color: var(--subtle);
-    margin: 0 0 4px;
+}
+
+/* Uploaded file chips */
+.notes-uploaded-files {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-bottom: 1px solid #d9e4f2;
 }
 
 .notes-uploaded-file {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f0f7ee;
-    border: 1px solid #bbf7d0;
-    border-radius: 8px;
-    padding: 5px 10px;
+    gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e8eef7;
+    background: #fff;
+    transition: background 0.1s;
+}
+
+.notes-uploaded-file:last-child {
+    border-bottom: none;
+}
+
+.notes-uploaded-file:hover {
+    background: #f0f6ff;
 }
 
 .notes-file-icon {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
 }
 
 .notes-file-name {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     color: #166534;
     font-weight: 600;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.notes-file-remove-btn {
+    border: none;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 0.6rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+    line-height: 1;
+}
+
+.notes-file-remove-btn:hover {
+    background: #fecaca;
+}
+
+/* Upload button wrapper — sits at the bottom of the attachments block */
+.notes-upload-btn-wrap {
+    padding: 10px 14px;
 }
