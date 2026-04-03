@@ -14,6 +14,7 @@ import saveMeetingNotes from '@salesforce/apex/VisitController.saveMeetingNotes'
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
 import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
 import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
+import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360Summary';
 
 export default class VisitDetail extends NavigationMixin(LightningElement) {
     _visit;
@@ -46,14 +47,38 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     blockingTask = null;
     blockReason = '';
     isActingOnTask = false;
+    isLoadingRelated = false;
+    activeRelatedTab = 'assets';
+    assets = [];
+    allAssets = [];
+    recentOrders = [];
+    allOrders = [];
+    orderProducts = [];
+    allOrderProducts = [];
+    cases = [];
+    allCases = [];
+    assetsCount = 0;
+    totalAssetsCount = 0;
+    ordersCount = 0;
+    totalOrdersCount = 0;
+    orderProductsCount = 0;
+    totalOrderProductsCount = 0;
+    casesCount = 0;
+    totalCasesCount = 0;
 
     @api
     get visit() {
         return this._visit;
     }
     set visit(value) {
+        const prevId = this.recordId;
         this._visit = value;
         this.recordId = value?.Id || this.recordId;
+        // If this is the first time we get a real ID, load tasks immediately.
+        // wiredVisit may return cached data without re-running loadVisitTasks.
+        if (!prevId && this.recordId) {
+            this.loadVisitTasks();
+        }
     }
 
     @api
@@ -61,8 +86,12 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         return this._visitId;
     }
     set visitId(value) {
+        const prevId = this.recordId;
         this._visitId = value;
         this.recordId = value || this.recordId;
+        if (!prevId && this.recordId) {
+            this.loadVisitTasks();
+        }
     }
     @api dayStarted;
     @api dayEnded;
@@ -73,6 +102,12 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         setTimeout(() => {
         this.loadAttendance();
         }, 300)
+        // Safety net: if the visit ID is already available when the component
+        // connects (e.g. passed as @api before connectedCallback), kick off
+        // the task load immediately without waiting for wiredVisit to re-fire.
+        if (this.currentVisitId) {
+            this.loadVisitTasks();
+        }
     }
 
     get currentVisitId() {
@@ -148,6 +183,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 this.setIsTodayFromVisit(visitData);
                 this.checkForVisitPhoto();
                 this.loadOutletPhoto();
+                this.loadOutletRelatedData();
             });
 
         return Promise.all([
@@ -197,6 +233,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             this.checkForVisitPhoto();
             // Load account/outlet photo
             this.loadOutletPhoto();
+            this.loadOutletRelatedData();
             // Load tasks for this visit
             this.loadVisitTasks();
             return;
@@ -209,6 +246,95 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 'error'
             );
         }
+    }
+
+    loadOutletRelatedData() {
+        const outletId = this.outletRecordId;
+        if (!outletId) {
+            this.assets = [];
+            this.allAssets = [];
+            this.recentOrders = [];
+            this.allOrders = [];
+            this.orderProducts = [];
+            this.allOrderProducts = [];
+            this.cases = [];
+            this.allCases = [];
+            return;
+        }
+
+        this.isLoadingRelated = true;
+        getOutlet360Summary({ recordId: outletId, objectApiName: 'Account' })
+            .then((result) => {
+                this.assets = (result?.assets || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-asset-${item.assetId || index}`,
+                    lastAuditDateLabel: this.formatDate(item.lastAuditDate),
+                    serialNumber: item.serialNumber || '--',
+                    lastCondition: item.lastCondition || '--'
+                }));
+                this.allAssets = (result?.allAssets || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-all-asset-${item.assetId || index}`,
+                    lastAuditDateLabel: this.formatDate(item.lastAuditDate),
+                    serialNumber: item.serialNumber || '--',
+                    lastCondition: item.lastCondition || '--'
+                }));
+                this.assetsCount = result?.assetsCount || this.assets.length;
+                this.totalAssetsCount = result?.totalAssetsCount || this.assetsCount;
+
+                this.recentOrders = (result?.recentOrders || []).map((item) => ({
+                    ...item,
+                    rowKey: `visit-order-${item.recordId}`,
+                    amountLabel: this.formatCurrency(item.amount),
+                    dateLabel: this.formatDate(item.recordDate)
+                }));
+                this.allOrders = (result?.allOrders || []).map((item) => ({
+                    ...item,
+                    rowKey: `visit-all-order-${item.recordId}`,
+                    amountLabel: this.formatCurrency(item.amount),
+                    dateLabel: this.formatDate(item.recordDate)
+                }));
+                this.ordersCount = result?.ordersCount || this.recentOrders.length;
+                this.totalOrdersCount = result?.totalOrdersCount || this.ordersCount;
+
+                this.orderProducts = (result?.orderProducts || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-product-${item.orderItemId || index}`,
+                    unitPriceLabel: this.formatCurrency(item.unitPrice),
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.allOrderProducts = (result?.allOrderProducts || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-all-product-${item.orderItemId || index}`,
+                    unitPriceLabel: this.formatCurrency(item.unitPrice),
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.orderProductsCount = result?.orderProductsCount || this.orderProducts.length;
+                this.totalOrderProductsCount = result?.totalOrderProductsCount || this.orderProductsCount;
+
+                this.cases = (result?.cases || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-case-${item.caseId || index}`,
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.allCases = (result?.allCases || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-all-case-${item.caseId || index}`,
+                    totalPriceLabel: this.formatCurrency(item.totalPrice)
+                }));
+                this.casesCount = result?.casesCount || this.cases.length;
+                this.totalCasesCount = result?.totalCasesCount || this.casesCount;
+            })
+            .catch((error) => {
+                this.showToast(
+                    'Unable to load related outlet data',
+                    error?.body?.message || 'Please try again.',
+                    'error'
+                );
+            })
+            .finally(() => {
+                this.isLoadingRelated = false;
+            });
     }
 
     // Method to check if there's a photo for this visit
@@ -405,6 +531,34 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         return this.dayStarted && (status === 'in progress' || status === 'completed');
     }
 
+    get hasRelatedAssets() { return this.assets.length > 0; }
+    get hasAllRelatedAssets() { return this.allAssets.length > 0; }
+    get hasRelatedOrders() { return this.recentOrders.length > 0; }
+    get hasAllRelatedOrders() { return this.allOrders.length > 0; }
+    get hasRelatedProducts() { return this.orderProducts.length > 0; }
+    get hasAllRelatedProducts() { return this.allOrderProducts.length > 0; }
+    get hasRelatedCases() { return this.cases.length > 0; }
+    get hasAllRelatedCases() { return this.allCases.length > 0; }
+    get showRelatedLists() { return !!this.outletRecordId; }
+
+    get relatedAssetsLabel() { return `Assets (${this.totalAssetsCount || this.assetsCount || 0})`; }
+    get relatedOrdersLabel() { return `Orders (${this.totalOrdersCount || this.ordersCount || 0})`; }
+    get relatedCasesLabel() { return `Cases (${this.totalCasesCount || this.casesCount || 0})`; }
+
+    get showViewAllRelatedAssets() { return (this.totalAssetsCount || 0) > 5; }
+    get showViewAllRelatedOrders() { return (this.totalOrdersCount || 0) > 5; }
+    get showViewAllRelatedProducts() { return (this.totalOrderProductsCount || 0) > 5; }
+    get showViewAllRelatedCases() { return (this.totalCasesCount || 0) > 5; }
+
+    get isRelatedTabAssets() { return this.activeRelatedTab === 'assets'; }
+    get isRelatedTabOrders() { return this.activeRelatedTab === 'orders'; }
+    get isRelatedTabProducts() { return this.activeRelatedTab === 'products'; }
+    get isRelatedTabCases() { return this.activeRelatedTab === 'cases'; }
+    get relatedTabClassAssets() { return `tab-pill${this.activeRelatedTab === 'assets' ? ' active' : ''}`; }
+    get relatedTabClassOrders() { return `tab-pill${this.activeRelatedTab === 'orders' ? ' active' : ''}`; }
+    get relatedTabClassProducts() { return `tab-pill${this.activeRelatedTab === 'products' ? ' active' : ''}`; }
+    get relatedTabClassCases() { return `tab-pill${this.activeRelatedTab === 'cases' ? ' active' : ''}`; }
+
     get mapDisabled() {
         return false; // Always enabled — falls back to default coordinates if outlet has none
     }
@@ -488,15 +642,20 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             return;
         }
 
+        const state = {
+            c__recordId: String(this.outletRecordId),
+            c__objectApiName: this.outletObjectApiName ? String(this.outletObjectApiName) : 'Account'
+        };
+        if (this.currentVisitId) {
+            state.c__visitId = String(this.currentVisitId);
+        }
+
         this[NavigationMixin.Navigate]({
             type: 'standard__component',
             attributes: {
                 componentName: 'c__outlet360Page'
             },
-            state: {
-                c__recordId: String(this.outletRecordId),
-                c__objectApiName: this.outletObjectApiName ? String(this.outletObjectApiName) : 'Account'
-            }
+            state
         });
     }
 
@@ -695,6 +854,28 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         }
     }
 
+    formatDate(value) {
+        if (!value) return '--';
+        try {
+            return new Date(value).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch {
+            return '--';
+        }
+    }
+
+    formatCurrency(value) {
+        const numeric = Number(value || 0);
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 2
+        }).format(numeric);
+    }
+
     get starList() {
         return [1, 2, 3, 4, 5].map(n => ({
             value: n,
@@ -762,8 +943,13 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 this.tasks = data || [];
                 this.isLoadingTasks = false;
             })
-            .catch(() => {
+            .catch(err => {
                 this.isLoadingTasks = false;
+                this.showToast(
+                    'Could not load tasks',
+                    err?.body?.message || 'Please refresh and try again.',
+                    'error'
+                );
             });
     }
 
@@ -792,7 +978,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     get hasTasks()       { return this.tasks.length > 0; }
-    get showTasksCard()  { return this.isLoadingTasks || this.tasks.length > 0; }
+    get showTasksCard()  { return !!this.currentVisitId; }
     get taskCountLabel() {
         const pending = this.tasks.filter(t => t.Status__c === 'Pending').length;
         const total   = this.tasks.length;
@@ -876,6 +1062,110 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+
+    handleRelatedTabClick(event) {
+        this.activeRelatedTab = event.currentTarget.dataset.tab;
+    }
+
+    handleOpenRelatedAssetsModal() {
+        const dlg = this.template.querySelector('dialog.related-assets-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    handleCloseRelatedAssetsModal() {
+        const dlg = this.template.querySelector('dialog.related-assets-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+    }
+
+    handleOpenRelatedOrdersModal() {
+        const dlg = this.template.querySelector('dialog.related-orders-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    handleCloseRelatedOrdersModal() {
+        const dlg = this.template.querySelector('dialog.related-orders-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+    }
+
+    handleOpenRelatedProductsModal() {
+        const dlg = this.template.querySelector('dialog.related-products-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    handleCloseRelatedProductsModal() {
+        const dlg = this.template.querySelector('dialog.related-products-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+    }
+
+    handleOpenRelatedCasesModal() {
+        const dlg = this.template.querySelector('dialog.related-cases-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
+    handleCloseRelatedCasesModal() {
+        const dlg = this.template.querySelector('dialog.related-cases-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+    }
+
+    handleRelatedDialogClose() {
+        this._unlockScroll();
+    }
+
+    handleRelatedOrderClick(event) {
+        const orderId = event.currentTarget.dataset.id;
+        if (!orderId) return;
+        this.handleCloseRelatedOrdersModal();
+        const orderDetail = this.template.querySelector('c-order-detail');
+        if (orderDetail) {
+            orderDetail.openForOrder(orderId);
+        }
+    }
+
+    handleRelatedCaseClick(event) {
+        const caseId = event.currentTarget.dataset.id;
+        if (!caseId) return;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: caseId,
+                actionName: 'view'
+            }
+        });
+    }
+
+    handleRelatedAssetClick(event) {
+        const assetId = event.currentTarget.dataset.id;
+        if (!assetId) return;
+        this.handleCloseRelatedAssetsModal();
+        const assetDetail = this.template.querySelector('c-asset-audit-detail');
+        if (assetDetail) {
+            assetDetail.openForAsset(assetId);
+        }
+    }
 
     showToast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));

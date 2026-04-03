@@ -230,6 +230,148 @@
                     </div>
                 </template>
 
+                <template if:true={showRelatedLists}>
+                    <div class="card related-card">
+                        <div class="card-head">
+                            <span class="card-title">Outlet Related Data</span>
+                        </div>
+
+                        <template if:true={isLoadingRelated}>
+                            <lightning-spinner alternative-text="Loading related data" size="small" variant="brand"></lightning-spinner>
+                        </template>
+
+                        <template if:false={isLoadingRelated}>
+                            <div class="tab-bar">
+                                <button type="button" class={relatedTabClassAssets} data-tab="assets" onclick={handleRelatedTabClick}>Assets</button>
+                                <button type="button" class={relatedTabClassOrders} data-tab="orders" onclick={handleRelatedTabClick}>Order History</button>
+                                <button type="button" class={relatedTabClassProducts} data-tab="products" onclick={handleRelatedTabClick}>Order Products</button>
+                                <button type="button" class={relatedTabClassCases} data-tab="cases" onclick={handleRelatedTabClick}>Cases</button>
+                            </div>
+
+                            <template if:true={isRelatedTabAssets}>
+                                <div class="section-head">
+                                    <h2 class="section-title">{relatedAssetsLabel}</h2>
+                                    <template if:true={showViewAllRelatedAssets}>
+                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedAssetsModal}>View All</button>
+                                    </template>
+                                </div>
+                                <template if:true={hasRelatedAssets}>
+                                    <div class="table-wrap">
+                                        <table class="summary">
+                                            <thead><tr><th>Asset</th><th>Serial</th><th>Status</th><th>Last Audit</th><th>Condition</th></tr></thead>
+                                            <tbody>
+                                                <template for:each={assets} for:item="item">
+                                                    <tr key={item.rowKey} class="order-row-clickable" data-id={item.assetId} onclick={handleRelatedAssetClick}>
+                                                        <td class="order-name-cell">{item.name}</td>
+                                                        <td>{item.serialNumber}</td>
+                                                        <td>{item.status}</td>
+                                                        <td>{item.lastAuditDateLabel}</td>
+                                                        <td>{item.lastCondition}</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </template>
+                                <template if:false={hasRelatedAssets}>
+                                    <div class="state">No assets found for this outlet.</div>
+                                </template>
+                            </template>
+
+                            <template if:true={isRelatedTabOrders}>
+                                <div class="section-head">
+                                    <h2 class="section-title">{relatedOrdersLabel}</h2>
+                                    <template if:true={showViewAllRelatedOrders}>
+                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedOrdersModal}>View All</button>
+                                    </template>
+                                </div>
+                                <template if:true={hasRelatedOrders}>
+                                    <div class="table-wrap">
+                                        <table class="summary">
+                                            <thead><tr><th>Order</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+                                            <tbody>
+                                                <template for:each={recentOrders} for:item="item">
+                                                    <tr key={item.rowKey} class="order-row-clickable" data-id={item.recordId} onclick={handleRelatedOrderClick}>
+                                                        <td class="order-name-cell">{item.name}</td>
+                                                        <td>{item.amountLabel}</td>
+                                                        <td>{item.dateLabel}</td>
+                                                        <td>{item.status}</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </template>
+                                <template if:false={hasRelatedOrders}>
+                                    <div class="state">No orders found for this outlet.</div>
+                                </template>
+                            </template>
+
+                            <template if:true={isRelatedTabProducts}>
+                                <div class="section-head">
+                                    <h2 class="section-title">Order Products</h2>
+                                    <template if:true={showViewAllRelatedProducts}>
+                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedProductsModal}>View All</button>
+                                    </template>
+                                </div>
+                                <template if:true={hasRelatedProducts}>
+                                    <div class="table-wrap">
+                                        <table class="summary">
+                                            <thead><tr><th>Order</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+                                            <tbody>
+                                                <template for:each={orderProducts} for:item="item">
+                                                    <tr key={item.rowKey}>
+                                                        <td>{item.orderName}</td>
+                                                        <td>{item.productName}</td>
+                                                        <td>{item.quantity}</td>
+                                                        <td>{item.unitPriceLabel}</td>
+                                                        <td>{item.totalPriceLabel}</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </template>
+                                <template if:false={hasRelatedProducts}>
+                                    <div class="state">No order products found for this outlet.</div>
+                                </template>
+                            </template>
+
+                            <template if:true={isRelatedTabCases}>
+                                <div class="section-head">
+                                    <h2 class="section-title">{relatedCasesLabel}</h2>
+                                    <template if:true={showViewAllRelatedCases}>
+                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedCasesModal}>View All</button>
+                                    </template>
+                                </div>
+                                <template if:true={hasRelatedCases}>
+                                    <div class="table-wrap">
+                                        <table class="summary">
+                                            <thead><tr><th>Case No.</th><th>Order</th><th>Type</th><th>Reason</th><th>Solution</th><th>Total</th><th>Owner</th></tr></thead>
+                                            <tbody>
+                                                <template for:each={cases} for:item="item">
+                                                    <tr key={item.rowKey}>
+                                                        <td><button class="case-link" type="button" data-id={item.caseId} onclick={handleRelatedCaseClick}>{item.caseNumber}</button></td>
+                                                        <td>{item.orderName}</td>
+                                                        <td>{item.caseType}</td>
+                                                        <td>{item.caseReason}</td>
+                                                        <td>{item.solutionRequired}</td>
+                                                        <td>{item.totalPriceLabel}</td>
+                                                        <td>{item.ownerName}</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </template>
+                                <template if:false={hasRelatedCases}>
+                                    <div class="state">No cases found for this outlet.</div>
+                                </template>
+                            </template>
+                        </template>
+                    </div>
+                </template>
+
                 <div class="card">
                     <div class="card-head with-actions">
                         <span class="card-title">Meeting Notes</span>
@@ -427,7 +569,7 @@
                 <header class="vd-header">
                     <div class="vd-title-row">
                         <span class="vd-badge">Orders</span>
-                        <h2 class="vd-title">My Orders</h2>
+                        <!-- <h2 class="vd-title">My Orders</h2> -->
                     </div>
                     <button class="vd-close-btn" type="button" onclick={handleCloseOrdersModal} aria-label="Close">&#10005;</button>
                 </header>
@@ -441,7 +583,153 @@
         </dialog>
 
         <!-- orderDetail popup — opens when an order card is tapped -->
+        <dialog class="vd-dialog vd-dialog-wide related-assets-dialog" onclose={handleRelatedDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseRelatedAssetsModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Assets</span>
+                        <h2 class="vd-title">All Assets</h2>
+                    </div>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseRelatedAssetsModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={hasAllRelatedAssets}>
+                        <div class="table-wrap table-wrap--flush">
+                            <table class="summary">
+                                <thead><tr><th>Asset</th><th>Serial</th><th>Status</th><th>Last Audit</th><th>Condition</th></tr></thead>
+                                <tbody>
+                                    <template for:each={allAssets} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable" data-id={item.assetId} onclick={handleRelatedAssetClick}>
+                                            <td class="order-name-cell">{item.name}</td>
+                                            <td>{item.serialNumber}</td>
+                                            <td>{item.status}</td>
+                                            <td>{item.lastAuditDateLabel}</td>
+                                            <td>{item.lastCondition}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseRelatedAssetsModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
+        <dialog class="vd-dialog vd-dialog-wide related-orders-dialog" onclose={handleRelatedDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseRelatedOrdersModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Orders</span>
+                        <h2 class="vd-title">All Orders</h2>
+                    </div>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseRelatedOrdersModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={hasAllRelatedOrders}>
+                        <div class="table-wrap table-wrap--flush">
+                            <table class="summary">
+                                <thead><tr><th>Order</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <template for:each={allOrders} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable" data-id={item.recordId} onclick={handleRelatedOrderClick}>
+                                            <td class="order-name-cell">{item.name}</td>
+                                            <td>{item.amountLabel}</td>
+                                            <td>{item.dateLabel}</td>
+                                            <td>{item.status}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseRelatedOrdersModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
+        <dialog class="vd-dialog vd-dialog-wide related-products-dialog" onclose={handleRelatedDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseRelatedProductsModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Order Products</span>
+                        <h2 class="vd-title">All Order Products</h2>
+                    </div>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseRelatedProductsModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={hasAllRelatedProducts}>
+                        <div class="table-wrap table-wrap--flush">
+                            <table class="summary">
+                                <thead><tr><th>Order</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+                                <tbody>
+                                    <template for:each={allOrderProducts} for:item="item">
+                                        <tr key={item.rowKey}>
+                                            <td>{item.orderName}</td>
+                                            <td>{item.productName}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.unitPriceLabel}</td>
+                                            <td>{item.totalPriceLabel}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseRelatedProductsModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
+        <dialog class="vd-dialog vd-dialog-wide related-cases-dialog" onclose={handleRelatedDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseRelatedCasesModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Cases</span>
+                        <h2 class="vd-title">All Cases</h2>
+                    </div>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseRelatedCasesModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={hasAllRelatedCases}>
+                        <div class="table-wrap table-wrap--flush">
+                            <table class="summary">
+                                <thead><tr><th>Case No.</th><th>Order</th><th>Type</th><th>Reason</th><th>Solution</th><th>Total</th><th>Owner</th></tr></thead>
+                                <tbody>
+                                    <template for:each={allCases} for:item="item">
+                                        <tr key={item.rowKey}>
+                                            <td><button class="case-link" type="button" data-id={item.caseId} onclick={handleRelatedCaseClick}>{item.caseNumber}</button></td>
+                                            <td>{item.orderName}</td>
+                                            <td>{item.caseType}</td>
+                                            <td>{item.caseReason}</td>
+                                            <td>{item.solutionRequired}</td>
+                                            <td>{item.totalPriceLabel}</td>
+                                            <td>{item.ownerName}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseRelatedCasesModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
         <c-order-detail onclose={handleOrderDetailClose}></c-order-detail>
+        <c-asset-audit-detail visit-id={currentVisitId}></c-asset-audit-detail>
 
     </section>
 </template>

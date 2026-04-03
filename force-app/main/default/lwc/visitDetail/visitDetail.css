@@ -285,6 +285,21 @@
     color: #334155;
 }
 
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.9rem 0 0.75rem;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--title);
+}
+
 /* DETAIL GRID */
 
 .detail-grid {
@@ -309,6 +324,118 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.tab-bar {
+    display: flex;
+    background: #e8f0fb;
+    border-radius: 999px;
+    padding: 3px;
+    width: fit-content;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-pill {
+    border: none;
+    background: transparent;
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--subtle);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tab-pill.active {
+    background: #ffffff;
+    color: var(--brand);
+}
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid #d9e4f2;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.table-wrap--flush {
+    border: none;
+    border-radius: 0;
+}
+
+.summary {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.summary th {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--subtle);
+    padding: 0.5rem;
+    border-bottom: 2px solid #dbe7f5;
+    text-align: left;
+    background: #f4f8ff;
+}
+
+.summary td {
+    font-size: 0.78rem;
+    padding: 0.55rem 0.5rem;
+    border-bottom: 1px solid #edf1f7;
+    color: #243041;
+    text-align: left;
+}
+
+.summary tr:last-child td {
+    border-bottom: none;
+}
+
+.state {
+    margin-top: 0.8rem;
+    border: 1px solid #d9e4f2;
+    border-radius: 10px;
+    background: #f8fbff;
+    color: var(--subtle);
+    padding: 0.75rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.order-row-clickable {
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.order-row-clickable:hover {
+    background: #eef5ff;
+}
+
+.order-row-clickable:hover .order-name-cell {
+    color: var(--brand);
+    text-decoration: underline;
+}
+
+.case-link {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: inherit;
+    font-weight: 700;
+    color: var(--brand);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 /* MESSAGE BOX */
