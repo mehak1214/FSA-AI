@@ -767,6 +767,21 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         this.recentUploadFiles = [...this.recentUploadFiles, ...newFiles];
         const count = files.length;
         this.showToast('Upload complete', `${count} file(s) attached to this visit.`, 'success');
+        this._renameNoteAttachments(newFiles);
+    }
+
+    _renameNoteAttachments(files) {
+        if (!files || files.length === 0) return;
+        const outlet = (this.outletName || 'Outlet').replace(/[^a-zA-Z0-9]/g, '_');
+        const visit  = (this.visitName  || 'Visit').replace(/[^a-zA-Z0-9]/g, '_');
+        const date   = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        files.forEach((file, idx) => {
+            const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
+            const suffix = files.length > 1 ? `_${idx + 1}` : '';
+            const newTitle = `Note_Attachment_${outlet}_${visit}_${date}${suffix}${ext ? '.' + ext : ''}`;
+            renameAttachment({ contentDocumentId: file.documentId, newTitle })
+                .catch(() => {});
+        });
     }
 
     handleRemoveAttachment(event) {
@@ -889,28 +904,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         this.showNotesInput = false;
         this.editingNoteId = null;
         this.meetingNotes = '';
-        this._renameNoteAttachments();
         this._persistNotes();
-    }
-
-    /** Rename any just-uploaded note attachments to a meaningful name */
-    _renameNoteAttachments() {
-        const files = this.recentUploadFiles;
-        if (!files || files.length === 0) return;
-
-        const outlet = (this.outletName || 'Outlet').replace(/[^a-zA-Z0-9]/g, '_');
-        const visit  = (this.visitName  || 'Visit').replace(/[^a-zA-Z0-9]/g, '_');
-        const date   = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-
-        files.forEach((file, idx) => {
-            const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
-            const suffix = files.length > 1 ? `_${idx + 1}` : '';
-            const newTitle = `Note_Attachment_${outlet}_${visit}_${date}${suffix}${ext ? '.' + ext : ''}`;
-            renameAttachment({ contentDocumentId: file.documentId, newTitle })
-                .catch(() => {}); // silent fail — rename is best-effort
-        });
-
-        this.recentUploadFiles = [];
     }
 
     /** Save the current savedNotesList to Meeting_Notes__c via Apex */

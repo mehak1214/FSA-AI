@@ -405,21 +405,28 @@ public with sharing class VisitController {
     @AuraEnabled(cacheable=true)
     public static ContentVersion getVisitPhoto(Id visitId){
 
+        // Collect all ContentDocumentIds linked to this visit
         List<ContentDocumentLink> links = [
             SELECT ContentDocumentId
             FROM ContentDocumentLink
             WHERE LinkedEntityId = :visitId
-            LIMIT 1
         ];
 
         if(links.isEmpty()){
             return null;
         }
 
+        Set<Id> docIds = new Set<Id>();
+        for(ContentDocumentLink cdl : links){
+            docIds.add(cdl.ContentDocumentId);
+        }
+
+        // Only return the dedicated visit photo — identified by its Title prefix
         List<ContentVersion> versions = [
             SELECT Id, ContentDocumentId, Title
             FROM ContentVersion
-            WHERE ContentDocumentId = :links[0].ContentDocumentId
+            WHERE ContentDocumentId IN :docIds
+            AND Title LIKE 'Visit\_Photo\_%'
             ORDER BY CreatedDate DESC
             LIMIT 1
         ];
@@ -444,6 +451,26 @@ public with sharing class VisitController {
             FROM ContentDocument
             WHERE Id = :cv.ContentDocumentId
         ];
+    }
+
+    /* =========================================================
+       RENAME ATTACHMENT
+    ========================================================= */
+    @AuraEnabled
+    public static void renameAttachment(Id contentDocumentId, String newTitle){
+
+        List<ContentVersion> versions = [
+            SELECT Id, Title
+            FROM ContentVersion
+            WHERE ContentDocumentId = :contentDocumentId
+            AND IsLatest = true
+            LIMIT 1
+        ];
+
+        if(!versions.isEmpty()){
+            versions[0].Title = newTitle;
+            update versions[0];
+        }
     }
 
     /* =========================================================
