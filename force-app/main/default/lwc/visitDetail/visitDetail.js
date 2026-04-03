@@ -12,6 +12,7 @@ import getVisitPhoto from '@salesforce/apex/VisitController.getVisitPhoto';
 import getOutletPhoto from '@salesforce/apex/VisitController.getOutletPhoto';
 import saveMeetingNotes from '@salesforce/apex/VisitController.saveMeetingNotes';
 import deleteAttachment from '@salesforce/apex/VisitController.deleteAttachment';
+import renameAttachment from '@salesforce/apex/VisitController.renameAttachment';
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
 import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
 import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
@@ -888,7 +889,28 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         this.showNotesInput = false;
         this.editingNoteId = null;
         this.meetingNotes = '';
+        this._renameNoteAttachments();
         this._persistNotes();
+    }
+
+    /** Rename any just-uploaded note attachments to a meaningful name */
+    _renameNoteAttachments() {
+        const files = this.recentUploadFiles;
+        if (!files || files.length === 0) return;
+
+        const outlet = (this.outletName || 'Outlet').replace(/[^a-zA-Z0-9]/g, '_');
+        const visit  = (this.visitName  || 'Visit').replace(/[^a-zA-Z0-9]/g, '_');
+        const date   = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+        files.forEach((file, idx) => {
+            const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
+            const suffix = files.length > 1 ? `_${idx + 1}` : '';
+            const newTitle = `Note_Attachment_${outlet}_${visit}_${date}${suffix}${ext ? '.' + ext : ''}`;
+            renameAttachment({ contentDocumentId: file.documentId, newTitle })
+                .catch(() => {}); // silent fail — rename is best-effort
+        });
+
+        this.recentUploadFiles = [];
     }
 
     /** Save the current savedNotesList to Meeting_Notes__c via Apex */

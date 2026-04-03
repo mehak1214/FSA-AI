@@ -955,27 +955,7 @@ gap:6px;
 }
 
 /* Add Note button */
-.notes-add-inline-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--brand-light);
-    border: 1px solid var(--brand-2);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--brand);
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-    white-space: nowrap;
-    margin-left: auto;
-}
 
-.notes-add-inline-btn:hover {
-    background: #dbeafe;
-    border-color: var(--brand);
-}
 
 /* ── Attachments block (integrated inside Meeting Notes card) ────────────── */
 
