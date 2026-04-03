@@ -955,30 +955,26 @@ gap:6px;
 }
 
 /* Add Note button */
-.notes-add-btn {
-    display: flex;
+.notes-add-inline-btn {
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     background: var(--brand-light);
-    border: 1px dashed var(--brand-2);
-    border-radius: 10px;
-    padding: 9px 14px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    border: 1px solid var(--brand-2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
     color: var(--brand);
     cursor: pointer;
-    width: 100%;
-    transition: background 0.12s;
-    margin-bottom: 12px;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+    margin-left: auto;
 }
 
-.notes-add-btn:hover {
+.notes-add-inline-btn:hover {
     background: #dbeafe;
-}
-
-.notes-add-icon {
-    font-size: 1.1rem;
-    line-height: 1;
+    border-color: var(--brand);
 }
 
 /* ── Attachments block (integrated inside Meeting Notes card) ────────────── */

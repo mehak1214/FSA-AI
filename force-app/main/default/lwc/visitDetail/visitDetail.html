@@ -376,6 +376,11 @@
                 <div class="card">
                     <div class="card-head">
                         <span class="card-title">Meeting Notes</span>
+                        <template if:false={showNotesInput}>
+                            <button class="notes-add-inline-btn" type="button" onclick={handleAddNote}>
+                                + Add Note
+                            </button>
+                        </template>
                     </div>
 
                     <!-- Saved notes tiles -->
@@ -411,6 +416,39 @@
                                 onchange={handleMeetingNotesChange}
                                 placeholder="Add meeting summary, commitments, next steps...">
                             </lightning-textarea>
+
+                            <!-- Attachments block — visible while composing -->
+                            <div class="notes-attachments-block">
+                                <div class="notes-attachments-header">
+                                    <span class="notes-attachments-title">Attachments</span>
+                                </div>
+
+                                <!-- Recently uploaded files list with delete -->
+                                <template if:true={hasRecentUploads}>
+                                    <div class="notes-uploaded-files">
+                                        <template for:each={recentUploadFiles} for:item="file">
+                                            <div key={file.documentId} class="notes-uploaded-file">
+                                                <span class="notes-file-icon">📎</span>
+                                                <span class="notes-file-name">{file.name}</span>
+                                                <button class="notes-file-remove-btn" type="button"
+                                                    data-id={file.documentId}
+                                                    onclick={handleRemoveAttachment}
+                                                    title="Remove attachment">✕</button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <div class="notes-upload-btn-wrap">
+                                    <lightning-file-upload
+                                        label="Attach files to this visit"
+                                        record-id={currentVisitId}
+                                        multiple
+                                        onuploadfinished={handleVisitFileUploadFinished}>
+                                    </lightning-file-upload>
+                                </div>
+                            </div>
+
                             <div class="notes-compose-actions">
                                 <button class="btn secondary" type="button" onclick={handleCancelNote}
                                     disabled={meetingNotesSaving}>
@@ -426,45 +464,7 @@
                         </div>
                     </template>
 
-                    <!-- Add note button: shown when not in compose mode -->
-                    <template if:false={showNotesInput}>
-                        <button class="notes-add-btn" type="button" onclick={handleAddNote}>
-                            <span class="notes-add-icon">+</span>
-                            <span>Add Note</span>
-                        </button>
-                    </template>
 
-                    <!-- File attachments + recently uploaded — single visual block -->
-                    <div class="notes-attachments-block">
-                        <div class="notes-attachments-header">
-                            <span class="notes-attachments-title">Attachments</span>
-                        </div>
-
-                        <!-- Recently uploaded files list with delete -->
-                        <template if:true={hasRecentUploads}>
-                            <div class="notes-uploaded-files">
-                                <template for:each={recentUploadFiles} for:item="file">
-                                    <div key={file.documentId} class="notes-uploaded-file">
-                                        <span class="notes-file-icon">📎</span>
-                                        <span class="notes-file-name">{file.name}</span>
-                                        <button class="notes-file-remove-btn" type="button"
-                                            data-id={file.documentId}
-                                            onclick={handleRemoveAttachment}
-                                            title="Remove attachment">✕</button>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-
-                        <div class="notes-upload-btn-wrap">
-                            <lightning-file-upload
-                                label="Attach files to this visit"
-                                record-id={currentVisitId}
-                                multiple
-                                onuploadfinished={handleVisitFileUploadFinished}>
-                            </lightning-file-upload>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Rating & Feedback -->
