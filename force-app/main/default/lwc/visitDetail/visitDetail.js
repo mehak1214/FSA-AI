@@ -34,6 +34,10 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     recentUploadNames = [];
     meetingNotes = '';
     meetingNotesSaving = false;
+    // Notes tile state
+    savedNotesList = [];       // [{id, text, dateLabel}]
+    showNotesInput = false;
+    editingNoteId = null;      // null = new note, string id = editing existing
     wiredVisitResult;
     // Rating & Feedback
     selectedRating = 0;
@@ -177,6 +181,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 if (!visitData) return;
                 this.visit = visitData;
                 this.meetingNotes = this._getFieldFromRecord(visitData, 'Meeting_Notes__c') || '';
+                this._parseMeetingNotesIntoTiles(this.meetingNotes);
                 this.selectedRating = Number(this._getFieldFromRecord(visitData, 'Rating__c')) || 0;
                 this.visitFeedback = this._getFieldFromRecord(visitData, 'Feedback__c') || '';
                 this.ratingFeedbackSaved = !!(this.selectedRating && this.visitFeedback);
@@ -225,6 +230,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             // Force refresh attendance state
             this.loadAttendance();
             this.meetingNotes = this._getFieldFromRecord(data, 'Meeting_Notes__c') || '';
+            this._parseMeetingNotesIntoTiles(this.meetingNotes);
             this.selectedRating = Number(this._getFieldFromRecord(data, 'Rating__c')) || 0;
             this.visitFeedback = this._getFieldFromRecord(data, 'Feedback__c') || '';
             this.ratingFeedbackSaved = !!(this.selectedRating && this.visitFeedback);
@@ -759,9 +765,79 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleVisitFileUploadFinished(event) {
         const files = event.detail?.files || [];
-        this.recentUploadNames = files.map(file => file.name);
+        const newNames = files.map(file => file.name);
+        this.recentUploadNames = [...this.recentUploadNames, ...newNames];
         const count = files.length;
         this.showToast('Upload complete', `${count} file(s) attached to this visit.`, 'success');
+    }
+
+    // ─── Meeting Notes tile helpers ───────────────────────────────────────────
+
+    /**
+     * Parse the Meeting_Notes__c field (JSON array stored as string) into
+     * the savedNotesList array. Falls back gracefully for plain-text legacy data.
+     */
+    _parseMeetingNotesIntoTiles(raw) {
+        if (!raw || !raw.trim()) {
+            this.savedNotesList = [];
+            return;
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                this.savedNotesList = parsed;
+                return;
+            }
+        } catch (e) {
+            // Legacy plain-text: treat whole value as a single tile
+        }
+        // Legacy fallback: single tile with the raw text
+        this.savedNotesList = [{
+            id: 'legacy-1',
+            text: raw,
+            dateLabel: ''
+        }];
+    }
+
+    /** Serialize savedNotesList back to JSON for storage in Meeting_Notes__c */
+    _serializeNotesToField() {
+        return JSON.stringify(this.savedNotesList);
+    }
+
+    _nowDateLabel() {
+        return new Date().toLocaleString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    // ─── Note UI handlers ─────────────────────────────────────────────────────
+
+    handleAddNote() {
+        this.meetingNotes = '';
+        this.editingNoteId = null;
+        this.showNotesInput = true;
+    }
+
+    handleEditNote(event) {
+        const noteId = event.currentTarget.dataset.id;
+        const note = this.savedNotesList.find(n => n.id === noteId);
+        if (!note) return;
+        this.meetingNotes = note.text;
+        this.editingNoteId = noteId;
+        this.showNotesInput = true;
+    }
+
+    handleDeleteNote(event) {
+        const noteId = event.currentTarget.dataset.id;
+        this.savedNotesList = this.savedNotesList.filter(n => n.id !== noteId);
+        this._persistNotes();
+    }
+
+    handleCancelNote() {
+        this.showNotesInput = false;
+        this.editingNoteId = null;
+        this.meetingNotes = '';
     }
 
     handleMeetingNotesChange(event) {
@@ -774,15 +850,46 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             this.showToast('Visit not found', 'Missing visit id.', 'error');
             return;
         }
+        const text = this.meetingNotes.trim();
+        if (!text) {
+            this.showToast('Empty note', 'Please enter some text before saving.', 'warning');
+            return;
+        }
+
+        if (this.editingNoteId) {
+            // Update existing tile
+            this.savedNotesList = this.savedNotesList.map(n =>
+                n.id === this.editingNoteId
+                    ? { ...n, text, dateLabel: this._nowDateLabel() }
+                    : n
+            );
+        } else {
+            // Add new tile
+            const newNote = {
+                id: `note-${Date.now()}`,
+                text,
+                dateLabel: this._nowDateLabel()
+            };
+            this.savedNotesList = [...this.savedNotesList, newNote];
+        }
+
+        this.showNotesInput = false;
+        this.editingNoteId = null;
+        this.meetingNotes = '';
+        this._persistNotes();
+    }
+
+    /** Save the current savedNotesList to Meeting_Notes__c via Apex */
+    _persistNotes() {
+        const visitId = this.currentVisitId;
+        if (!visitId) return;
 
         this.meetingNotesSaving = true;
-        saveMeetingNotes({
-            visitId,
-            notes: this.meetingNotes
-        })
+        const notes = this._serializeNotesToField();
+
+        saveMeetingNotes({ visitId, notes })
             .then(() => {
-                this.showToast('Saved', 'Meeting notes saved.', 'success');
-                this.refreshVisitData({ showErrorToast: false });
+                this.showToast('Saved', 'Meeting notes saved successfully.', 'success');
             })
             .catch((error) => {
                 this.showToast(
@@ -794,6 +901,20 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             .finally(() => {
                 this.meetingNotesSaving = false;
             });
+    }
+
+    // ─── Getters for template ─────────────────────────────────────────────────
+
+    get hasSavedNotes() {
+        return this.savedNotesList && this.savedNotesList.length > 0;
+    }
+
+    get hasRecentUploads() {
+        return this.recentUploadNames && this.recentUploadNames.length > 0;
+    }
+
+    get notesInputLabel() {
+        return this.editingNoteId ? 'Edit Note' : 'New Note';
     }
 
     performGeoAction(apexMethod) {

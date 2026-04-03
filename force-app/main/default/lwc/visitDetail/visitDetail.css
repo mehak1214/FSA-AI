@@ -856,3 +856,175 @@ gap:6px;
 .block-reason-wrap {
     margin-top: 4px;
 }
+/* ── Meeting Notes Tiles ─────────────────────────────────────────────────────── */
+
+.notes-tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.note-tile {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f4f8ff;
+    border: 1px solid #c8d9ef;
+    border-left: 3px solid var(--brand-2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: background 0.12s;
+}
+
+.note-tile:hover {
+    background: #eaf1fc;
+}
+
+.note-tile-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.note-tile-text {
+    margin: 0 0 4px;
+    font-size: 0.83rem;
+    color: var(--title);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.note-tile-meta {
+    font-size: 0.68rem;
+    color: var(--subtle);
+    font-style: italic;
+}
+
+.note-tile-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.note-action-btn {
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+}
+
+.note-edit-btn {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.note-edit-btn:hover {
+    background: #c7d2fe;
+}
+
+.note-delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.note-delete-btn:hover {
+    background: #fecaca;
+}
+
+/* Compose / edit input area */
+.notes-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.notes-compose-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Add Note button */
+.notes-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--brand-light);
+    border: 1px dashed var(--brand-2);
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--brand);
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.12s;
+    margin-bottom: 12px;
+}
+
+.notes-add-btn:hover {
+    background: #dbeafe;
+}
+
+.notes-add-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* File upload section */
+.notes-upload {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #e8eef7;
+}
+
+/* Recently uploaded files */
+.notes-uploaded-files {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notes-upload-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--subtle);
+    margin: 0 0 4px;
+}
+
+.notes-uploaded-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f7ee;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 5px 10px;
+}
+
+.notes-file-icon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.notes-file-name {
+    font-size: 0.78rem;
+    color: #166534;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
