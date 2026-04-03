@@ -774,12 +774,30 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         if (!files || files.length === 0) return;
         const outlet = (this.outletName || 'Outlet').replace(/[^a-zA-Z0-9]/g, '_');
         const visit  = (this.visitName  || 'Visit').replace(/[^a-zA-Z0-9]/g, '_');
-        const date   = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const now    = new Date();
+        const date   = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const time   = now.toISOString().slice(11, 19).replace(/:/g, '');
+        
         files.forEach((file, idx) => {
-            const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
-            const suffix = files.length > 1 ? `_${idx + 1}` : '';
-            const newTitle = `Note_Attachment_${outlet}_${visit}_${date}${suffix}${ext ? '.' + ext : ''}`;
+            // Extract file extension and original name
+            const lastDotIndex = file.name.lastIndexOf('.');
+            const ext = lastDotIndex !== -1 ? file.name.substring(lastDotIndex + 1).toLowerCase() : '';
+            const originalName = lastDotIndex !== -1 ? file.name.substring(0, lastDotIndex) : file.name;
+            const cleanOriginalName = originalName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+            
+            // Create meaningful filename with sequence
+            const sequence = (idx + 1).toString().padStart(2, '0');
+            const newTitle = `${outlet}_${visit}_${date}_${time}_${sequence}_${cleanOriginalName}${ext ? '.' + ext : ''}`;
+            
             renameAttachment({ contentDocumentId: file.documentId, newTitle })
+                .then(() => {
+                    // Update the UI with the new meaningful name
+                    this.recentUploadFiles = this.recentUploadFiles.map(f =>
+                        f.documentId === file.documentId
+                            ? { ...f, name: newTitle }
+                            : f
+                    );
+                })
                 .catch(() => {});
         });
     }
