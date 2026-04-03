@@ -291,7 +291,12 @@ public with sharing class VisitController {
             LIMIT 1
         ];
 
-        v.Meeting_Notes__c = notes;
+        // Clear the field completely if notes are empty or only contain empty array
+        if (String.isBlank(notes) || notes == '[]') {
+            v.Meeting_Notes__c = null;
+        } else {
+            v.Meeting_Notes__c = notes;
+        }
 
         update v;
     }

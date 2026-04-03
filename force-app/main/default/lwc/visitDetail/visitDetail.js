@@ -36,6 +36,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     recentUploadFiles = [];  // [{name, documentId}]
     meetingNotes = '';
     meetingNotesSaving = false;
+    lastNoteAction = null;     // Track action: 'add', 'edit', 'delete'
     // Notes tile state
     savedNotesList = [];       // [{id, text, dateLabel}]
     showNotesInput = false;
@@ -670,6 +671,17 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleCheckOut(event) {
         event?.stopPropagation();
+        
+        // Check if meeting notes are provided
+        if (!this.savedNotesList || this.savedNotesList.length === 0) {
+            this.showToast(
+                'Notes required',
+                'Please add meeting notes before checking out.',
+                'warning'
+            );
+            return;
+        }
+        
         if (!this.ratingFeedbackSaved) {
             this.showToast(
                 'Feedback required',
@@ -828,8 +840,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             this.savedNotesList = [];
             return;
         }
-        
-        // Try JSON format first (for backward compatibility with old data)
         try {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
@@ -837,51 +847,19 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 return;
             }
         } catch (e) {
-            // Not JSON, parse simple format
+            // Legacy plain-text: treat whole value as a single tile
         }
-        
-        // Parse simple format: [date]\ntext\n\n[date]\ntext
-        const noteRegex = /\[([^\]]+)\]\n([\s\S]*?)(?=\n\n\[|$)/g;
-        const notes = [];
-        let match;
-        let noteIndex = 1;
-        
-        while ((match = noteRegex.exec(raw)) !== null) {
-            const dateLabel = match[1].trim();
-            const text = match[2].trim();
-            
-            notes.push({
-                id: `note-${noteIndex}`,
-                text,
-                dateLabel,
-                attachments: []
-            });
-            noteIndex++;
-        }
-        
-        // If we parsed notes, use them; otherwise fall back to single tile
-        if (notes.length > 0) {
-            this.savedNotesList = notes;
-        } else {
-            this.savedNotesList = [{
-                id: 'legacy-1',
-                text: raw,
-                dateLabel: ''
-            }];
-        }
+        // Legacy fallback: single tile with the raw text
+        this.savedNotesList = [{
+            id: 'legacy-1',
+            text: raw,
+            dateLabel: ''
+        }];
     }
 
-    /** Serialize savedNotesList - store only note text with date separator for readability */
+    /** Serialize savedNotesList back to JSON for storage in Meeting_Notes__c */
     _serializeNotesToField() {
-        if (!this.savedNotesList || this.savedNotesList.length === 0) {
-            return '';
-        }
-        
-        const notesList = this.savedNotesList.map((note, index) => {
-            return `[${note.dateLabel}]\n${note.text}`;
-        }).join('\n\n');
-        
-        return notesList;
+        return JSON.stringify(this.savedNotesList);
     }
 
     _nowDateLabel() {
@@ -914,19 +892,29 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     handleDeleteNote(event) {
         const noteId = event.currentTarget.dataset.id;
         const noteToDelete = this.savedNotesList.find(n => n.id === noteId);
-        
-        // Delete associated attachments first
+
         if (noteToDelete && noteToDelete.attachments && noteToDelete.attachments.length > 0) {
-            noteToDelete.attachments.forEach(attachment => {
+            // Delete all attachments associated with this note
+            const deletePromises = noteToDelete.attachments.map(attachment =>
                 deleteAttachment({ contentDocumentId: attachment.documentId })
-                    .catch(() => {});
-            });
+            );
+
+            Promise.all(deletePromises)
+                .then(() => {
+                    // After attachments are deleted, remove the note
+                    this.savedNotesList = this.savedNotesList.filter(n => n.id !== noteId);
+                    this.lastNoteAction = 'delete';
+                    this._persistNotes();
+                })
+                .catch(err => {
+                    this.showToast('Delete failed', err?.body?.message || 'Unable to delete note attachments.', 'error');
+                });
+        } else {
+            // No attachments, just remove the note
+            this.savedNotesList = this.savedNotesList.filter(n => n.id !== noteId);
+            this.lastNoteAction = 'delete';
+            this._persistNotes();
         }
-        
-        // Remove the note from the list
-        this.savedNotesList = this.savedNotesList.filter(n => n.id !== noteId);
-        this._persistNotes();
-        this.showToast('Deleted', 'Note and its attachments have been removed.', 'success');
     }
 
     handleCancelNote() {
@@ -959,6 +947,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                     ? { ...n, text, dateLabel: this._nowDateLabel(), attachments: this.recentUploadFiles }
                     : n
             );
+            this.lastNoteAction = 'edit';
         } else {
             // Add new tile
             const newNote = {
@@ -968,6 +957,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 attachments: this.recentUploadFiles
             };
             this.savedNotesList = [...this.savedNotesList, newNote];
+            this.lastNoteAction = 'add';
         }
 
         this.showNotesInput = false;
@@ -987,7 +977,24 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
         saveMeetingNotes({ visitId, notes })
             .then(() => {
-                this.showToast('Saved', 'Meeting notes saved successfully.', 'success');
+                let toastTitle = 'Saved';
+                let toastMessage = 'Meeting notes saved successfully.';
+
+                if (this.lastNoteAction === 'delete') {
+                    toastTitle = 'Deleted';
+                    toastMessage = this.savedNotesList.length === 0 
+                        ? 'Note and all attachments deleted successfully.' 
+                        : 'Note and all attachments deleted successfully.';
+                } else if (this.lastNoteAction === 'add') {
+                    toastTitle = 'Added';
+                    toastMessage = 'Note added successfully.';
+                } else if (this.lastNoteAction === 'edit') {
+                    toastTitle = 'Updated';
+                    toastMessage = 'Note updated successfully.';
+                }
+
+                this.showToast(toastTitle, toastMessage, 'success');
+                this.lastNoteAction = null;  // Reset action
             })
             .catch((error) => {
                 this.showToast(
@@ -995,6 +1002,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                     error?.body?.message || 'Unable to save meeting notes.',
                     'error'
                 );
+                this.lastNoteAction = null;  // Reset action on error
             })
             .finally(() => {
                 this.meetingNotesSaving = false;
