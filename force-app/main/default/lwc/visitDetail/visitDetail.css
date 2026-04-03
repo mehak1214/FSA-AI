@@ -212,6 +212,12 @@
     color: #ffffff;
 }
 
+.btn.btn-sm {
+    padding: 3px 6px;
+    font-size: 11px;
+    border-radius: 6px;
+}
+
 .btn.secondary {
     background: #ffffff;
     color: #17396e;
