@@ -828,6 +828,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             this.savedNotesList = [];
             return;
         }
+        
+        // Try JSON format first (for backward compatibility with old data)
         try {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
@@ -835,19 +837,51 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 return;
             }
         } catch (e) {
-            // Legacy plain-text: treat whole value as a single tile
+            // Not JSON, parse simple format
         }
-        // Legacy fallback: single tile with the raw text
-        this.savedNotesList = [{
-            id: 'legacy-1',
-            text: raw,
-            dateLabel: ''
-        }];
+        
+        // Parse simple format: [date]\ntext\n\n[date]\ntext
+        const noteRegex = /\[([^\]]+)\]\n([\s\S]*?)(?=\n\n\[|$)/g;
+        const notes = [];
+        let match;
+        let noteIndex = 1;
+        
+        while ((match = noteRegex.exec(raw)) !== null) {
+            const dateLabel = match[1].trim();
+            const text = match[2].trim();
+            
+            notes.push({
+                id: `note-${noteIndex}`,
+                text,
+                dateLabel,
+                attachments: []
+            });
+            noteIndex++;
+        }
+        
+        // If we parsed notes, use them; otherwise fall back to single tile
+        if (notes.length > 0) {
+            this.savedNotesList = notes;
+        } else {
+            this.savedNotesList = [{
+                id: 'legacy-1',
+                text: raw,
+                dateLabel: ''
+            }];
+        }
     }
 
-    /** Serialize savedNotesList back to JSON for storage in Meeting_Notes__c */
+    /** Serialize savedNotesList - store only note text with date separator for readability */
     _serializeNotesToField() {
-        return JSON.stringify(this.savedNotesList);
+        if (!this.savedNotesList || this.savedNotesList.length === 0) {
+            return '';
+        }
+        
+        const notesList = this.savedNotesList.map((note, index) => {
+            return `[${note.dateLabel}]\n${note.text}`;
+        }).join('\n\n');
+        
+        return notesList;
     }
 
     _nowDateLabel() {
