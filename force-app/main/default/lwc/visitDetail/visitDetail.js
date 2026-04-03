@@ -844,6 +844,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     handleAddNote() {
         this.meetingNotes = '';
         this.editingNoteId = null;
+        this.recentUploadFiles = [];  // Clear previous attachments
         this.showNotesInput = true;
     }
 
@@ -853,6 +854,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         if (!note) return;
         this.meetingNotes = note.text;
         this.editingNoteId = noteId;
+        // Restore attachments associated with this note
+        this.recentUploadFiles = note.attachments || [];
         this.showNotesInput = true;
     }
 
@@ -866,6 +869,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         this.showNotesInput = false;
         this.editingNoteId = null;
         this.meetingNotes = '';
+        this.recentUploadFiles = [];  // Clear attachments when canceling
     }
 
     handleMeetingNotesChange(event) {
@@ -888,7 +892,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             // Update existing tile
             this.savedNotesList = this.savedNotesList.map(n =>
                 n.id === this.editingNoteId
-                    ? { ...n, text, dateLabel: this._nowDateLabel() }
+                    ? { ...n, text, dateLabel: this._nowDateLabel(), attachments: this.recentUploadFiles }
                     : n
             );
         } else {
@@ -896,7 +900,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             const newNote = {
                 id: `note-${Date.now()}`,
                 text,
-                dateLabel: this._nowDateLabel()
+                dateLabel: this._nowDateLabel(),
+                attachments: this.recentUploadFiles
             };
             this.savedNotesList = [...this.savedNotesList, newNote];
         }
@@ -904,6 +909,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         this.showNotesInput = false;
         this.editingNoteId = null;
         this.meetingNotes = '';
+        this.recentUploadFiles = [];  // Clear attachments after saving note
         this._persistNotes();
     }
 
