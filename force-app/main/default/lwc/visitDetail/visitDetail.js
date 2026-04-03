@@ -879,8 +879,20 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleDeleteNote(event) {
         const noteId = event.currentTarget.dataset.id;
+        const noteToDelete = this.savedNotesList.find(n => n.id === noteId);
+        
+        // Delete associated attachments first
+        if (noteToDelete && noteToDelete.attachments && noteToDelete.attachments.length > 0) {
+            noteToDelete.attachments.forEach(attachment => {
+                deleteAttachment({ contentDocumentId: attachment.documentId })
+                    .catch(() => {});
+            });
+        }
+        
+        // Remove the note from the list
         this.savedNotesList = this.savedNotesList.filter(n => n.id !== noteId);
         this._persistNotes();
+        this.showToast('Deleted', 'Note and its attachments have been removed.', 'success');
     }
 
     handleCancelNote() {
