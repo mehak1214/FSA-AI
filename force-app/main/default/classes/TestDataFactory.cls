@@ -373,6 +373,34 @@ public with sharing class TestDataFactory {
         orderRecord.Type = 'Standard';
         insert orderRecord;
 
+        // If status is not 'Draft', create a default OrderItem so Order can be activated
+        // (Salesforce requires OrderItems before an Order can transition to 'Activated')
+        if (status != null && status != 'Draft') {
+            Product2 tempProduct = new Product2(
+                Name = 'Temp Order Product',
+                IsActive = true,
+                Is_Veeglow_products__c = true
+            );
+            insert tempProduct;
+            
+            PricebookEntry pbe = new PricebookEntry(
+                Product2Id = tempProduct.Id,
+                Pricebook2Id = Test.getStandardPricebookId(),
+                UnitPrice = totalAmount > 0 ? totalAmount : 100.00,
+                IsActive = true
+            );
+            insert pbe;
+            
+            OrderItem item = new OrderItem(
+                OrderId = orderRecord.Id,
+                Product2Id = tempProduct.Id,
+                PricebookEntryId = pbe.Id,
+                Quantity = 1,
+                UnitPrice = totalAmount > 0 ? totalAmount : 100.00
+            );
+            insert item;
+        }
+
         if (status != null && status != 'Draft') {
             orderRecord.Status = status;
             try {
