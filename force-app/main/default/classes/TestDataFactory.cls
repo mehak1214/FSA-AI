@@ -11,7 +11,7 @@ public with sharing class TestDataFactory {
 
     // User helper: returns the running user as Sales Rep context
     public static User getRunningUser() {
-        return [SELECT Id, ProfileId FROM User WHERE Id = :UserInfo.getUserId()];
+        return [SELECT Id, ProfileId, LastName, ManagerId FROM User WHERE Id = :UserInfo.getUserId()];
     }
 
     public static Id getDealerDistributorRtId() {
@@ -49,7 +49,7 @@ public with sharing class TestDataFactory {
             u.ManagerId = managerId;
         }
         insert u;
-        return u;
+        return [SELECT Id, ProfileId, LastName, ManagerId FROM User WHERE Id = :u.Id];
     }
 
     // Account
@@ -295,10 +295,21 @@ public with sharing class TestDataFactory {
     }
 
     public static Expense_Policy__c createExpensePolicy(User manager, Decimal capValue, Decimal warnThresholdPct) {
-        String managerLastName = String.isBlank(manager.LastName) ? 'Manager' : manager.LastName;
+        // Ensure we have the manager's LastName; query if not present or not fully loaded
+        String managerLastName = 'Manager';
+        Id managerId = manager.Id;
+        
+        try {
+            managerLastName = String.isBlank(manager.LastName) ? 'Manager' : manager.LastName;
+        } catch (SObjectException e) {
+            // LastName not in the queried fields; fetch full user
+            User mgr = [SELECT Id, LastName FROM User WHERE Id = :managerId LIMIT 1];
+            managerLastName = String.isBlank(mgr.LastName) ? 'Manager' : mgr.LastName;
+        }
+        
         Expense_Policy__c p = new Expense_Policy__c();
         p.Name                       = 'Policy - ' + managerLastName + ' ' + now().getTime();
-        p.Manager__c                 = manager.Id;
+        p.Manager__c                 = managerId;
         p.Travel_Cap__c              = capValue;
         p.Food_Cap__c                = capValue;
         p.Market_Execution_Cap__c    = capValue;
@@ -315,9 +326,20 @@ public with sharing class TestDataFactory {
         a.Sales_Rep__c     = rep.Id;
         a.Month_Year__c    = monthYear;
         a.Allowance_Amount__c = amount;
-        if (rep.ManagerId != null) {
-            a.Manager__c = rep.ManagerId;
+        
+        // Ensure ManagerId is loaded; query if not present
+        try {
+            if (rep.ManagerId != null) {
+                a.Manager__c = rep.ManagerId;
+            }
+        } catch (SObjectException e) {
+            // ManagerId not in the queried fields; fetch it
+            User mgr = [SELECT ManagerId FROM User WHERE Id = :rep.Id LIMIT 1];
+            if (mgr.ManagerId != null) {
+                a.Manager__c = mgr.ManagerId;
+            }
         }
+        
         insert a;
         return a;
     }
