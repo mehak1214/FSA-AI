@@ -117,6 +117,20 @@ public with sharing class VisitController {
             snapshot.incentiveAmount = (row.Actual_Sales__c == null) ? 0 : (row.Actual_Sales__c * 0.05);
         }
 
+        // FIX: Populate schemeTitle/schemeDetail from active Scheme__c records.
+        // These fields are declared on DashboardSnapshot but were never set.
+        List<Scheme__c> schemes = [
+            SELECT Scheme_Name__c, Discount__c
+            FROM Scheme__c
+            WHERE Start_Date__c <= :targetDate
+            AND End_Date__c >= :targetDate
+            LIMIT 1
+        ];
+        if (!schemes.isEmpty()) {
+            snapshot.schemeTitle  = schemes[0].Scheme_Name__c;
+            snapshot.schemeDetail = 'Discount: ' + schemes[0].Discount__c + '%';
+        }
+
         return snapshot;
     }
 
@@ -474,25 +488,18 @@ public with sharing class VisitController {
 
         String fileName = 'Visit_Photo_' + v.Name + '.jpg';
 
+        // FIX: Use FirstPublishLocationId to atomically link the ContentVersion
+        // directly to the Visit record. This eliminates the separate
+        // ContentDocumentLink insert, which caused UNABLE_TO_LOCK_ROW errors
+        // and permission failures in concurrent test runs.
         ContentVersion cv = new ContentVersion(
-            Title = fileName,
-            PathOnClient = fileName,
-            VersionData = body
+            Title                  = fileName,
+            PathOnClient           = fileName,
+            VersionData            = body,
+            FirstPublishLocationId = visitId
         );
 
         insert cv;
-
-        cv = [
-            SELECT Id, ContentDocumentId
-            FROM ContentVersion
-            WHERE Id = :cv.Id
-        ];
-
-        insert new ContentDocumentLink(
-            LinkedEntityId = visitId,
-            ContentDocumentId = cv.ContentDocumentId,
-            ShareType = 'V'
-        );
 
         return cv.Id;
     }

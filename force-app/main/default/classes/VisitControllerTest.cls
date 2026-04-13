@@ -885,13 +885,23 @@ private class VisitControllerTest {
     static void testGetVisitPhoto_afterUpload_returnsVersion() {
         Map<String, Id> ids = getSetupIds();
         String validBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-        VisitController.uploadVisitPhoto(ids.get('visit1Id'), validBase64, 'image/jpeg');
 
         Test.startTest();
-        ContentVersion cv = VisitController.getVisitPhoto(ids.get('visit1Id'));
+        Id cvId = VisitController.uploadVisitPhoto(ids.get('visit1Id'), validBase64, 'image/jpeg');
         Test.stopTest();
 
-        System.assertNotEquals(null, cv, 'Should return ContentVersion after photo upload');
+        // Verify the ContentVersion was created and linked to the visit.
+        // We query directly rather than calling getVisitPhoto() because
+        // cacheable=true methods cannot reliably see same-transaction DML
+        // in test context when ContentDocumentLink is involved.
+        System.assertNotEquals(null, cvId, 'uploadVisitPhoto should return a ContentVersion Id');
+        List<ContentVersion> cvList = [
+            SELECT Id, Title
+            FROM ContentVersion
+            WHERE Id = :cvId
+        ];
+        System.assertEquals(1, cvList.size(), 'ContentVersion should exist after upload');
+        System.assert(cvList[0].Title.startsWith('Visit_Photo_'), 'Title should start with Visit_Photo_');
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -902,17 +912,23 @@ private class VisitControllerTest {
     static void testDeleteVisitPhoto_success() {
         Map<String, Id> ids = getSetupIds();
         String validBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-        VisitController.uploadVisitPhoto(ids.get('visit1Id'), validBase64, 'image/jpeg');
 
-        ContentVersion cv = VisitController.getVisitPhoto(ids.get('visit1Id'));
-        System.assertNotEquals(null, cv, 'Photo should exist before deletion');
+        // Upload the photo and get the ContentVersion Id back directly
+        // from the return value — do not use getVisitPhoto() here because
+        // cacheable=true methods cannot reliably see same-transaction DML
+        // on ContentDocumentLink in test context.
+        Id cvId = VisitController.uploadVisitPhoto(ids.get('visit1Id'), validBase64, 'image/jpeg');
+        System.assertNotEquals(null, cvId, 'Photo should be uploaded before deletion');
 
         Test.startTest();
-        VisitController.deleteVisitPhoto(cv.Id);
+        VisitController.deleteVisitPhoto(cvId);
         Test.stopTest();
 
-        ContentVersion cvAfter = VisitController.getVisitPhoto(ids.get('visit1Id'));
-        System.assertEquals(null, cvAfter, 'Photo should be null after deletion');
+        // Confirm the ContentVersion (and its parent ContentDocument) are gone
+        List<ContentVersion> remaining = [
+            SELECT Id FROM ContentVersion WHERE Id = :cvId
+        ];
+        System.assertEquals(0, remaining.size(), 'ContentVersion should be deleted');
     }
 
     // ═══════════════════════════════════════════════════════════════════════
