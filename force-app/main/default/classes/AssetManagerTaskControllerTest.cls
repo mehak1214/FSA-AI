@@ -7,6 +7,7 @@ private class AssetManagerTaskControllerTest {
         Account outlet = TestDataFactory.createAccount('Task Outlet', 'Franchise');
         Product2 product = TestDataFactory.createVashiProduct('TaskProduct', true);
         Asset__c asset = TestDataFactory.createAssetRecord('Task Asset', 'Pending Preparation', outlet, product);
+        Asset__c deployedAsset = TestDataFactory.createAssetRecord('Deployed Asset', 'Deployed', outlet, product);
         Beat__c beat = TestDataFactory.createBeat(currentUser, true);
         Visit__c visit = TestDataFactory.createVisitApproved(currentUser, outlet, beat, 2, Date.today());
         TestDataFactory.createBeatPlanStore(beat, outlet, true);
@@ -15,7 +16,7 @@ private class AssetManagerTaskControllerTest {
         System.assert(AssetManagerTaskController.getRetailers().size() >= 1);
         System.assert(AssetManagerTaskController.getSalesRepsForOutlet(outlet.Id).size() >= 1);
 
-        Visit_Task__c createdTask = AssetManagerTaskController.createVisitAndTask(outlet.Id, currentUser.Id, String.valueOf(Date.today()), 'Store Visit', 'Follow up', true, asset.Id);
+        Visit_Task__c createdTask = AssetManagerTaskController.createVisitAndTask(outlet.Id, currentUser.Id, String.valueOf(Date.today()), 'Routine Check', 'Follow up', true, asset.Id);
         System.assertEquals('Pending', createdTask.Status__c);
         System.assertEquals(asset.Id, createdTask.Related_Asset__c);
 
