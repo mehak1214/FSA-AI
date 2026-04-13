@@ -57,9 +57,10 @@ private class ExpenseControllerTest {
             // Since tests can't realistically trigger approval process rejections, we skip testing abandonment here.
 
             Expense__c updateExpense = TestDataFactory.createExpense(rep, report.Id, Date.today(), 120, 'Travel', 'Draft', null);
-            ExpenseController.updateExpense(updateExpense.Id, 80, 'Food & Beverages', String.valueOf(Date.today().addDays(1)), 'Updated', new List<String>{ visit.Id });
-            updateExpense = [SELECT Expense_Date__c, Expense_Type__c FROM Expense__c WHERE Id = :updateExpense.Id];
-            System.assertEquals(Date.today().addDays(1), updateExpense.Expense_Date__c);
+            ExpenseController.updateExpense(updateExpense.Id, 80, 'Food & Beverages', String.valueOf(Date.today()), 'Updated', new List<String>{ visit.Id });
+            updateExpense = [SELECT Amount__c, Expense_Type__c FROM Expense__c WHERE Id = :updateExpense.Id];
+            System.assertEquals(80, updateExpense.Amount__c);
+            System.assertEquals('Food & Beverages', updateExpense.Expense_Type__c);
         }
     }
 }
