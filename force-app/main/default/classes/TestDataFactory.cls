@@ -368,6 +368,7 @@ public with sharing class TestDataFactory {
         Order orderRecord = new Order();
         orderRecord.AccountId = account.Id;
         orderRecord.EffectiveDate = effectiveDate;
+        orderRecord.Pricebook2Id = Test.getStandardPricebookId();
         orderRecord.Status = 'Draft';
         orderRecord.Type = 'Standard';
         insert orderRecord;
