@@ -213,7 +213,8 @@ public with sharing class TestDataFactory {
         Product2 p                   = new Product2();
         p.Name                       = name;
         p.IsActive                   = active;
-        p.Is_Veeglow_products__c = true;
+        p.Is_Veeglow_products__c     = true;
+        p.Is_Asset__c                = true;
         insert p;
         return p;
     }
@@ -226,6 +227,7 @@ public with sharing class TestDataFactory {
         p.Name                       = name;
         p.IsActive                   = active;
         p.Is_Veeglow_products__c     = true;
+        p.Is_Asset__c                = true;
         p.Is_New__c                  = true;
         insert p;
         return p;
@@ -614,6 +616,7 @@ public with sharing class TestDataFactory {
         p.Name                      = name;
         p.IsActive                  = active;
         p.Is_Veeglow_products__c    = true;
+        p.Is_Asset__c               = true;
         p.isSample__c               = true;
         p.SampleOrderLimit__c       = sampleOrderLimit;
         p.TotalSampleQuantity__c    = sampleOrderLimit * 4;

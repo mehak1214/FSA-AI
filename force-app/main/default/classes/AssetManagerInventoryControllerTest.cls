@@ -27,7 +27,7 @@ private class AssetManagerInventoryControllerTest {
 
         AssetManagerInventoryController.markDelivered(inventoryAsset.Id);
         deployed = [SELECT Asset_Status__c FROM Asset__c WHERE Id = :inventoryAsset.Id];
-        System.assertEquals('Active', deployed.Asset_Status__c);
+        System.assertEquals('Deployed', deployed.Asset_Status__c);
 
         AssetManagerInventoryController.updateAssetStatus(inventoryAsset.Id, 'In Transit');
         deployed = [SELECT Asset_Status__c FROM Asset__c WHERE Id = :inventoryAsset.Id];
