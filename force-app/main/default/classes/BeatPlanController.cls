@@ -28,7 +28,11 @@ public with sharing class BeatPlanController {
         @AuraEnabled public String  colorClass         { get; set; }  // derived from visitStatus
         @AuraEnabled public String  startTime          { get; set; }  // HH:mm from UI draft form
         @AuraEnabled public String  endTime            { get; set; }  // HH:mm from UI draft form
+        @AuraEnabled public String  meetingAgenda      { get; set; }  // Meeting_Agenda__c multipicklist as ; separated values
+        @AuraEnabled public Decimal expectedOrderValue { get; set; }  // Expected_Order_Value__c
+        @AuraEnabled public Decimal expectedExpenses   { get; set; }  // Expected_Expenses__c
         @AuraEnabled public String  notes              { get; set; }  // maps to Missed_Remarks__c
+        @AuraEnabled public String  managerComment     { get; set; }
     }
 
     /** Header stats shown in the banner bar */
@@ -89,9 +93,10 @@ public with sharing class BeatPlanController {
                     Sales_Rep__c
             FROM    Beat__c
             WHERE   Sales_Rep__c = :UserInfo.getUserId()
+            AND     Active__c = true
             AND     Start_Date__c <= :weekEnd
             AND     End_Date__c   >= :weekStart
-            ORDER BY Active__c DESC, Start_Date__c DESC
+            ORDER BY Start_Date__c DESC
             LIMIT   50
         ];
 
@@ -154,6 +159,10 @@ public with sharing class BeatPlanController {
             stats.beatEndDate   = records[0].Beat__r.End_Date__c;
         }
 
+        Map<Id, String> rejectionCommentByVisitId = getLatestRejectionComments(
+            new Map<Id, Visit__c>(records).keySet()
+        );
+
         // Step 4: Map records -> VisitWrappers
         List<VisitWrapper> visits = new List<VisitWrapper>();
 
@@ -179,6 +188,7 @@ public with sharing class BeatPlanController {
             v.sequence          = r.Sequence__c != null ? Integer.valueOf(r.Sequence__c) : null;
             v.dayOfWeek         = dayLabel(r.Visit_Date__c);
             v.colorClass        = statusToColor(r.Visit_Status__c, r.Is_Completed__c, r.Approval_Status__c);
+            v.managerComment    = rejectionCommentByVisitId.get(r.Id);
 
             String s = r.Visit_Status__c;
             if      (r.Is_Completed__c == true) stats.completed++;
@@ -257,8 +267,8 @@ public with sharing class BeatPlanController {
     @AuraEnabled
     public static String saveVisit(String visitJson) {
         VisitWrapper v = (VisitWrapper) JSON.deserialize(visitJson, VisitWrapper.class);
-        if (v.visitDate != null && v.visitDate < Date.today()) {
-            throw new AuraHandledException('Visit can only be created for today or future dates.');
+        if (String.isBlank(v.id) && v.visitDate != null && v.visitDate <= Date.today()) {
+            throw new AuraHandledException('Visit can only be created for future dates.');
         }
 
         Visit__c record = new Visit__c();
@@ -283,6 +293,9 @@ public with sharing class BeatPlanController {
         if (String.isNotBlank(v.notes)) {
             record.Missed_Remarks__c = v.notes;
         }
+        record.Meeting_Agenda__c = v.meetingAgenda;
+        record.Expected_Order_Value__c = v.expectedOrderValue;
+        record.Expected_Expenses__c = v.expectedExpenses;
 
         record.Visit_Status__c     = String.isBlank(v.visitStatus) ? 'Planned' : v.visitStatus;
         record.Approval_Status__c  = String.isBlank(v.approvalStatus) ? 'Planned' : v.approvalStatus;
@@ -309,8 +322,8 @@ public with sharing class BeatPlanController {
                 if (String.isBlank(v.beatId) || String.isBlank(v.outletId) || v.visitDate == null) {
                     throw new AuraHandledException('Beat, Outlet and Visit Date are required for all visits.');
                 }
-                if (v.visitDate < Date.today()) {
-                    throw new AuraHandledException('Visit can only be created for today or future dates.');
+                if (v.visitDate == null || v.visitDate <= Date.today()) {
+                    throw new AuraHandledException('Visit can only be created for future dates.');
                 }
                 if (String.isBlank(v.startTime) || String.isBlank(v.endTime)) {
                     throw new AuraHandledException('Start Time and End Time are required for all visits.');
@@ -328,6 +341,9 @@ public with sharing class BeatPlanController {
                 // Must match Visit_Approval_Process entry criteria.
                 rec.Approval_Status__c = 'Draft';
                 rec.Missed_Remarks__c = v.notes;
+                rec.Meeting_Agenda__c = v.meetingAgenda;
+                rec.Expected_Order_Value__c = v.expectedOrderValue;
+                rec.Expected_Expenses__c = v.expectedExpenses;
                 if (v.sequence != null) rec.Sequence__c = v.sequence;
                 toInsert.add(rec);
             }
@@ -400,43 +416,52 @@ public with sharing class BeatPlanController {
      * Resubmits a rejected Visit for approval by resetting statuses to Draft.
      */
     @AuraEnabled
-    public static String resubmitRejectedVisit(String visitId) {
-        if (String.isBlank(visitId)) {
+    public static String editAndResubmitRejectedVisit(String visitJson) {
+        VisitWrapper v = (VisitWrapper) JSON.deserialize(visitJson, VisitWrapper.class);
+        if (String.isBlank(v?.id)) {
             throw new AuraHandledException('Visit Id is required.');
+        }
+        if (v.visitDate == null || v.visitDate <= Date.today()) {
+            throw new AuraHandledException('Visit can only be created for future dates.');
+        }
+        if (String.isBlank(v.beatId) || String.isBlank(v.outletId)) {
+            throw new AuraHandledException('Beat and Outlet are required.');
+        }
+        if (String.isBlank(v.startTime) || String.isBlank(v.endTime)) {
+            throw new AuraHandledException('Start Time and End Time are required.');
         }
 
         Visit__c rec = [
             SELECT Id, Approval_Status__c, Visit_Status__c, Sales_Rep__c, OwnerId
             FROM Visit__c
-            WHERE Id = :visitId
+            WHERE Id = :v.id
             LIMIT 1
         ];
 
         if (rec.Approval_Status__c != 'Rejected') {
-            throw new AuraHandledException('Only Rejected visits can be resubmitted.');
+            throw new AuraHandledException('Only Rejected visits can be edited and resubmitted.');
         }
 
+        rec.Beat__c = v.beatId;
+        rec.Outlet1__c = v.outletId;
+        rec.Visit_Date__c = v.visitDate;
+        rec.Planned_Start_Time__c = parseDateTime(v.visitDate, v.startTime);
+        rec.Planned_End_Time__c = parseDateTime(v.visitDate, v.endTime);
+        rec.Missed_Remarks__c = v.notes;
+        rec.Meeting_Agenda__c = v.meetingAgenda;
+        rec.Expected_Order_Value__c = v.expectedOrderValue;
+        rec.Expected_Expenses__c = v.expectedExpenses;
         rec.Approval_Status__c = 'Draft';
         rec.Visit_Status__c = 'Draft';
-        if (rec.OwnerId == null || rec.OwnerId != UserInfo.getUserId()) {
-            rec.OwnerId = UserInfo.getUserId();
-        }
+        rec.OwnerId = UserInfo.getUserId();
         if (rec.Sales_Rep__c == null) {
             rec.Sales_Rep__c = UserInfo.getUserId();
         }
         update rec;
 
-        String processDefinitionId = resolveVisitApprovalProcessId();
-        if (String.isBlank(processDefinitionId)) {
-            throw new AuraHandledException(
-                'No active Visit approval process found. Configure and activate a Visit approval process in this org.'
-            );
-        }
-
         try {
             Approval.ProcessSubmitRequest req = new Approval.ProcessSubmitRequest();
             req.setObjectId(rec.Id);
-            // Mirror the working initial submit flow and let Salesforce select the active process.
             req.setSkipEntryCriteria(false);
             Approval.ProcessResult result = Approval.process(req);
             if (result == null || !result.isSuccess()) {
@@ -445,9 +470,9 @@ public with sharing class BeatPlanController {
         } catch (DmlException submitEx) {
             String statusCode = String.valueOf(submitEx.getDmlStatusCode(0));
             String dmlMessage = submitEx.getDmlMessage(0);
-            String detailMsg = 'Visit approval resubmission failed: ' + dmlMessage
-                             + '. StatusCode=' + statusCode + '.';
-            throw new AuraHandledException(detailMsg);
+            throw new AuraHandledException(
+                'Visit approval resubmission failed: ' + dmlMessage + '. StatusCode=' + statusCode + '.'
+            );
         }
         return 'SUCCESS';
     }
@@ -505,13 +530,17 @@ public with sharing class BeatPlanController {
             LIMIT   500
         ];
 
-        Map<Id, Account> byId = new Map<Id, Account>();
+        List<Account> outlets = new List<Account>();
+        Set<Id> seenOutletIds = new Set<Id>();
+
         for (Beat_Plan_Store__c link : links) {
             if (link.Outlet__c == null || link.Outlet__r == null) continue;
-            byId.put(link.Outlet__c, link.Outlet__r);
+            if (seenOutletIds.contains(link.Outlet__c)) continue;
+            seenOutletIds.add(link.Outlet__c);
+            outlets.add(link.Outlet__r);
         }
 
-        return new List<Account>(byId.values());
+        return outlets;
     }
 
     /**
@@ -613,6 +642,24 @@ public with sharing class BeatPlanController {
         // Avoid silently choosing an unrelated approval process if the expected one isn't active/present.
         if (activeForObject.size() == 1) return activeForObject[0].Id;
         return null;
+    }
+
+    private static Map<Id, String> getLatestRejectionComments(Set<Id> visitIds) {
+        Map<Id, String> result = new Map<Id, String>();
+        if (visitIds == null || visitIds.isEmpty()) return result;
+
+        for (ProcessInstanceStep step : [
+            SELECT Comments, CreatedDate, ProcessInstance.TargetObjectId
+            FROM ProcessInstanceStep
+            WHERE ProcessInstance.TargetObjectId IN :visitIds
+            AND StepStatus = 'Rejected'
+            ORDER BY CreatedDate DESC
+        ]) {
+            Id targetId = step.ProcessInstance.TargetObjectId;
+            if (targetId == null || result.containsKey(targetId)) continue;
+            result.put(targetId, step.Comments);
+        }
+        return result;
     }
 
     /**

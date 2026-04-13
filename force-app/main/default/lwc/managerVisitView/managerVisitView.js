@@ -1,11 +1,10 @@
 import { LightningElement, track, wire } from 'lwc';
-import { NavigationMixin } from 'lightning/navigation';
 import { refreshApex } from '@salesforce/apex';
 import getVisitsForManager from '@salesforce/apex/ManagerVisitApprovalView.getVisitsForManager';
 import approveVisit from '@salesforce/apex/ManagerVisitApprovalView.approveVisit';
 import rejectVisit from '@salesforce/apex/ManagerVisitApprovalView.rejectVisit';
 
-export default class ManagerVisitView extends NavigationMixin(LightningElement) {
+export default class ManagerVisitView extends LightningElement {
 
     @track activeTab = 'pending';
     @track isLoading = false;
@@ -17,6 +16,8 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
     @track showRejectModal = false;
     @track rejectComment = '';
     @track rejectVisitId = null;
+    @track showPopup = false;
+    @track popupVisit = null;
 
     wiredVisitsResult;
     _allVisits = [];
@@ -33,11 +34,21 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
             this.hasError = false;
             this.errorMessage = '';
             this.isLoading = false;
+            // Notify parent console of current pending count
+            this._firePendingCount(this.pendingVisits.length);
         } else if (result.error) {
             this.hasError = true;
             this.errorMessage = result.error.body?.message || 'Failed to load visits.';
             this.isLoading = false;
         }
+    }
+
+    _firePendingCount(count) {
+        this.dispatchEvent(new CustomEvent('pendingcountchange', {
+            detail  : { count },
+            bubbles : true,
+            composed: true
+        }));
     }
 
     _formatVisit(visit) {
@@ -57,6 +68,8 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
 
         const formattedStartTime = this._formatTime(this._getField(visit, 'Planned_Start_Time__c'));
         const formattedEndTime = this._formatTime(this._getField(visit, 'Planned_End_Time__c'));
+        const formattedCheckInTime = this._formatTime(this._getField(visit, 'Check_In_Time__c'));
+        const formattedCheckOutTime = this._formatTime(this._getField(visit, 'Check_Out_Time__c'));
 
         return {
             ...visit,
@@ -64,7 +77,9 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
             initials,
             formattedDate,
             formattedStartTime,
-            formattedEndTime
+            formattedEndTime,
+            formattedCheckInTime,
+            formattedCheckOutTime
         };
     }
 
@@ -97,15 +112,24 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
         );
     }
 
+    get missedVisits() {
+        return this._allVisits.filter(
+            (visit) => this._normalizeStatus(this._getField(visit, 'Visit_Status__c')) === 'Missed'
+        );
+    }
+
     get pendingCount()      { return this.pendingVisits.length; }
     get approvedCount()     { return this.approvedVisits.length; }
     get rejectedCount()     { return this.rejectedVisits.length; }
+    get missedCount()       { return this.missedVisits.length; }
     get hasPendingVisits()  { return this.pendingVisits.length > 0; }
     get hasApprovedVisits() { return this.approvedVisits.length > 0; }
     get hasRejectedVisits() { return this.rejectedVisits.length > 0; }
+    get hasMissedVisits()   { return this.missedVisits.length > 0; }
     get showPendingTab()    { return this.activeTab === 'pending'; }
     get showApprovedTab()   { return this.activeTab === 'approved'; }
     get showRejectedTab()   { return this.activeTab === 'rejected'; }
+    get showMissedTab()     { return this.activeTab === 'missed'; }
 
     get pendingTabClass() {
         return this.activeTab === 'pending' ? 'tab-btn tab-active' : 'tab-btn';
@@ -119,13 +143,37 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
         return this.activeTab === 'rejected' ? 'tab-btn tab-active' : 'tab-btn';
     }
 
+    get missedTabClass() {
+        return this.activeTab === 'missed' ? 'tab-btn tab-active' : 'tab-btn';
+    }
+
     get toastClass() {
         return `toast-notification toast-${this.toastType}`;
+    }
+
+    get popupIsPending() {
+        return this.showPopup && this.popupVisit &&
+               this._allVisits.some(v => v.Id === this.popupVisit.Id && 
+                   (this._normalizeStatus(this._getField(v, 'Approval_Status__c')) === 'Submitted' || 
+                    (!this._normalizeStatus(this._getField(v, 'Approval_Status__c')) && 
+                     this._normalizeStatus(this._getField(v, 'Visit_Status__c')) === 'Submitted')));
+    }
+
+    get popupIsMissed() {
+        return this.showPopup && this.popupVisit &&
+               this._allVisits.some(v => v.Id === this.popupVisit.Id && 
+                   this._normalizeStatus(this._getField(v, 'Visit_Status__c')) === 'Missed');
+    }
+
+    get popupVisitIsCompleted() {
+        return this.showPopup && this.popupVisit &&
+               this._normalizeStatus(this._getField(this.popupVisit, 'Visit_Status__c')) === 'Completed';
     }
 
     showPending() { this.activeTab = 'pending'; }
     showApproved() { this.activeTab = 'approved'; }
     showRejected() { this.activeTab = 'rejected'; }
+    showMissed() { this.activeTab = 'missed'; }
 
     async handleApprove(event) {
         event.stopPropagation();
@@ -181,15 +229,44 @@ export default class ManagerVisitView extends NavigationMixin(LightningElement) 
         }
     }
 
+    handleAbandon(event) {
+        event.stopPropagation();
+        const visitId = event.currentTarget.dataset.id;
+        // TODO: Implement abandon logic
+        this._showToast('Abandon action not yet implemented.', 'info');
+    }
+
+    handleEscalate(event) {
+        event.stopPropagation();
+        const visitId = event.currentTarget.dataset.id;
+        // TODO: Implement escalate logic
+        this._showToast('Escalate action not yet implemented.', 'info');
+    }
+
+    handleAskForReason(event) {
+        event.stopPropagation();
+        const visitId = event.currentTarget.dataset.id;
+        // TODO: Implement ask for reason logic
+        this._showToast('Ask for Reason action not yet implemented.', 'info');
+    }
+
     navigateToRecord(event) {
         const recordId = event.currentTarget.dataset.id;
-        this[NavigationMixin.Navigate]({
-            type: 'standard__recordPage',
-            attributes: {
-                recordId,
-                actionName: 'view'
-            }
-        });
+        const visit = this._allVisits.find(v => v.Id === recordId);
+        if (!visit) return;
+        this.popupVisit = visit;
+        this.showPopup = true;
+    }
+
+    handleClosePopup() {
+        this.showPopup = false;
+        this.popupVisit = null;
+    }
+
+    handleBackdropClick(event) {
+        if (event.target === event.currentTarget) {
+            this.handleClosePopup();
+        }
     }
 
     _showToast(message, type = 'success') {

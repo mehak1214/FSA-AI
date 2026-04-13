@@ -342,7 +342,6 @@ export default class CreateCaseModal extends LightningElement {
         
         this.orderId = orderId;
         this.accountId = accountId;
-        this.isModalOpen = true;
         this.attemptCount = 0;
         this.resetForm();
         
@@ -353,14 +352,16 @@ export default class CreateCaseModal extends LightningElement {
             formSubmitted: false
         };
         
+        // Open native dialog
+        const dlg = this.template.querySelector('dialog.ccm-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+        
         this.loadOrderInfo();
         
         // Focus on subject field after modal opens
         setTimeout(() => {
             const subjectInput = this.template.querySelector('[id="subject-input"]');
-            if (subjectInput) {
-                subjectInput.focus();
-            }
+            if (subjectInput) subjectInput.focus();
         }, 100);
     }
 
@@ -371,8 +372,11 @@ export default class CreateCaseModal extends LightningElement {
         console.log('Closing CreateCaseModal');
         
         this.modalMetrics.closedAt = new Date().toISOString();
-        this.isModalOpen = false;
         this.resetForm();
+        
+        // Close native dialog
+        const dlg = this.template.querySelector('dialog.ccm-dialog');
+        if (dlg && dlg.open) dlg.close();
         
         // Dispatch close event
         this.dispatchEvent(new CustomEvent('modalclosed', {
@@ -380,6 +384,13 @@ export default class CreateCaseModal extends LightningElement {
             bubbles: true,
             composed: true
         }));
+    }
+
+    /**
+     * Esc key sync — dialog closed itself, just reset form
+     */
+    handleDialogClose() {
+        this.resetForm();
     }
 
     /**
@@ -733,15 +744,17 @@ export default class CreateCaseModal extends LightningElement {
                 this.handleSubmitSuccess(result);
             })
             .catch(error => {
-                this.handleSubmitError(error);
-            })
-            .finally(() => {
+                // Reset spinner on error so user can correct and retry
                 this.isSubmitting = false;
-                this.loadingStates = { 
-                    ...this.loadingStates, 
-                    caseSubmitting: false 
+                this.loadingStates = {
+                    ...this.loadingStates,
+                    caseSubmitting: false
                 };
+                this.handleSubmitError(error);
             });
+        // Note: no .finally() — on success the spinner stays active until
+        // closeModal() fires (via the 1500ms setTimeout in handleSubmitSuccess),
+        // preventing the form from becoming interactive again before it closes.
     }
 
     /**
@@ -925,6 +938,15 @@ export default class CreateCaseModal extends LightningElement {
             uploadError: '',
             isUploading: false
         };
+
+        // Reset submission state so the button is enabled on next open
+        this.isSubmitting = false;
+        this.loadingStates = {
+            picklistsLoading: false,
+            orderInfoLoading: false,
+            caseSubmitting: false,
+            fileUploading: false
+        };
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -935,13 +957,15 @@ export default class CreateCaseModal extends LightningElement {
      * Handle keyboard shortcuts
      */
     handleKeyDown(event) {
+        const dlg = this.template.querySelector('dialog.ccm-dialog');
+        const isOpen = dlg && dlg.open;
         // Close modal on Escape key
-        if (event.key === 'Escape' && this.isModalOpen) {
+        if (event.key === 'Escape' && isOpen) {
             this.handleCloseModal();
         }
 
         // Submit form on Ctrl/Cmd + Enter
-        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && this.isModalOpen) {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && isOpen) {
             if (this.canSubmitForm) {
                 this.handleSaveCase();
             }

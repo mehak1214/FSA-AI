@@ -29,6 +29,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     outletPhotoUrl;
     actionInFlight = false;
     showOrderPanel = false;
+    assetRequestSuccessMessage = '';
     // UI state for photo modal
     isPhotoModalOpen = false;
     isSchemesModalOpen = false;
@@ -64,6 +65,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     allOrderProducts = [];
     cases = [];
     allCases = [];
+    assetRequests = [];
+    allAssetRequests = [];
     assetsCount = 0;
     totalAssetsCount = 0;
     ordersCount = 0;
@@ -72,6 +75,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     totalOrderProductsCount = 0;
     casesCount = 0;
     totalCasesCount = 0;
+    assetRequestsCount = 0;
+    totalAssetRequestsCount = 0;
 
     @api
     get visit() {
@@ -153,8 +158,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     handleOrderCreated(event) {
-        const orderId = event.detail?.orderId;
-
         this.showToast(
             'Order Created',
             'Order created successfully.',
@@ -165,8 +168,33 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         const orderDlg = this.template.querySelector('dialog.order-dialog');
         if (orderDlg && orderDlg.open) { orderDlg.close(); this._unlockScroll(); }
 
-        // Optional: refresh parent visit
-        this.refreshVisitData({ showErrorToast: false });
+        Promise.all([
+            this.refreshVisitData({ showErrorToast: false }),
+            Promise.resolve().then(() => this.loadOutletRelatedData())
+        ]).catch(() => {});
+    }
+
+    handleOpenAssetRequest() {
+        if (!this.currentVisitId) {
+            this.showToast('Visit not found', 'Missing visit id.', 'error');
+            return;
+        }
+        if (!this.outletRecordId) {
+            this.showToast('Store unavailable', 'Store record is not available for this visit.', 'warning');
+            return;
+        }
+
+        this.assetRequestSuccessMessage = '';
+
+        const modal = this.template.querySelector('c-asset-request-form');
+        if (modal) {
+            modal.openModal();
+        }
+    }
+
+    handleAssetRequestSubmitted(event) {
+        this.assetRequestSuccessMessage = event.detail?.message || 'Request submitted — your manager will review it shortly.';
+        this.showToast('Request submitted', this.assetRequestSuccessMessage, 'success');
     }
 
 
@@ -262,12 +290,24 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         if (!outletId) {
             this.assets = [];
             this.allAssets = [];
+            this.assetsCount = 0;
+            this.totalAssetsCount = 0;
             this.recentOrders = [];
             this.allOrders = [];
+            this.ordersCount = 0;
+            this.totalOrdersCount = 0;
             this.orderProducts = [];
             this.allOrderProducts = [];
+            this.orderProductsCount = 0;
+            this.totalOrderProductsCount = 0;
             this.cases = [];
             this.allCases = [];
+            this.casesCount = 0;
+            this.totalCasesCount = 0;
+            this.assetRequests = [];
+            this.allAssetRequests = [];
+            this.assetRequestsCount = 0;
+            this.totalAssetRequestsCount = 0;
             return;
         }
 
@@ -333,6 +373,27 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
                 }));
                 this.casesCount = result?.casesCount || this.cases.length;
                 this.totalCasesCount = result?.totalCasesCount || this.casesCount;
+
+                this.assetRequests = (result?.assetRequests || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-asset-request-${item.requestId || index}`,
+                    createdDateLabel: this.formatDate(item.createdDate),
+                    requestedInstallationDateLabel: this.formatDate(item.requestedInstallationDate),
+                    productName: item.productName || '--',
+                    requestType: item.requestType || '--',
+                    status: item.status || '--'
+                }));
+                this.allAssetRequests = (result?.allAssetRequests || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `visit-all-asset-request-${item.requestId || index}`,
+                    createdDateLabel: this.formatDate(item.createdDate),
+                    requestedInstallationDateLabel: this.formatDate(item.requestedInstallationDate),
+                    productName: item.productName || '--',
+                    requestType: item.requestType || '--',
+                    status: item.status || '--'
+                }));
+                this.assetRequestsCount = result?.assetRequestsCount || this.assetRequests.length;
+                this.totalAssetRequestsCount = result?.totalAssetRequestsCount || this.assetRequestsCount;
             })
             .catch((error) => {
                 this.showToast(
@@ -400,7 +461,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     get outletName() {
         const account = this.outletAccount;
-        return account?.Name || 'Unknown Outlet';
+        return account?.Name || 'Unknown Store';
     }
 
     get outletRecordId() {
@@ -535,6 +596,10 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         return !this.dayStarted;
     }
 
+    get hasAssetRequestSuccessMessage() {
+        return !!this.assetRequestSuccessMessage;
+    }
+
     get showRatingFeedback() {
         const status = this.normalizedStatus;
         return this.dayStarted && (status === 'in progress' || status === 'completed');
@@ -548,25 +613,31 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     get hasAllRelatedProducts() { return this.allOrderProducts.length > 0; }
     get hasRelatedCases() { return this.cases.length > 0; }
     get hasAllRelatedCases() { return this.allCases.length > 0; }
+    get hasRelatedAssetRequests() { return this.assetRequests.length > 0; }
+    get hasAllRelatedAssetRequests() { return this.allAssetRequests.length > 0; }
     get showRelatedLists() { return !!this.outletRecordId; }
 
     get relatedAssetsLabel() { return `Assets (${this.totalAssetsCount || this.assetsCount || 0})`; }
     get relatedOrdersLabel() { return `Orders (${this.totalOrdersCount || this.ordersCount || 0})`; }
     get relatedCasesLabel() { return `Cases (${this.totalCasesCount || this.casesCount || 0})`; }
+    get relatedAssetRequestsLabel() { return `Asset Requests (${this.totalAssetRequestsCount || this.assetRequestsCount || 0})`; }
 
     get showViewAllRelatedAssets() { return (this.totalAssetsCount || 0) > 5; }
     get showViewAllRelatedOrders() { return (this.totalOrdersCount || 0) > 5; }
     get showViewAllRelatedProducts() { return (this.totalOrderProductsCount || 0) > 5; }
     get showViewAllRelatedCases() { return (this.totalCasesCount || 0) > 5; }
+    get showViewAllRelatedAssetRequests() { return (this.totalAssetRequestsCount || 0) > 5; }
 
     get isRelatedTabAssets() { return this.activeRelatedTab === 'assets'; }
     get isRelatedTabOrders() { return this.activeRelatedTab === 'orders'; }
     get isRelatedTabProducts() { return this.activeRelatedTab === 'products'; }
     get isRelatedTabCases() { return this.activeRelatedTab === 'cases'; }
+    get isRelatedTabAssetRequests() { return this.activeRelatedTab === 'assetRequests'; }
     get relatedTabClassAssets() { return `tab-pill${this.activeRelatedTab === 'assets' ? ' active' : ''}`; }
     get relatedTabClassOrders() { return `tab-pill${this.activeRelatedTab === 'orders' ? ' active' : ''}`; }
     get relatedTabClassProducts() { return `tab-pill${this.activeRelatedTab === 'products' ? ' active' : ''}`; }
     get relatedTabClassCases() { return `tab-pill${this.activeRelatedTab === 'cases' ? ' active' : ''}`; }
+    get relatedTabClassAssetRequests() { return `tab-pill${this.activeRelatedTab === 'assetRequests' ? ' active' : ''}`; }
 
     get mapDisabled() {
         return false; // Always enabled — falls back to default coordinates if outlet has none
@@ -643,7 +714,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         event?.stopPropagation();
 
         if (!this.outletRecordId) {
-            this.showToast('Outlet unavailable', 'Outlet record is not available for this visit.', 'warning');
+            this.showToast('Store unavailable', 'Store record is not available for this visit.', 'warning');
             return;
         }
 
@@ -671,6 +742,15 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
 
     handleCheckOut(event) {
         event?.stopPropagation();
+
+        if (this.hasPendingMandatoryTasks) {
+            this.showToast(
+                'Mandatory task pending',
+                'Please complete all mandatory tasks before checking out.',
+                'warning'
+            );
+            return;
+        }
         
         // Check if meeting notes are provided
         if (!this.savedNotesList || this.savedNotesList.length === 0) {
@@ -1205,6 +1285,11 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     get hasTasks()       { return this.tasks.length > 0; }
+    get hasPendingMandatoryTasks() {
+        return this.tasks.some(t =>
+            t.Is_Mandatory__c === true && t.Status__c === 'Pending'
+        );
+    }
     get showTasksCard()  { return !!this.currentVisitId; }
     get taskCountLabel() {
         const pending = this.tasks.filter(t => t.Status__c === 'Pending').length;
@@ -1350,8 +1435,24 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         }
     }
 
+    handleOpenRelatedAssetRequestsModal() {
+        const dlg = this.template.querySelector('dialog.related-asset-requests-dialog');
+        if (dlg && !dlg.open) {
+            dlg.showModal();
+            this._lockScroll();
+        }
+    }
+
     handleCloseRelatedCasesModal() {
         const dlg = this.template.querySelector('dialog.related-cases-dialog');
+        if (dlg && dlg.open) {
+            dlg.close();
+            this._unlockScroll();
+        }
+    }
+
+    handleCloseRelatedAssetRequestsModal() {
+        const dlg = this.template.querySelector('dialog.related-asset-requests-dialog');
         if (dlg && dlg.open) {
             dlg.close();
             this._unlockScroll();
@@ -1391,6 +1492,16 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         const assetDetail = this.template.querySelector('c-asset-audit-detail');
         if (assetDetail) {
             assetDetail.openForAsset(assetId);
+        }
+    }
+
+    handleRelatedAssetRequestClick(event) {
+        const requestId = event.currentTarget.dataset.id;
+        if (!requestId) return;
+        this.handleCloseRelatedAssetRequestsModal();
+        const requestDetail = this.template.querySelector('c-asset-request-detail');
+        if (requestDetail) {
+            requestDetail.openForRequest(requestId);
         }
     }
 

@@ -296,6 +296,36 @@
                                            onchange={handleDraftFieldChange} />
                                 </div>
 
+                                <lightning-checkbox-group
+                                    name="meetingAgenda"
+                                    label="Meeting Agenda"
+                                    value={draftForm.meetingAgenda}
+                                    options={meetingAgendaOptions}
+                                    onchange={handleDraftFieldChange}>
+                                </lightning-checkbox-group>
+
+                                <template if:true={showExpectedOrderValue}>
+                                    <lightning-input
+                                        type="number"
+                                        name="expectedOrderValue"
+                                        label="Expected Order Value"
+                                        value={draftForm.expectedOrderValue}
+                                        step="0.01"
+                                        min="0"
+                                        onchange={handleDraftFieldChange}>
+                                    </lightning-input>
+                                </template>
+
+                                <lightning-input
+                                    type="number"
+                                    name="expectedExpenses"
+                                    label="Expected Expenses"
+                                    value={draftForm.expectedExpenses}
+                                    step="0.01"
+                                    min="0"
+                                    onchange={handleDraftFieldChange}>
+                                </lightning-input>
+
                                 <div class="bp-field bp-field--full">
                                     <label class="bp-field__label">Notes</label>
                                     <textarea class="bp-field__input bp-field__textarea"
@@ -334,6 +364,72 @@
                         </header>
 
                         <div class="bp-modal__body bp-modal__body--scroll">
+                            <template if:true={showRejectedEditView}>
+                                <div class="bp-reject-note">
+                                    <span class="bp-reject-note__label">Manager Comment</span>
+                                    <p class="bp-reject-note__text">{selectedVisitManagerComment}</p>
+                                </div>
+                                <div class="bp-form-grid">
+                                    <lightning-combobox
+                                        name="visitDate"
+                                        label="Visit Date"
+                                        value={rejectedForm.visitDate}
+                                        options={draftDateOptions}
+                                        onchange={handleRejectedFieldChange}
+                                        required>
+                                    </lightning-combobox>
+
+                                    <div class="bp-field">
+                                        <label class="bp-field__label">Visit Status</label>
+                                        <div class="bp-field__input bp-field__input--disabled">{rejectedForm.visitStatus}</div>
+                                    </div>
+
+                                    <lightning-combobox
+                                        name="beatId"
+                                        label="Beat"
+                                        value={rejectedForm.beatId}
+                                        options={beatOptions}
+                                        onchange={handleRejectedFieldChange}
+                                        required>
+                                    </lightning-combobox>
+
+                                    <lightning-combobox
+                                        name="outletId"
+                                        label="Outlet"
+                                        value={rejectedForm.outletId}
+                                        options={outletOptions}
+                                        onchange={handleRejectedFieldChange}
+                                        required>
+                                    </lightning-combobox>
+
+                                    <div class="bp-field">
+                                        <label class="bp-field__label">Start Time <abbr class="bp-field__required" title="required">*</abbr></label>
+                                        <input class="bp-field__input"
+                                               type="time"
+                                               name="startTime"
+                                               value={rejectedForm.startTime}
+                                               onchange={handleRejectedFieldChange} />
+                                    </div>
+
+                                    <div class="bp-field">
+                                        <label class="bp-field__label">End Time <abbr class="bp-field__required" title="required">*</abbr></label>
+                                        <input class="bp-field__input"
+                                               type="time"
+                                               name="endTime"
+                                               value={rejectedForm.endTime}
+                                               onchange={handleRejectedFieldChange} />
+                                    </div>
+
+                                    <div class="bp-field bp-field--full">
+                                        <label class="bp-field__label">Notes</label>
+                                        <textarea class="bp-field__input bp-field__textarea"
+                                                  name="notes"
+                                                  onchange={handleRejectedFieldChange}>{rejectedForm.notes}</textarea>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template if:false={showRejectedEditView}>
 
                             <div class="bp-mrow">
                                 <span class="bp-mrow__lbl">Beat Plan</span>
@@ -401,11 +497,26 @@
                                 </div>
                             </template>
 
+                            <template if:true={canResubmitSelectedVisit}>
+                                <div class="bp-mrow bp-mrow--full">
+                                    <span class="bp-mrow__lbl">Manager Comment</span>
+                                    <span class="bp-mrow__val bp-mrow__val--wrap">
+                                        {selectedVisitManagerComment}
+                                    </span>
+                                </div>
+                            </template>
+
+                            </template>
+
                         </div>
 
                         <footer class="bp-modal__footer">
-                            <template if:true={canResubmitSelectedVisit}>
-                                <lightning-button label="Resubmit" variant="brand" onclick={handleResubmit}></lightning-button>
+                            <template if:true={showRejectedEditView}>
+                                <lightning-button label="Cancel" onclick={handleCancelRejectedEdit}></lightning-button>
+                                <lightning-button label="Save & Resubmit" variant="brand" onclick={handleEditAndResubmit}></lightning-button>
+                            </template>
+                            <template if:true={showRejectedReadView}>
+                                <lightning-button label="Edit & Resubmit" variant="brand" onclick={handleEditRejected}></lightning-button>
                             </template>
                             <lightning-button label="Close"
                                               onclick={handleCloseModal}>

@@ -8,6 +8,8 @@ import getExpenses                        from '@salesforce/apex/ExpenseControll
 import getTodaySummary                    from '@salesforce/apex/ExpenseController.getTodaySummary';
 import deleteExpense                      from '@salesforce/apex/ExpenseController.deleteExpense';
 import submitExpense                      from '@salesforce/apex/ExpenseController.submitExpense';
+import resubmitExpense                   from '@salesforce/apex/ExpenseController.resubmitExpense';
+import abandonExpense                    from '@salesforce/apex/ExpenseController.abandonExpense';
 import updateExpense                      from '@salesforce/apex/ExpenseController.updateExpense';
 import submitTodayReport                  from '@salesforce/apex/ExpenseController.submitTodayReport';
 import getVisitsForDate                   from '@salesforce/apex/ExpenseController.getVisitsForDate';
@@ -18,7 +20,7 @@ import attachFilesToExpense               from '@salesforce/apex/ExpenseControll
 import removeFileFromExpense              from '@salesforce/apex/ExpenseController.removeFileFromExpense';
 import { pendingCount, isOnline }         from 'c/offlineQueueForExpenses';
 
-const STATUS_OPTIONS = ['All', 'Draft', 'Submitted', 'Approved', 'Rejected', 'Paid'];
+const STATUS_OPTIONS = ['All', 'Draft', 'Submitted', 'Approved', 'Rejected', 'Abandoned', 'Paid'];
 const TYPE_OPTIONS   = [
     'All', 'Travel', 'Food & Beverages', 'Market Execution Expenses',
     'Communications Expenses', 'Miscellaneous Expenses', 'Other'
@@ -65,9 +67,21 @@ export default class ExpenseList extends LightningElement {
     @track deleteTargetId     = null;
     @track isDeleting         = false;
 
-    get deleteModalStyle() { return this.showDeleteConfirm ? '' : 'display:none'; }
-    get editModalStyle()   { return this.showEditModal     ? '' : 'display:none'; }
-    get viewModalStyle()   { return this.showViewModal     ? '' : 'display:none'; }
+    // ── Submit confirm ──────────────────────────────
+    @track showSubmitConfirm  = false;
+    @track submitTargetId     = null;
+    @track isSubmittingExpense = false;
+
+    // ── Abandon confirm ─────────────────────────────
+    @track showAbandonConfirm = false;
+    @track abandonTargetId    = null;
+    @track isAbandoning       = false;
+
+    get deleteModalStyle()  { return this.showDeleteConfirm  ? '' : 'display:none'; }
+    get submitModalStyle()  { return this.showSubmitConfirm  ? '' : 'display:none'; }
+    get abandonModalStyle() { return this.showAbandonConfirm ? '' : 'display:none'; }
+    get editModalStyle()    { return this.showEditModal       ? '' : 'display:none'; }
+    get viewModalStyle()    { return this.showViewModal       ? '' : 'display:none'; }
 
     // ── View modal (non-Draft expenses) ────────────
     @track showViewModal       = false;
@@ -228,6 +242,39 @@ export default class ExpenseList extends LightningElement {
             EXPENSE_QUEUED_CHANNEL,
             () => this.handleExpenseQueuedMessage()
         );
+        // Tell FAB it should be visible — we are on the expense tab
+        this._fabControl('show');
+        this._setupVisibilityObserver();
+    }
+
+    _setupVisibilityObserver() {
+        if (this._visibilityObserver) return;
+
+        const host = this.template.host;
+
+        const checkVisibility = () => {
+            // Walk up the DOM — if any ancestor has display:none we are hidden
+            let el = host;
+            while (el) {
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    this._fabControl('hide');
+                    return;
+                }
+                el = el.parentElement;
+            }
+            this._fabControl('show');
+        };
+
+        // MutationObserver watches for style/class/attribute changes on the
+        // host and its ancestors — Salesforce sets display:none on the tab
+        // container when switching tabs, which this catches reliably.
+        this._visibilityObserver = new MutationObserver(checkVisibility);
+        this._visibilityObserver.observe(document.body, {
+            attributes      : true,
+            attributeFilter : ['style', 'class'],
+            subtree         : true
+        });
     }
 
     renderedCallback() {
@@ -249,6 +296,12 @@ export default class ExpenseList extends LightningElement {
         this._lmsSubscription = null;
         if (this._portal)   this._portal.remove();
         if (this._styleTag) this._styleTag.remove();
+        if (this._visibilityObserver) {
+            this._visibilityObserver.disconnect();
+            this._visibilityObserver = null;
+        }
+        // Tell FAB to hide — user has left the expense tab
+        this._fabControl('hide');
     }
 
     handleExpenseQueuedMessage() {
@@ -526,11 +579,21 @@ export default class ExpenseList extends LightningElement {
         }
     }
 
-    // ── Submit individual expense ───────────────────
-    async handleSubmitExpense(event) {
-        const expenseId = event.detail.expenseId;
+    // ── Submit individual expense — show confirm ────
+    handleSubmitExpense(event) {
+        this.submitTargetId    = event.detail.expenseId;
+        this.showSubmitConfirm = true;
+    }
+
+    cancelSubmit() {
+        this.showSubmitConfirm = false;
+        this.submitTargetId    = null;
+    }
+
+    async confirmSubmit() {
+        this.isSubmittingExpense = true;
         try {
-            await submitExpense({ expenseId });
+            await submitExpense({ expenseId: this.submitTargetId });
             this.dispatchEvent(new ShowToastEvent({
                 title  : 'Submitted',
                 message: 'Expense submitted successfully.',
@@ -544,6 +607,70 @@ export default class ExpenseList extends LightningElement {
                 message: err?.body?.message || 'Could not submit expense.',
                 variant: 'error'
             }));
+        } finally {
+            this.isSubmittingExpense = false;
+            this.showSubmitConfirm   = false;
+            this.submitTargetId      = null;
+        }
+    }
+
+    // ── Resubmit (Rejected → Draft, opens edit modal) ──
+    async handleResubmitExpense(event) {
+        const expenseId = event.detail.expenseId;
+        try {
+            await resubmitExpense({ expenseId });
+            this.dispatchEvent(new ShowToastEvent({
+                title  : 'Ready to Edit',
+                message: 'Expense has been reset to Draft. Make your changes and resubmit.',
+                variant: 'success'
+            }));
+            // Refresh so the card re-renders as Draft, then open the edit modal
+            await refreshApex(this._wiredExpensesResult);
+            await refreshApex(this._wiredSummaryResult);
+            // Find the freshly-refreshed expense and open its edit modal
+            const exp = this.expenses.find(e => e.id === expenseId);
+            if (exp) this._openEditModal(exp);
+        } catch (err) {
+            this.dispatchEvent(new ShowToastEvent({
+                title  : 'Error',
+                message: err?.body?.message || 'Could not resubmit expense.',
+                variant: 'error'
+            }));
+        }
+    }
+
+    // ── Abandon — show confirm dialog ───────────────
+    handleAbandonExpense(event) {
+        this.abandonTargetId    = event.detail.expenseId;
+        this.showAbandonConfirm = true;
+    }
+
+    cancelAbandon() {
+        this.showAbandonConfirm = false;
+        this.abandonTargetId    = null;
+    }
+
+    async confirmAbandon() {
+        this.isAbandoning = true;
+        try {
+            await abandonExpense({ expenseId: this.abandonTargetId });
+            this.dispatchEvent(new ShowToastEvent({
+                title  : 'Abandoned',
+                message: 'Expense has been abandoned and kept for record.',
+                variant: 'success'
+            }));
+            refreshApex(this._wiredExpensesResult);
+            refreshApex(this._wiredSummaryResult);
+        } catch (err) {
+            this.dispatchEvent(new ShowToastEvent({
+                title  : 'Error',
+                message: err?.body?.message || 'Could not abandon expense.',
+                variant: 'error'
+            }));
+        } finally {
+            this.isAbandoning       = false;
+            this.showAbandonConfirm = false;
+            this.abandonTargetId    = null;
         }
     }
 

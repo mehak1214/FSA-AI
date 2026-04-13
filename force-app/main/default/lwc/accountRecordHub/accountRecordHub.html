@@ -1,80 +1,155 @@
 <template>
     <section class="hub-page">
-        <div class="hub-panel hub-header">
-            <div class="header-copy">
-                <h1>Account Hub</h1>
-                <p>Manage Dealer/Distributor and Franchise accounts from one place.</p>
+
+        <!-- ── Controls Panel ── -->
+        <div class="controls-panel">
+
+            <!-- Top row: result summary + new buttons -->
+            <div class="controls-top-row">
+                <span class="result-summary">{resultSummary}</span>
+                <div class="header-actions">
+                    <button class="action-btn secondary" type="button" onclick={handleCreateDealerDistributor}>
+                        + Dealer/Distributor
+                    </button>
+                    <button class="action-btn primary" type="button" onclick={handleCreateRetailer}>
+                        + Retailer
+                    </button>
+                </div>
             </div>
-            <div class="header-actions">
-                <button class="action-btn secondary" type="button" onclick={handleCreateDealerDistributor}>
-                    + New Dealer/Distributor
+
+            <!-- Account type tabs -->
+            <div class="type-tabs" role="tablist">
+                <button class={dealerTabClass} data-type="Dealer_Distributor" onclick={handleTabSelect} type="button">
+                    Dealer / Distributor
                 </button>
-                <button class="action-btn primary" type="button" onclick={handleCreateFranchise}>
-                    + New Franchise
+                <button class={retailerTabClass} data-type="Franchise" onclick={handleTabSelect} type="button">
+                    Retailer
                 </button>
+            </div>
+
+            <!-- Search + Refresh -->
+            <div class="search-row">
+                <div class="search-box">
+                    <span class="search-icon">&#128269;</span>
+                    <input
+                        type="search"
+                        class="search-input"
+                        placeholder="Search by name, phone or city…"
+                        value={searchText}
+                        oninput={handleSearchChange} />
+                </div>
+                <button class="refresh-btn" type="button" onclick={handleRefresh} title="Refresh">&#8635;</button>
+            </div>
+
+            <!-- Status filter pills -->
+            <div class="status-filter-row">
+                <template for:each={statusFilters} for:item="f">
+                    <button
+                        key={f.value}
+                        type="button"
+                        class={f.cssClass}
+                        data-status={f.value}
+                        onclick={handleStatusFilter}>
+                        {f.label}
+                        <span class="pill-count">{f.count}</span>
+                    </button>
+                </template>
             </div>
         </div>
 
-        <div class="hub-panel hub-content">
-            <div class="toolbar">
-                <div class="hub-tabs" role="tablist" aria-label="Account Type Tabs">
-                    <button class={dealerTabClass} data-type="Dealer_Distributor" onclick={handleTabSelect} type="button">
-                        Dealer/Distributor
-                    </button>
-                    <button class={franchiseTabClass} data-type="Franchise" onclick={handleTabSelect} type="button">
-                        Franchise
-                    </button>
-                </div>
-
-                <div class="toolbar-search">
-                    <lightning-input
-                        type="search"
-                        variant="label-hidden"
-                        placeholder="Search by name, phone, city or site"
-                        value={searchText}
-                        onchange={handleSearchChange}>
-                    </lightning-input>
-                    <button class="refresh-btn" type="button" onclick={handleRefresh}>Refresh</button>
-                </div>
-            </div>
-
-            <div class="section-title-row">
-                <h2>{panelTitle}</h2>
-            </div>
-
+        <!-- ── Records ── -->
+        <div class="records-area">
             <template if:true={isLoading}>
                 <div class="loading-wrap">
-                    <lightning-spinner alternative-text="Loading accounts" size="medium"></lightning-spinner>
+                    <lightning-spinner alternative-text="Loading stores" size="medium"></lightning-spinner>
                 </div>
             </template>
 
             <template if:true={hasRecords}>
+                <div class="pagination-bar top">
+                    <span class="records-visible">{recordsVisibleInfo}</span>
+                    <div class="page-nav">
+                        <button class="page-btn" type="button" onclick={handlePrevPage} disabled={disablePrev}>&#8592;</button>
+                        <span class="page-info">{pageInfo}</span>
+                        <button class="page-btn" type="button" onclick={handleNextPage} disabled={disableNext}>&#8594;</button>
+                    </div>
+                </div>
+
                 <div class="records-grid">
                     <template for:each={visibleRecords} for:item="record">
-                        <article key={record.accountId} class="record-card" data-id={record.accountId} onclick={handleOpenAccount}>
-                            <div class="record-accent"></div>
-                            <div class="record-main">
-                                <div class="avatar">{record.avatarLetter}</div>
-                                <div class="record-copy">
-                                    <h3>{record.accountName}</h3>
-                                    <p>{record.locationText}</p>
+                        <article
+                            key={record.accountId}
+                            class={record.cardClass}
+                            data-id={record.accountId}
+                            data-status={record.outletStatusText}
+                            onclick={handleOpenAccount}>
+
+                            <!-- Status-coloured left border via inline style -->
+                            <div class="card-side-accent" style={record.accentStyle}></div>
+
+                            <div class="card-body">
+                                <div class="card-top">
+                                    <div class="avatar">{record.avatarLetter}</div>
+                                    <div class="card-title-block">
+                                        <h3 class="store-name">{record.accountName}</h3>
+                                        <p class="store-location">{record.locationText}</p>
+                                    </div>
+                                    <span class={record.statusBadgeClass}>{record.outletStatusText}</span>
                                 </div>
-                            </div>
-                            <div class="record-meta">
-                                <span><strong>Phone:</strong> {record.phoneText}</span>
-                                <span><strong>{record.ownerLabel}:</strong> {record.ownerText}</span>
-                                <span><strong>Type:</strong> {record.recordTypeText}</span>
-                                <template if:true={record.showOutletFields}>
-                                    <span><strong>Outlet Status:</strong> {record.outletStatusText}</span>
+
+                                <div class="card-meta">
+                                    <span class="meta-item">
+                                        <span class="meta-icon">&#128222;</span> {record.phoneText}
+                                    </span>
+                                    <span class="meta-item">
+                                        <span class="meta-icon">&#128100;</span> {record.ownerText}
+                                    </span>
+                                </div>
+
+                                <!-- Draft: Submit for Approval -->
+                                <template if:true={record.isDraft}>
+                                    <div class="card-actions">
+                                        <button
+                                            type="button"
+                                            class="submit-approval-btn"
+                                            data-id={record.accountId}
+                                            onclick={handleSubmitForApproval}>
+                                            &#10003; Submit for Approval
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <!-- Rejected: reason + Resubmit + Abandon -->
+                                <template if:true={record.isRejected}>
+                                    <div class="card-actions rejection">
+                                        <template if:true={record.rejectionReason}>
+                                            <p class="rejection-reason">&#9888; {record.rejectionReason}</p>
+                                        </template>
+                                        <div class="action-btns">
+                                            <button type="button" class="resubmit-btn"
+                                                data-id={record.accountId} onclick={handleResubmit}>
+                                                &#8635; Resubmit
+                                            </button>
+                                            <button type="button" class="abandon-btn"
+                                                data-id={record.accountId} onclick={handleAbandon}>
+                                                &#10005; Abandon
+                                            </button>
+                                        </div>
+                                    </div>
                                 </template>
                             </div>
+
                         </article>
                     </template>
                 </div>
-                <div class="pagination-bar">
-                    <button class="refresh-btn" type="button" onclick={handlePrevPage} disabled={disablePrev}>Previous</button>
-                    <span class="page-info">{pageInfo}</span>
-                    <button class="refresh-btn" type="button" onclick={handleNextPage} disabled={disableNext}>Next</button>
+
+                <div class="pagination-bar bottom">
+                    <span class="records-visible">{recordsVisibleInfo}</span>
+                    <div class="page-nav">
+                        <button class="page-btn" type="button" onclick={handlePrevPage} disabled={disablePrev}>&#8592;</button>
+                        <span class="page-info">{pageInfo}</span>
+                        <button class="page-btn" type="button" onclick={handleNextPage} disabled={disableNext}>&#8594;</button>
+                    </div>
                 </div>
             </template>
 
@@ -84,9 +159,34 @@
 
             <template if:false={isLoading}>
                 <template if:false={hasRecords}>
-                    <div class="empty-box">{emptyMessage}</div>
+                    <div class="empty-box">
+                        <p class="empty-icon">&#128722;</p>
+                        <p class="empty-text">{emptyMessage}</p>
+                    </div>
                 </template>
             </template>
         </div>
+
     </section>
+
+    <c-new-retail-account
+        account-type={modalAccountType}
+        record-type-id={modalRecordTypeId}
+        onclose={handleModalClose}
+        onaccountcreated={handleAccountCreated}>
+    </c-new-retail-account>
+
+    <!-- ── Submit for Approval Confirmation ── -->
+    <template if:true={showConfirmModal}>
+        <div class="confirm-backdrop" onclick={handleConfirmCancel}></div>
+        <div class="confirm-dialog" role="dialog" aria-modal="true">
+            <p class="confirm-icon">&#128196;</p>
+            <h3 class="confirm-title">Submit for Approval?</h3>
+            <p class="confirm-msg">This will submit the account record for approval. Once submitted, it cannot be edited until reviewed. Do you want to continue?</p>
+            <div class="confirm-actions">
+                <button type="button" class="action-btn secondary" onclick={handleConfirmCancel}>Cancel</button>
+                <button type="button" class="action-btn primary" onclick={handleConfirmSubmit}>Yes, Submit</button>
+            </div>
+        </div>
+    </template>
 </template>

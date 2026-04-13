@@ -526,6 +526,34 @@
     gap: 8px;
 }
 
+.bp-reject-note {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #f0c2c2;
+    border-left: 4px solid #d85b5b;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #fff8f8, #fff1f1);
+    box-shadow: 0 2px 8px rgba(179, 84, 84, 0.08);
+}
+
+.bp-reject-note__label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9a2d2d;
+    margin-bottom: 6px;
+}
+
+.bp-reject-note__text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #5e3030;
+    font-weight: 500;
+}
+
 /* ── Status pills (modal rows) ────────────────────────────────────────── */
 .bp-pill {
     display: inline-block;

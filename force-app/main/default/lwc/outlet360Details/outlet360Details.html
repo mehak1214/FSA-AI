@@ -2,11 +2,11 @@
     <section class="page">
 
         <template if:true={isLoading}>
-            <lightning-spinner alternative-text="Loading outlet details" size="medium"></lightning-spinner>
+            <lightning-spinner alternative-text="Loading store details" size="medium"></lightning-spinner>
         </template>
 
         <template if:false={hasRecordContext}>
-            <div class="state error">Unable to open Outlet 360. Missing record id.</div>
+            <div class="state error">Unable to open Store 360. Missing record id.</div>
         </template>
 
         <template if:true={hasRecordContext}>
@@ -102,133 +102,129 @@
                 </div>
             </section>
 
-            <!-- ── Orders & Products tabset ── -->
+            <!-- ── Orders, Products & Cases (custom tabs) ── -->
             <section class="card">
-                <lightning-tabset variant="scoped">
+                <div class="tab-bar">
+                    <button type="button" class={tabClassAssets}   data-tab="assets"   onclick={handleTabClick}>Assets</button>
+                    <button type="button" class={tabClassOrders}   data-tab="orders"   onclick={handleTabClick}>Order History</button>
+                    <button type="button" class={tabClassProducts} data-tab="products" onclick={handleTabClick}>Order Products</button>
+                    <button type="button" class={tabClassCases}    data-tab="cases"    onclick={handleTabClick}>Cases</button>
+                </div>
 
-                    <lightning-tab label="Order History">
-                        <div class="section-head">
-                            <h2 class="section-title">{ordersSectionLabel}</h2>
-                        </div>
-                        <template if:true={hasRecentOrders}>
-                            <div class="table-wrap">
-                                <table class="summary">
-                                    <thead>
-                                        <tr>
-                                            <th>Order</th>
-                                            <th>Amount</th>
-                                            <th>Date</th>
-                                            <th>Status</th>
+                <template if:true={isTabAssets}>
+                    <div class="section-head">
+                        <h2 class="section-title">{assetsSectionLabel}</h2>
+                        <template if:true={showViewAllAssets}>
+                            <button class="btn refresh" type="button" onclick={handleOpenAssetModal}>View All</button>
+                        </template>
+                    </div>
+                    <template if:true={hasAssets}>
+                        <div class="table-wrap">
+                            <table class="summary">
+                                <thead><tr><th>Asset</th><th>Serial</th><th>Status</th><th>Last Audit</th><th>Condition</th></tr></thead>
+                                <tbody>
+                                    <template for:each={assets} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable" data-id={item.assetId} onclick={handleAssetClick}>
+                                            <td class="order-name-cell">{item.name}</td>
+                                            <td>{item.serialNumber}</td>
+                                            <td>{item.status}</td>
+                                            <td>{item.lastAuditDateLabel}</td>
+                                            <td>{item.lastCondition}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template for:each={recentOrders} for:item="item">
-                                            <tr key={item.rowKey}>
-                                                <td>{item.name}</td>
-                                                <td>{item.amountLabel}</td>
-                                                <td>{item.dateLabel}</td>
-                                                <td>{item.status}</td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <template if:true={showViewAllOrders}>
-                                <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
-                                    <button class="btn refresh" type="button" onclick={handleOpenOrderModal}>View All Orders</button>
-                                </div>
-                            </template>
-                        </template>
-                        <template if:false={hasRecentOrders}>
-                            <div class="state">No orders found for this outlet.</div>
-                        </template>
-                    </lightning-tab>
-
-                    <lightning-tab label="Order Products">
-                        <div class="section-head">
-                            <h2 class="section-title">Order Products</h2>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
-                        <template if:true={hasOrderProducts}>
-                            <div class="table-wrap">
-                                <table class="summary">
-                                    <thead>
-                                        <tr>
-                                            <th>Order</th>
-                                            <th>Product</th>
-                                            <th>Qty</th>
-                                            <th>Unit Price</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template for:each={orderProducts} for:item="item">
-                                            <tr key={item.rowKey}>
-                                                <td>{item.orderName}</td>
-                                                <td>{item.productName}</td>
-                                                <td>{item.quantity}</td>
-                                                <td>{item.unitPriceLabel}</td>
-                                                <td>{item.totalPriceLabel}</td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <template if:true={showViewAllOrderProducts}>
-                                <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
-                                    <button class="btn refresh" type="button" onclick={handleOpenProductModal}>View All Products</button>
-                                </div>
-                            </template>
-                        </template>
-                        <template if:false={hasOrderProducts}>
-                            <div class="state">No order products found for this outlet.</div>
-                        </template>
-                    </lightning-tab>
+                    </template>
+                    <template if:false={hasAssets}>
+                        <div class="state">No assets found for this store.</div>
+                    </template>
+                </template>
 
-                    <lightning-tab label="Cases">
-                        <div class="section-head">
-                            <h2 class="section-title">{casesSectionLabel}</h2>
+                <template if:true={isTabOrders}>
+                    <div class="section-head">
+                        <h2 class="section-title">{ordersSectionLabel}</h2>
+                        <template if:true={showViewAllOrders}>
+                            <button class="btn refresh" type="button" onclick={handleOpenOrderModal}>View All</button>
+                        </template>
+                    </div>
+                    <template if:true={hasRecentOrders}>
+                        <div class="table-wrap">
+                            <table class="summary">
+                                <thead><tr><th>Order</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <template for:each={recentOrders} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable"
+                                            data-id={item.recordId} onclick={handleOrderClick}>
+                                            <td class="order-name-cell">{item.name}</td>
+                                            <td>{item.amountLabel}</td>
+                                            <td>{item.dateLabel}</td>
+                                            <td>{item.status}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
-                        <template if:true={hasCases}>
-                            <div class="table-wrap">
-                                <table class="summary">
-                                    <thead>
-                                        <tr>
-                                            <th>Case Number</th>
-                                            <th>Order</th>
-                                            <th>Case Type</th>
-                                            <th>Case Reason</th>
-                                            <th>Solution Required</th>
-                                            <th>Total Price</th>
-                                            <th>Owner</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template for:each={cases} for:item="item">
-                                            <tr key={item.rowKey}>
-                                                <td>{item.caseNumber}</td>
-                                                <td>{item.orderName}</td>
-                                                <td>{item.caseType}</td>
-                                                <td>{item.caseReason}</td>
-                                                <td>{item.solutionRequired}</td>
-                                                <td>{item.totalPriceLabel}</td>
-                                                <td>{item.ownerName}</td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <template if:true={showViewAllCases}>
-                                <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
-                                    <button class="btn refresh" type="button" onclick={handleOpenCaseModal}>View All Cases</button>
-                                </div>
-                            </template>
-                        </template>
-                        <template if:false={hasCases}>
-                            <div class="state">No cases found for this outlet.</div>
-                        </template>
-                    </lightning-tab>
+                    </template>
+                    <template if:false={hasRecentOrders}>
+                        <div class="state">No orders found for this store.</div>
+                    </template>
+                </template>
 
-                </lightning-tabset>
+                <template if:true={isTabProducts}>
+                    <div class="section-head">
+                        <h2 class="section-title">Order Products</h2>
+                        <template if:true={showViewAllOrderProducts}>
+                            <button class="btn refresh" type="button" onclick={handleOpenProductModal}>View All</button>
+                        </template>
+                    </div>
+                    <template if:true={hasOrderProducts}>
+                        <div class="table-wrap">
+                            <table class="summary">
+                                <thead><tr><th>Order</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+                                <tbody>
+                                    <template for:each={orderProducts} for:item="item">
+                                        <tr key={item.rowKey}>
+                                            <td>{item.orderName}</td><td>{item.productName}</td>
+                                            <td>{item.quantity}</td><td>{item.unitPriceLabel}</td><td>{item.totalPriceLabel}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template if:false={hasOrderProducts}>
+                        <div class="state">No order products found for this store.</div>
+                    </template>
+                </template>
+
+                <template if:true={isTabCases}>
+                    <div class="section-head">
+                        <h2 class="section-title">{casesSectionLabel}</h2>
+                        <template if:true={showViewAllCases}>
+                            <button class="btn refresh" type="button" onclick={handleOpenCaseModal}>View All</button>
+                        </template>
+                    </div>
+                    <template if:true={hasCases}>
+                        <div class="table-wrap">
+                            <table class="summary">
+                                <thead><tr><th>Case No.</th><th>Order</th><th>Type</th><th>Reason</th><th>Solution</th><th>Total</th><th>Owner</th></tr></thead>
+                                <tbody>
+                                    <template for:each={cases} for:item="item">
+                                        <tr key={item.rowKey}>
+                                            <td><button class="case-link" type="button" data-id={item.caseId} onclick={handleCaseClick}>{item.caseNumber}</button></td><td>{item.orderName}</td>
+                                            <td>{item.caseType}</td><td>{item.caseReason}</td>
+                                            <td>{item.solutionRequired}</td><td>{item.totalPriceLabel}</td><td>{item.ownerName}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template if:false={hasCases}>
+                        <div class="state">No cases found for this store.</div>
+                    </template>
+                </template>
             </section>
 
             <!-- ── Invoices ── -->
@@ -261,7 +257,7 @@
                     </div>
                 </template>
                 <template if:false={hasRecentInvoices}>
-                    <div class="state">No invoices found for this outlet.</div>
+                    <div class="state">No invoices found for this store.</div>
                 </template>
             </section>
 
@@ -269,7 +265,7 @@
             <section class="card">
                 <div class="section-head">
                     <h2 class="section-title">{contactsSectionLabel}</h2>
-                    <button class="btn refresh" type="button" onclick={handleRefresh}>&#8635; Refresh</button>
+                    <button class="btn action" type="button" onclick={handleOpenAddContactModal}>&#43; Add Contact</button>
                 </div>
                 <template if:true={contactsError}>
                     <div class="state error">{contactsError}</div>
@@ -277,7 +273,7 @@
                 <template if:false={contactsError}>
                     <template if:true={hasContacts}>
                         <ul class="contact-list">
-                            <template for:each={contacts} for:item="contact">
+                            <template for:each={visibleContacts} for:item="contact">
                                 <li key={contact.rowKey} class="contact-item">
                                     <div class="contact-avatar">{contact.initials}</div>
                                     <div class="contact-info">
@@ -297,160 +293,314 @@
                                 </li>
                             </template>
                         </ul>
+                        <template if:true={showViewAllContacts}>
+                            <div style="padding: 0 0.85rem 0.85rem; text-align: center;">
+                                <button class="btn refresh" type="button" onclick={handleOpenContactsModal}>View All Contacts</button>
+                            </div>
+                        </template>
                     </template>
                     <template if:false={hasContacts}>
-                        <div class="state">No contacts found for this outlet.</div>
+                        <div class="state">No contacts found for this store.</div>
                     </template>
                 </template>
             </section>
 
         </template>
 
-        <!-- ── All Orders Modal ── -->
-        <template if:true={isOrderModalOpen}>
-            <section role="dialog" tabindex="-1" aria-modal="true"
-                aria-labelledby="allOrdersHeading"
-                class="slds-modal slds-fade-in-open slds-modal_large">
-                <div class="slds-modal__container">
-                    <header class="slds-modal__header">
-                        <h2 id="allOrdersHeading" class="slds-text-heading_medium">All Orders</h2>
-                    </header>
-                    <div class="slds-modal__content slds-p-around_medium modal-content">
-                        <template if:true={hasAllOrders}>
-                            <div class="table-wrap">
-                                <table class="summary">
-                                    <thead>
-                                        <tr>
-                                            <th>Order</th>
-                                            <th>Amount</th>
-                                            <th>Date</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template for:each={allOrders} for:item="item">
-                                            <tr key={item.rowKey}>
-                                                <td>{item.name}</td>
-                                                <td>{item.amountLabel}</td>
-                                                <td>{item.dateLabel}</td>
-                                                <td>{item.status}</td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </template>
-                        <template if:false={hasAllOrders}>
-                            <div class="state">No orders found.</div>
-                        </template>
+        <!-- ── All Assets dialog ── -->
+        <dialog class="hub-dialog assets-dialog" aria-labelledby="allAssetsTitle" onclose={handleAssetsDialogClose}>
+            <div class="hub-dialog-backdrop" onclick={handleAssetsBackdropClick}></div>
+            <div class="hub-dialog-shell">
+                <header class="hub-dialog-header">
+                    <div class="hub-dialog-title-row">
+                        <span class="hub-dialog-badge">Assets</span>
+                        <h2 id="allAssetsTitle" class="hub-dialog-title">All Assets</h2>
                     </div>
-                    <footer class="slds-modal__footer">
-                        <button class="btn action" type="button" onclick={handleCloseOrderModal}>Close</button>
-                    </footer>
+                    <button class="hub-dialog-close-btn" type="button"
+                            onclick={handleCloseAssetModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="hub-dialog-body">
+                    <template if:true={hasAllAssets}>
+                        <div class="table-wrap" style="padding:0;">
+                            <table class="summary">
+                                <thead>
+                                    <tr><th>Asset</th><th>Serial</th><th>Status</th><th>Last Audit</th><th>Condition</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={allAssets} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable" data-id={item.assetId} onclick={handleAssetClick}>
+                                            <td class="order-name-cell">{item.name}</td>
+                                            <td>{item.serialNumber}</td>
+                                            <td>{item.status}</td>
+                                            <td>{item.lastAuditDateLabel}</td>
+                                            <td>{item.lastCondition}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template if:false={hasAllAssets}>
+                        <div class="state">No assets found.</div>
+                    </template>
                 </div>
-            </section>
-            <div class="slds-backdrop slds-backdrop_open"></div>
-        </template>
+                <footer class="hub-dialog-footer">
+                    <button class="btn-secondary-dialog" type="button" onclick={handleCloseAssetModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
 
-        <!-- ── All Order Products Modal ── -->
-        <template if:true={isProductModalOpen}>
-            <section role="dialog" tabindex="-1" aria-modal="true"
-                aria-labelledby="allProductsHeading"
-                class="slds-modal slds-fade-in-open slds-modal_large">
-                <div class="slds-modal__container">
-                    <header class="slds-modal__header">
-                        <h2 id="allProductsHeading" class="slds-text-heading_medium">All Order Products</h2>
-                    </header>
-                    <div class="slds-modal__content slds-p-around_medium modal-content">
-                        <template if:true={allOrderProducts}>
-                            <div class="table-wrap">
-                                <table class="summary">
-                                    <thead>
-                                        <tr>
-                                            <th>Order</th>
-                                            <th>Product</th>
-                                            <th>Qty</th>
-                                            <th>Unit Price</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template for:each={allOrderProducts} for:item="item">
-                                            <tr key={item.rowKey}>
-                                                <td>{item.orderName}</td>
-                                                <td>{item.productName}</td>
-                                                <td>{item.quantity}</td>
-                                                <td>{item.unitPriceLabel}</td>
-                                                <td>{item.totalPriceLabel}</td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </template>
-                        <template if:false={allOrderProducts}>
-                            <div class="state">No products found.</div>
-                        </template>
+        <!-- ── All Orders dialog ── -->
+        <dialog class="hub-dialog orders-dialog" aria-labelledby="allOrdersTitle" onclose={handleOrdersDialogClose}>
+            <div class="hub-dialog-backdrop" onclick={handleOrdersBackdropClick}></div>
+            <div class="hub-dialog-shell">
+                <header class="hub-dialog-header">
+                    <div class="hub-dialog-title-row">
+                        <span class="hub-dialog-badge">Orders</span>
+                        <h2 id="allOrdersTitle" class="hub-dialog-title">All Orders</h2>
                     </div>
-                    <footer class="slds-modal__footer">
-                        <button class="btn action" type="button" onclick={handleCloseProductModal}>Close</button>
-                    </footer>
+                    <button class="hub-dialog-close-btn" type="button"
+                            onclick={handleCloseOrderModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="hub-dialog-body">
+                    <template if:true={hasAllOrders}>
+                        <div class="table-wrap" style="padding:0;">
+                            <table class="summary">
+                                <thead>
+                                    <tr><th>Order</th><th>Amount</th><th>Date</th><th>Status</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={allOrders} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable"
+                                            data-id={item.recordId} onclick={handleOrderClick}>
+                                            <td class="order-name-cell">{item.name}</td>
+                                            <td>{item.amountLabel}</td>
+                                            <td>{item.dateLabel}</td>
+                                            <td>{item.status}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template if:false={hasAllOrders}>
+                        <div class="state">No orders found.</div>
+                    </template>
                 </div>
-            </section>
-            <div class="slds-backdrop slds-backdrop_open"></div>
-        </template>
+                <footer class="hub-dialog-footer">
+                    <button class="btn-secondary-dialog" type="button" onclick={handleCloseOrderModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
 
-        <!-- ── All Cases Modal ── -->
-        <template if:true={isCaseModalOpen}>
-            <section role="dialog" tabindex="-1" aria-modal="true"
-                aria-labelledby="allCasesHeading"
-                class="slds-modal slds-fade-in-open slds-modal_large">
-                <div class="slds-modal__container">
-                    <header class="slds-modal__header">
-                        <h2 id="allCasesHeading" class="slds-text-heading_medium">All Cases</h2>
-                    </header>
-                    <div class="slds-modal__content slds-p-around_medium modal-content">
-                        <template if:true={allCases}>
-                            <div class="table-wrap">
-                                <table class="summary">
-                                    <thead>
-                                        <tr>
-                                            <th>Case Number</th>
-                                            <th>Order</th>
-                                            <th>Case Type</th>
-                                            <th>Case Reason</th>
-                                            <th>Solution Required</th>
-                                            <th>Total Price</th>
-                                            <th>Owner</th>
+        <!-- ── All Order Products dialog ── -->
+        <dialog class="hub-dialog products-dialog" aria-labelledby="allProductsTitle" onclose={handleProductsDialogClose}>
+            <div class="hub-dialog-backdrop" onclick={handleProductsBackdropClick}></div>
+            <div class="hub-dialog-shell">
+                <header class="hub-dialog-header">
+                    <div class="hub-dialog-title-row">
+                        <span class="hub-dialog-badge">Order Products</span>
+                        <h2 id="allProductsTitle" class="hub-dialog-title">All Order Products</h2>
+                    </div>
+                    <button class="hub-dialog-close-btn" type="button"
+                            onclick={handleCloseProductModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="hub-dialog-body">
+                    <template if:true={allOrderProducts}>
+                        <div class="table-wrap" style="padding:0;">
+                            <table class="summary">
+                                <thead>
+                                    <tr><th>Order</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={allOrderProducts} for:item="item">
+                                        <tr key={item.rowKey}>
+                                            <td>{item.orderName}</td>
+                                            <td>{item.productName}</td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.unitPriceLabel}</td>
+                                            <td>{item.totalPriceLabel}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template for:each={allCases} for:item="item">
-                                            <tr key={item.rowKey}>
-                                                <td>{item.caseNumber}</td>
-                                                <td>{item.orderName}</td>
-                                                <td>{item.caseType}</td>
-                                                <td>{item.caseReason}</td>
-                                                <td>{item.solutionRequired}</td>
-                                                <td>{item.totalPriceLabel}</td>
-                                                <td>{item.ownerName}</td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </template>
-                        <template if:false={allCases}>
-                            <div class="state">No cases found.</div>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template if:false={allOrderProducts}>
+                        <div class="state">No products found.</div>
+                    </template>
+                </div>
+                <footer class="hub-dialog-footer">
+                    <button class="btn-secondary-dialog" type="button" onclick={handleCloseProductModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
+        <!-- ── All Cases dialog ── -->
+        <dialog class="hub-dialog cases-dialog" aria-labelledby="allCasesTitle" onclose={handleCasesDialogClose}>
+            <div class="hub-dialog-backdrop" onclick={handleCasesBackdropClick}></div>
+            <div class="hub-dialog-shell">
+                <header class="hub-dialog-header">
+                    <div class="hub-dialog-title-row">
+                        <span class="hub-dialog-badge">Cases</span>
+                        <h2 id="allCasesTitle" class="hub-dialog-title">All Cases</h2>
+                    </div>
+                    <button class="hub-dialog-close-btn" type="button"
+                            onclick={handleCloseCaseModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="hub-dialog-body">
+                    <template if:true={allCases}>
+                        <div class="table-wrap" style="padding:0;">
+                            <table class="summary">
+                                <thead>
+                                    <tr><th>Case No.</th><th>Order</th><th>Type</th><th>Reason</th><th>Solution</th><th>Total</th><th>Owner</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={allCases} for:item="item">
+                                        <tr key={item.rowKey}>
+                                            <td><button class="case-link" type="button" data-id={item.caseId} onclick={handleCaseClick}>{item.caseNumber}</button></td>
+                                            <td>{item.orderName}</td>
+                                            <td>{item.caseType}</td>
+                                            <td>{item.caseReason}</td>
+                                            <td>{item.solutionRequired}</td>
+                                            <td>{item.totalPriceLabel}</td>
+                                            <td>{item.ownerName}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template if:false={allCases}>
+                        <div class="state">No cases found.</div>
+                    </template>
+                </div>
+                <footer class="hub-dialog-footer">
+                    <button class="btn-secondary-dialog" type="button" onclick={handleCloseCaseModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
+
+        <!-- ── Add Contact dialog (native <dialog> — bottom-sheet on mobile) ── -->
+        <dialog class="add-contact-dialog" aria-labelledby="addContactTitle" onclose={handleAddContactDialogClose}>
+            <div class="add-contact-backdrop" onclick={handleAddContactBackdropClick}></div>
+            <div class="add-contact-shell">
+                <header class="add-contact-header">
+                    <div class="add-contact-title-row">
+                        <span class="add-contact-badge">Contacts</span>
+                        <h2 id="addContactTitle" class="add-contact-title">Add Contact</h2>
+                    </div>
+                    <button class="add-contact-close-btn" type="button"
+                            onclick={handleCloseAddContactModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="add-contact-body">
+                    <div class="form-row">
+                        <label class="form-label">Salutation <span class="req-star">*</span></label>
+                        <div class="select-wrap">
+                            <select class={salutationSelectClass} data-field="salutation" onchange={handleContactFieldChange}>
+                                <option value="">-- Select --</option>
+                                <option value="Mr.">Mr.</option>
+                                <option value="Ms.">Ms.</option>
+                                <option value="Mrs.">Mrs.</option>
+                                <option value="Dr.">Dr.</option>
+                                <option value="Prof.">Prof.</option>
+                            </select>
+                        </div>
+                        <template if:true={salutationError}>
+                            <span class="field-error">{salutationError}</span>
                         </template>
                     </div>
-                    <footer class="slds-modal__footer">
-                        <button class="btn action" type="button" onclick={handleCloseCaseModal}>Close</button>
-                    </footer>
+                    <div class="form-row">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" placeholder="Enter first name"
+                               data-field="firstName" value={newContact.firstName}
+                               onchange={handleContactFieldChange} />
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Last Name <span class="req-star">*</span></label>
+                        <input type="text" class={lastNameInputClass} placeholder="Enter last name"
+                               data-field="lastName" value={newContact.lastName}
+                               onchange={handleContactFieldChange} />
+                        <template if:true={lastNameError}>
+                            <span class="field-error">{lastNameError}</span>
+                        </template>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel" class="form-input" placeholder="Enter mobile number"
+                               data-field="phone" value={newContact.phone}
+                               onchange={handleContactFieldChange} />
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" placeholder="Enter email address"
+                               data-field="email" value={newContact.email}
+                               onchange={handleContactFieldChange} />
+                    </div>
+                    <template if:true={contactSaveError}>
+                        <div class="state error" style="margin-top:0.5rem;">{contactSaveError}</div>
+                    </template>
                 </div>
-            </section>
-            <div class="slds-backdrop slds-backdrop_open"></div>
-        </template>
+                <footer class="add-contact-footer">
+                    <button class="btn-secondary-dialog" type="button"
+                            onclick={handleCloseAddContactModal}
+                            disabled={isSavingContact}>Cancel</button>
+                    <button class="btn-primary-dialog" type="button"
+                            onclick={handleSaveContact}
+                            disabled={isSavingContact}>
+                        <template if:true={isSavingContact}>Saving&#8230;</template>
+                        <template if:false={isSavingContact}>Save Contact</template>
+                    </button>
+                </footer>
+            </div>
+        </dialog>
+
+        <!-- ── All Contacts dialog (native <dialog> — bottom-sheet on mobile) ── -->
+        <dialog class="contacts-dialog" aria-labelledby="allContactsTitle" onclose={handleContactsDialogClose}>
+            <div class="contacts-backdrop" onclick={handleContactsBackdropClick}></div>
+            <div class="contacts-shell">
+                <header class="contacts-header">
+                    <div class="contacts-title-row">
+                        <span class="contacts-badge">Contacts</span>
+                        <h2 id="allContactsTitle" class="contacts-title">{contactsSectionLabel}</h2>
+                    </div>
+                    <button class="contacts-close-btn" type="button"
+                            onclick={handleCloseContactsModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="contacts-body">
+                    <ul class="contact-list contacts-modal-list">
+                        <template for:each={contacts} for:item="contact">
+                            <li key={contact.rowKey} class="contact-item">
+                                <div class="contact-avatar">{contact.initials}</div>
+                                <div class="contact-info">
+                                    <span class="contact-name">{contact.name}</span>
+                                    <template if:true={contact.title}>
+                                        <span class="contact-title">{contact.title}</span>
+                                    </template>
+                                    <div class="contact-links">
+                                        <template if:true={contact.phone}>
+                                            <a href={contact.phoneHref} class="contact-link">&#128222; {contact.phone}</a>
+                                        </template>
+                                        <template if:true={contact.email}>
+                                            <a href={contact.emailHref} class="contact-link">&#9993; {contact.email}</a>
+                                        </template>
+                                    </div>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+                <footer class="contacts-footer">
+                    <button class="btn-secondary-dialog" type="button" onclick={handleCloseContactsModal}>Close</button>
+                    <button class="btn-primary-dialog" type="button" onclick={handleOpenAddContactModal}>&#43; Add Contact</button>
+                </footer>
+            </div>
+        </dialog>
+
+        <!-- ── Order Detail dialog (delegated to child component) ── -->
+        <c-order-detail onclose={handleOrderDetailClose}></c-order-detail>
+        <c-asset-audit-detail visit-id={sourceVisitId} hide-audit-action="true"></c-asset-audit-detail>
 
     </section>
 </template>

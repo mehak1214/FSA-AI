@@ -234,9 +234,11 @@ public with sharing class CreateCaseController {
             newCase.Status = 'New';  // Default status
             newCase.Approval_Status__c = APPROVAL_STATUS_PENDING;
             newCase.Comments__c = comments;
-            newCase.CurrencyIsoCode = currencyIsoCode;
-            if (orderReturnCancelRecordTypeId != null) {
-                newCase.RecordTypeId = orderReturnCancelRecordTypeId;
+            if (String.isNotBlank(currencyIsoCode) && isCaseFieldAvailable('CurrencyIsoCode')) {
+                newCase.put('CurrencyIsoCode', currencyIsoCode);
+            }
+            if (orderReturnCancelRecordTypeId != null && isCaseFieldAvailable('RecordTypeId')) {
+                newCase.put('RecordTypeId', orderReturnCancelRecordTypeId);
             }
             
             // Store Account Name if the field exists
@@ -379,17 +381,22 @@ public with sharing class CreateCaseController {
             System.debug('Case ID: ' + caseId);
             
             // Fetch the case to update approval status
-            Case caseRecord = [
-                SELECT Id, Status, Approval_Status__c, RecordTypeId
-                FROM Case
-                WHERE Id = :caseId
-                LIMIT 1
-            ];
+            List<String> selectedFields = new List<String>{'Id', 'Status', 'Approval_Status__c'};
+            Boolean hasRecordTypeField = isCaseFieldAvailable('RecordTypeId');
+            if (hasRecordTypeField) {
+                selectedFields.add('RecordTypeId');
+            }
+
+            String soql = 'SELECT ' + String.join(selectedFields, ',') + ' FROM Case WHERE Id = :caseId LIMIT 1';
+            Case caseRecord = (Case) Database.query(soql);
             System.debug('Case before approval - Status: ' + caseRecord.Status + ', Approval_Status__c: ' + caseRecord.Approval_Status__c);
             
             Id orderReturnCancelRecordTypeId = getCaseRecordTypeId(ORDER_RETURN_CANCEL_DEVELOPER_NAME);
-            if (orderReturnCancelRecordTypeId != null && caseRecord.RecordTypeId != orderReturnCancelRecordTypeId) {
-                caseRecord.RecordTypeId = orderReturnCancelRecordTypeId;
+            if (orderReturnCancelRecordTypeId != null && hasRecordTypeField) {
+                Id currentRecordTypeId = (Id) caseRecord.get('RecordTypeId');
+                if (currentRecordTypeId != orderReturnCancelRecordTypeId) {
+                    caseRecord.put('RecordTypeId', orderReturnCancelRecordTypeId);
+                }
             }
 
             // Keep the case aligned with the record type's restricted picklist values.
@@ -462,8 +469,16 @@ public with sharing class CreateCaseController {
     }
 
     private static Id getCaseRecordTypeId(String developerName) {
-        Schema.RecordTypeInfo rtInfo = Schema.SObjectType.Case.getRecordTypeInfosByDeveloperName().get(developerName);
+        Map<String, Schema.RecordTypeInfo> rtMap =
+            Schema.SObjectType.Case.getRecordTypeInfosByDeveloperName();
+        if (rtMap == null || !rtMap.containsKey(developerName)) {
+            return null;
+        }
+        Schema.RecordTypeInfo rtInfo = rtMap.get(developerName);
         return rtInfo != null ? rtInfo.getRecordTypeId() : null;
     }
 
+    private static Boolean isCaseFieldAvailable(String fieldApiName) {
+        return Schema.SObjectType.Case.fields.getMap().containsKey(fieldApiName);
+    }
 }

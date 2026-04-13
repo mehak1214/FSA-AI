@@ -2,7 +2,6 @@
     <div class="manager-view-container">
         <div class="header">
             <div class="header-left">
-                <span class="header-icon">MV</span>
                 <div>
                     <h1 class="header-title">Visit Approvals</h1>
                     <p class="header-subtitle">Manager Dashboard</p>
@@ -21,6 +20,10 @@
                     <span class="stat-count">{rejectedCount}</span>
                     <span class="stat-label">Rejected</span>
                 </div>
+                <div class="stat-pill missed-pill">
+                    <span class="stat-count">{missedCount}</span>
+                    <span class="stat-label">Missed</span>
+                </div>
             </div>
         </div>
 
@@ -36,9 +39,9 @@
             </button>
             <button class={rejectedTabClass} onclick={showRejected}>
                 Rejected Visits
-                <template if:true={rejectedCount}>
-                    <span class="tab-badge">{rejectedCount}</span>
-                </template>
+            </button>
+            <button class={missedTabClass} onclick={showMissed}>
+                Missed Visits
             </button>
         </div>
 
@@ -169,11 +172,195 @@
                     </div>
                 </template>
             </template>
+
+            <template if:true={showMissedTab}>
+                <template if:true={hasMissedVisits}>
+                    <div class="cards-grid">
+                        <template for:each={missedVisits} for:item="visit">
+                            <div key={visit.Id} class="visit-card missed-card" data-id={visit.Id} onclick={navigateToRecord}>
+                                <div class="card-hint">Click to open record</div>
+
+                                <div class="card-top">
+                                    <div class="employee-avatar missed-avatar">{visit.initials}</div>
+                                    <div class="card-info">
+                                        <p class="employee-name">{visit.salesRepName}</p>
+                                        <p class="visit-name">{visit.Name}</p>
+                                    </div>
+                                    <span class="status-badge status-missed">Missed</span>
+                                </div>
+
+                                <div class="card-meta">
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Date</span>
+                                        <span>{visit.formattedDate}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-icon">Time</span>
+                                        <span>{visit.formattedStartTime} - {visit.formattedEndTime}</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-actions">
+                                    <button class="action-btn action-abandon" data-id={visit.Id} onclick={handleAbandon} type="button">Abandon</button>
+                                    <button class="action-btn action-escalate" data-id={visit.Id} onclick={handleEscalate} type="button">Escalate</button>
+                                    <button class="action-btn action-ask-reason" data-id={visit.Id} onclick={handleAskForReason} type="button">Ask for Reason</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={hasMissedVisits}>
+                    <div class="empty-state">
+                        <p class="empty-title">No missed visits yet.</p>
+                        <p class="empty-subtitle">Missed visits will appear here.</p>
+                    </div>
+                </template>
+            </template>
         </template>
 
         <template if:true={showToast}>
             <div class={toastClass}>
                 <span>{toastMessage}</span>
+            </div>
+        </template>
+
+        <!-- ══════════════════════════════════════════
+             DETAIL POPUP
+        ══════════════════════════════════════════ -->
+        <template if:true={showPopup}>
+            <div class="popup-backdrop" onclick={handleBackdropClick}>
+                <div class="popup-panel" role="dialog" aria-modal="true">
+
+                    <!-- Popup header -->
+                    <div class="popup-header">
+                        <div class="popup-header-left">
+                            <div class="popup-avatar">{popupVisit.initials}</div>
+                            <div>
+                                <h2 class="popup-visit-name">{popupVisit.Name}</h2>
+                                <span class="popup-rep-label">{popupVisit.salesRepName}</span>
+                            </div>
+                        </div>
+                        <button class="popup-close" type="button" onclick={handleClosePopup}
+                            title="Close">✕</button>
+                    </div>
+
+                    <!-- Popup body: scrollable content -->
+                    <div class="popup-body">
+                        <div class="popup-content">
+
+                            <!-- SECTION: Visit Details -->
+                            <div class="popup-section">
+                                <div class="section-header">
+                                    <span class="section-header-icon">📋</span>
+                                    <h3 class="section-header-title">Details</h3>
+                                </div>
+                                <div class="popup-detail-grid">
+                                    <div class="popup-field">
+                                        <span class="popup-label">Visit Name</span>
+                                        <span class="popup-value">{popupVisit.Name}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Sales Rep</span>
+                                        <span class="popup-value">{popupVisit.salesRepName}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Outlet</span>
+                                        <span class="popup-value">{popupVisit.Outlet1__r.Name}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Beat</span>
+                                        <span class="popup-value">{popupVisit.Beat__r.Name}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Visit Status</span>
+                                        <span class="popup-value">{popupVisit.Visit_Status__c}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Visit Date</span>
+                                        <span class="popup-value">{popupVisit.formattedDate}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Planned Start Time</span>
+                                        <span class="popup-value">{popupVisit.formattedStartTime}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Planned End Time</span>
+                                        <span class="popup-value">{popupVisit.formattedEndTime}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Is Completed</span>
+                                        <span class="popup-value">{popupVisit.Is_Completed__c}</span>
+                                    </div>
+                                    <div class="popup-field">
+                                        <span class="popup-label">Visit Duration</span>
+                                        <span class="popup-value">{popupVisit.Actual_Duration__c}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECTION: Visit Information -->
+                            <template if:true={popupVisitIsCompleted}>
+                                <div class="popup-section">
+                                    <div class="section-header">
+                                        <span class="section-header-icon">ℹ️</span>
+                                        <h3 class="section-header-title">Visit Information</h3>
+                                    </div>
+                                    <div class="popup-detail-grid">
+                                        <div class="popup-field">
+                                            <span class="popup-label">Actual Duration</span>
+                                            <span class="popup-value">{popupVisit.Actual_Duration__c}</span>
+                                        </div>
+                                        <div class="popup-field">
+                                            <span class="popup-label">Check-in Time</span>
+                                            <span class="popup-value">{popupVisit.formattedCheckInTime}</span>
+                                        </div>
+                                        <div class="popup-field">
+                                            <span class="popup-label">Check-Out Time</span>
+                                            <span class="popup-value">{popupVisit.formattedCheckOutTime}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- SECTION: Approval Information -->
+                            <div class="popup-section">
+                                <div class="section-header">
+                                    <span class="section-header-icon">✅</span>
+                                    <h3 class="section-header-title">Approval Information</h3>
+                                </div>
+                                <div class="popup-detail-grid">
+                                    <div class="popup-field">
+                                        <span class="popup-label">Approval Status</span>
+                                        <span class="popup-value">{popupVisit.Approval_Status__c}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Popup footer with action buttons -->
+                    <template if:true={popupIsPending}>
+                        <div class="popup-footer">
+                            <button class="popup-action-btn popup-approve-btn" type="button" 
+                                data-id={popupVisit.Id} onclick={handleApprove}>Approve</button>
+                            <button class="popup-action-btn popup-reject-btn" type="button"
+                                data-id={popupVisit.Id} onclick={handleReject}>Reject</button>
+                        </div>
+                    </template>
+
+                    <template if:true={popupIsMissed}>
+                        <div class="popup-footer">
+                            <button class="popup-action-btn popup-abandon-btn" type="button"
+                                data-id={popupVisit.Id} onclick={handleAbandon}>Abandon</button>
+                            <button class="popup-action-btn popup-escalate-btn" type="button"
+                                data-id={popupVisit.Id} onclick={handleEscalate}>Escalate</button>
+                            <button class="popup-action-btn popup-ask-reason-btn" type="button"
+                                data-id={popupVisit.Id} onclick={handleAskForReason}>Ask for Reason</button>
+                        </div>
+                    </template>
+
+                </div>
             </div>
         </template>
 

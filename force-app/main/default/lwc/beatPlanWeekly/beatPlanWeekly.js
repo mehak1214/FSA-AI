@@ -41,11 +41,18 @@ import getWeeklyVisits  from '@salesforce/apex/BeatPlanController.getWeeklyVisit
 import getOutletsForBeat from '@salesforce/apex/BeatPlanController.getOutletsForBeat';
 import getUserBeats from '@salesforce/apex/BeatPlanController.getUserBeats';
 import createVisitsAndSubmitForApproval from '@salesforce/apex/BeatPlanController.createVisitsAndSubmitForApproval';
-import resubmitRejectedVisit from '@salesforce/apex/BeatPlanController.resubmitRejectedVisit';
+import editAndResubmitRejectedVisit from '@salesforce/apex/BeatPlanController.editAndResubmitRejectedVisit';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DAY_KEYS  = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const DAY_NAMES = { MON:'Mon', TUE:'Tue', WED:'Wed', THU:'Thu', FRI:'Fri', SAT:'Sat', SUN:'Sun' };
+const MEETING_AGENDA_OPTIONS = [
+    { label: 'Order', value: 'Order' },
+    { label: 'Sample', value: 'Sample' },
+    { label: 'Payment Collection', value: 'Payment Collection' },
+    { label: 'Meeting', value: 'Meeting' },
+    { label: 'Other', value: 'Other' }
+];
 
 // Card background CSS — keyed to local status mapping
 const CARD_CSS = {
@@ -90,12 +97,25 @@ export default class BeatPlanWeekly extends LightningElement {
     @track beatOptions = [];
     @track outletOptions = [];
     @track showDraftModal = false;
+    @track editRejectedMode = false;
+    @track rejectedForm = {
+        beatId: '',
+        outletId: '',
+        visitDate: '',
+        visitStatus: '',
+        startTime: '',
+        endTime: '',
+        notes: ''
+    };
     @track draftForm = {
         visitDate: '',
         beatId: '',
         outletId: '',
         startTime: '',
         endTime: '',
+        meetingAgenda: [],
+        expectedOrderValue: '',
+        expectedExpenses: '',
         notes: ''
     };
     @track draftErrors = {};
@@ -180,6 +200,7 @@ export default class BeatPlanWeekly extends LightningElement {
 
     get draftDateOptions() {
         const mon = this._mondayOf(this.anchorDate);
+        const todayIso = this._isoDate(new Date());
         return DAY_KEYS.map((key, i) => {
             const d = new Date(mon);
             d.setDate(d.getDate() + i);
@@ -188,11 +209,19 @@ export default class BeatPlanWeekly extends LightningElement {
                 label: `${DAY_NAMES[key]}, ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
                 value
             };
-        });
+        }).filter(option => option.value >= todayIso);
     }
 
     get statusLabel() {
         return 'Draft';
+    }
+
+    get meetingAgendaOptions() {
+        return MEETING_AGENDA_OPTIONS;
+    }
+
+    get showExpectedOrderValue() {
+        return (this.draftForm.meetingAgenda || []).includes('Order');
     }
 
     get salesRepLabel() {
@@ -327,6 +356,7 @@ export default class BeatPlanWeekly extends LightningElement {
         const visit = this.visits.find(v => v.id === id);
         if (visit) {
             this.selectedVisit = visit;
+            this.editRejectedMode = false;
             this.showModal     = true;
         }
     }
@@ -334,22 +364,82 @@ export default class BeatPlanWeekly extends LightningElement {
     handleCloseModal() {
         this.showModal     = false;
         this.selectedVisit = null;
+        this.editRejectedMode = false;
     }
 
     get canResubmitSelectedVisit() {
         return this.selectedVisit?.approvalStatus === 'Rejected';
     }
 
-    async handleResubmit() {
+    get showRejectedReadView() {
+        return this.canResubmitSelectedVisit && !this.editRejectedMode;
+    }
+
+    get showRejectedEditView() {
+        return this.canResubmitSelectedVisit && this.editRejectedMode;
+    }
+
+    get selectedVisitManagerComment() {
+        return this.selectedVisit?.managerComment || 'No manager comment available.';
+    }
+
+    async handleEditRejected() {
+        if (!this.selectedVisit) return;
+        this.rejectedForm = {
+            beatId: this.selectedVisit.beatId || '',
+            outletId: this.selectedVisit.outletId || '',
+            visitDate: this._dateKey(this.selectedVisit.visitDate),
+            visitStatus: this.selectedVisit.visitStatus || this.selectedVisit.approvalStatus || '',
+            startTime: this._to24Hour(this.selectedVisit.plannedStartTime),
+            endTime: this._to24Hour(this.selectedVisit.plannedEndTime),
+            notes: this.selectedVisit.missedRemarks || ''
+        };
+        if (!this.beatOptions.length) {
+            await this.loadBeats();
+        }
+        if (this.rejectedForm.beatId) {
+            await this.loadOutlets(this.rejectedForm.beatId);
+        }
+        this.editRejectedMode = true;
+    }
+
+    handleRejectedFieldChange(event) {
+        const { name, value } = event.target;
+        this.rejectedForm = { ...this.rejectedForm, [name]: value };
+        if (name === 'beatId') {
+            this.rejectedForm = { ...this.rejectedForm, beatId: value, outletId: '' };
+            if (value) {
+                this.loadOutlets(value);
+            } else {
+                this.outletOptions = [];
+            }
+        }
+    }
+
+    handleCancelRejectedEdit() {
+        this.editRejectedMode = false;
+    }
+
+    async handleEditAndResubmit() {
         if (!this.selectedVisit?.id) return;
         this.isLoading = true;
         try {
-            await resubmitRejectedVisit({ visitId: this.selectedVisit.id });
-            this.showToast('Resubmitted', 'Visit resubmitted for approval.', 'success');
+            await editAndResubmitRejectedVisit({
+                visitJson: JSON.stringify({
+                    id: this.selectedVisit.id,
+                    beatId: this.rejectedForm.beatId,
+                    outletId: this.rejectedForm.outletId,
+                    visitDate: this.rejectedForm.visitDate,
+                    startTime: this.rejectedForm.startTime,
+                    endTime: this.rejectedForm.endTime,
+                    notes: this.rejectedForm.notes
+                })
+            });
+            this.showToast('Resubmitted', 'Visit updated and resubmitted for approval.', 'success');
             this.handleCloseModal();
             await this.loadWeek();
         } catch (err) {
-            this._error('Resubmit failed', err);
+            this._error('Edit and resubmit failed', err);
         } finally {
             this.isLoading = false;
         }
@@ -373,13 +463,19 @@ export default class BeatPlanWeekly extends LightningElement {
                 this.outletOptions = [];
             }
 
-            const firstDate = this.draftDateOptions[0]?.value || this._isoDate(new Date());
+            const todayIso = this._isoDate(new Date());
+            const firstDate = this.draftDateOptions.find(option => option.value === todayIso)?.value
+                || this.draftDateOptions[0]?.value
+                || todayIso;
             this.draftForm = {
                 visitDate: firstDate,
                 beatId: defaultBeatId,
                 outletId: '',
                 startTime: '09:00',
                 endTime: '10:00',
+                meetingAgenda: [],
+                expectedOrderValue: '',
+                expectedExpenses: '',
                 notes: ''
             };
             this.draftErrors = {};
@@ -390,9 +486,20 @@ export default class BeatPlanWeekly extends LightningElement {
     }
 
     handleDraftFieldChange(event) {
-        const { name, value } = event.target;
-        this.draftForm = { ...this.draftForm, [name]: value };
-        this.draftErrors = { ...this.draftErrors, [name]: '' };
+        const { name } = event.target;
+        const value = name === 'meetingAgenda'
+            ? (event.detail?.value || [])
+            : event.target.value;
+        const nextForm = { ...this.draftForm, [name]: value };
+        const nextErrors = { ...this.draftErrors, [name]: '' };
+
+        if (name === 'meetingAgenda' && !(value || []).includes('Order')) {
+            nextForm.expectedOrderValue = '';
+            nextErrors.expectedOrderValue = '';
+        }
+
+        this.draftForm = nextForm;
+        this.draftErrors = nextErrors;
         if (event.target && typeof event.target.setCustomValidity === 'function') {
             event.target.setCustomValidity('');
             event.target.reportValidity();
@@ -426,6 +533,9 @@ export default class BeatPlanWeekly extends LightningElement {
         if (!this.draftForm.outletId) errors.outletId = 'Required';
         if (!this.draftForm.startTime) errors.startTime = 'Required';
         if (!this.draftForm.endTime) errors.endTime = 'Required';
+        if (this.showExpectedOrderValue && !this.draftForm.expectedOrderValue && this.draftForm.expectedOrderValue !== 0) {
+            errors.expectedOrderValue = 'Required when Order is selected';
+        }
         if (this.draftForm.startTime && this.draftForm.endTime && this.draftForm.startTime >= this.draftForm.endTime) {
             errors.endTime = 'End time must be after start time';
         }
@@ -459,6 +569,9 @@ export default class BeatPlanWeekly extends LightningElement {
             outletName: outlet?.label || 'Outlet',
             startTime: this.draftForm.startTime,
             endTime: this.draftForm.endTime,
+            meetingAgenda: [...(this.draftForm.meetingAgenda || [])],
+            expectedOrderValue: this.showExpectedOrderValue ? this.draftForm.expectedOrderValue : '',
+            expectedExpenses: this.draftForm.expectedExpenses,
             notes: this.draftForm.notes || '',
             approvalStatus: 'Draft',
             visitStatus: 'Draft',
@@ -507,6 +620,9 @@ export default class BeatPlanWeekly extends LightningElement {
                     visitStatus: 'Draft',
                     startTime: d.startTime,
                     endTime: d.endTime,
+                    meetingAgenda: this._serializeMultiPicklist(d.meetingAgenda),
+                    expectedOrderValue: this._toDecimalOrNull(d.expectedOrderValue),
+                    expectedExpenses: this._toDecimalOrNull(d.expectedExpenses),
                     notes: d.notes
                 });
             });
@@ -701,9 +817,22 @@ export default class BeatPlanWeekly extends LightningElement {
         return `${h}:${String(m).padStart(2, '0')} ${ap}`;
     }
 
+    _to24Hour(displayTime) {
+        if (!displayTime) return '';
+        const clean = displayTime.trim();
+        const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) return '';
+        let h = Number(match[1]);
+        const m = Number(match[2]);
+        const ap = match[3].toUpperCase();
+        if (ap === 'PM' && h !== 12) h += 12;
+        if (ap === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
     _reportDraftFieldErrors() {
         const fields = this.template.querySelectorAll(
-            'lightning-combobox[name], lightning-input[name], lightning-textarea[name]'
+            'lightning-combobox[name], lightning-input[name], lightning-textarea[name], lightning-checkbox-group[name], input[name], textarea[name]'
         );
         fields.forEach(field => {
             const msg = this.draftErrors?.[field.name] || '';
@@ -748,6 +877,16 @@ export default class BeatPlanWeekly extends LightningElement {
             return candidateStart < e && candidateEnd > s;
         });
         return existingConflict;
+    }
+
+    _serializeMultiPicklist(values) {
+        return Array.isArray(values) && values.length ? values.join(';') : null;
+    }
+
+    _toDecimalOrNull(value) {
+        if (value === '' || value === null || value === undefined) return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
     }
 
     showToast(title, message, variant) {

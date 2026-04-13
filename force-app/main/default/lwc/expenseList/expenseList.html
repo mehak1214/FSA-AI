@@ -158,6 +158,8 @@
                             expense={exp}
                             ondeleteexpense={handleDeleteExpense}
                             onsubmitexpense={handleSubmitExpense}
+                            onresubmitexpense={handleResubmitExpense}
+                            onabandonexpense={handleAbandonExpense}
                             oncardclick={handleCardClick}>
                         </c-expense-card>
                     </template>
@@ -187,6 +189,8 @@
                                             expense={exp}
                                             ondeleteexpense={handleDeleteExpense}
                                             onsubmitexpense={handleSubmitExpense}
+                                            onresubmitexpense={handleResubmitExpense}
+                                            onabandonexpense={handleAbandonExpense}
                                             oncardclick={handleCardClick}>
                                         </c-expense-card>
                                     </template>
@@ -218,6 +222,44 @@
                     <button class="btn-delete-confirm" onclick={confirmDelete} disabled={isDeleting}>
                         <template lwc:if={isDeleting}>Deleting…</template>
                         <template lwc:else>Delete</template>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SUBMIT CONFIRM DIALOG ─────────────────────── -->
+        <div style={submitModalStyle}>
+            <div class="elc-portal-backdrop" onclick={cancelSubmit}></div>
+            <div class="elc-portal-dialog" role="alertdialog" aria-modal="true">
+                <div class="confirm-icon-wrap">
+                    <lightning-icon icon-name="utility:send" size="medium" class="confirm-icon confirm-icon--submit"></lightning-icon>
+                </div>
+                <h3 class="confirm-title">Submit Expense?</h3>
+                <p class="confirm-body">Once submitted, this expense will be sent for approval and can no longer be edited.</p>
+                <div class="confirm-actions">
+                    <button class="btn-cancel-confirm" onclick={cancelSubmit} disabled={isSubmittingExpense}>Cancel</button>
+                    <button class="btn-submit-confirm" onclick={confirmSubmit} disabled={isSubmittingExpense}>
+                        <template lwc:if={isSubmittingExpense}>Submitting…</template>
+                        <template lwc:else>Submit</template>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ABANDON CONFIRM DIALOG ────────────────────── -->
+        <div style={abandonModalStyle}>
+            <div class="elc-portal-backdrop" onclick={cancelAbandon}></div>
+            <div class="elc-portal-dialog" role="alertdialog" aria-modal="true">
+                <div class="confirm-icon-wrap">
+                    <lightning-icon icon-name="utility:ban" size="medium" class="confirm-icon confirm-icon--abandon"></lightning-icon>
+                </div>
+                <h3 class="confirm-title">Abandon Expense?</h3>
+                <p class="confirm-body">This expense will be marked as Abandoned. It won't be deleted — it stays in your records for audit purposes.</p>
+                <div class="confirm-actions">
+                    <button class="btn-cancel-confirm" onclick={cancelAbandon} disabled={isAbandoning}>Cancel</button>
+                    <button class="btn-abandon-confirm" onclick={confirmAbandon} disabled={isAbandoning}>
+                        <template lwc:if={isAbandoning}>Abandoning…</template>
+                        <template lwc:else>Abandon</template>
                     </button>
                 </div>
             </div>

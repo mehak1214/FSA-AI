@@ -1,7 +1,8 @@
 import { api, LightningElement, wire } from 'lwc';
 import { NavigationMixin, CurrentPageReference } from 'lightning/navigation';
 import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360Summary';
-import { getRelatedListRecords } from 'lightning/uiRelatedListApi';
+import createContact from '@salesforce/apex/Outlet360Controller.createContact';
+import { getRelatedListRecords, refresh } from 'lightning/uiRelatedListApi';
 
 export default class Outlet360Details extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -14,6 +15,8 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     allOrderProducts = [];
     cases = [];
     allCases = [];
+    assets = [];
+    allAssets = [];
     recentInvoices = [];
     isLoading = false;
     loadError;
@@ -27,6 +30,8 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     totalOrderProductsCount = 0;
     casesCount = 0;
     totalCasesCount = 0;
+    assetsCount = 0;
+    totalAssetsCount = 0;
     invoicesCount = 0;
     ordersObjectApiName;
     invoicesObjectApiName;
@@ -37,43 +42,57 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     outletAddress;
     ownerName;
     ownerEmail;
-    isOrderModalOpen = false;
+    isOrderModalOpen = false;   // kept for backward compat — dialogs use showModal() now
     isProductModalOpen = false;
     isCaseModalOpen = false;
+    isAssetModalOpen = false;
+    // Custom tab state (replaces lightning-tabset)
+    activeTab = 'assets';
+    sourceVisitId;
+    // Add Contact state
+    isSavingContact = false;
+    contactSaveError;
+    newContact = { salutation: '', firstName: '', lastName: '', phone: '', email: '' };
+    salutationError;
+    lastNameError;
     _lastLoadKey;
 
     contacts = [];
     contactsError;
+    _wiredContactsResult;
 
     @wire(getRelatedListRecords, {
         parentRecordId: '$recordId',
         relatedListId: 'Contacts',
-        fields: ['Contact.Id', 'Contact.Name', 'Contact.Title', 'Contact.Phone', 'Contact.Email']
+        fields: ['Contact.Id', 'Contact.Name', 'Contact.Title', 'Contact.Phone', 'Contact.Email', 'Contact.Primary_Contact__c']
     })
-    wiredContacts({ data, error }) {
+    wiredContacts(result) {
+        this._wiredContactsResult = result;
+        const { data, error } = result;
         if (data) {
-            this.contacts = data.records.map(r => {
+            const mapped = data.records.map(r => {
                 const f = r.fields;
                 const phone = f.Phone?.value;
                 const email = f.Email?.value;
-                const name = f.Name?.value || '--';
-                const initials = name
-                    .split(' ')
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map(w => w[0].toUpperCase())
-                    .join('');
+                const name  = f.Name?.value || '--';
+                const initials = name.split(' ').filter(Boolean).slice(0, 2)
+                    .map(w => w[0].toUpperCase()).join('');
                 return {
-                    rowKey: f.Id?.value || r.id,
-                    name,
-                    initials,
-                    title: f.Title?.value || null,
-                    phone: phone || null,
-                    email: email || null,
-                    phoneHref: phone ? `tel:${phone}` : null,
-                    emailHref: email ? `mailto:${email}` : null
+                    rowKey    : f.Id?.value || r.id,
+                    name, initials,
+                    title     : f.Title?.value || null,
+                    isPrimary : !!f.Primary_Contact__c?.value,
+                    phone     : phone || null,
+                    email     : email || null,
+                    phoneHref : phone ? `tel:${phone}`    : null,
+                    emailHref : email ? `mailto:${email}` : null
                 };
             });
+            // Primary contacts first, then the rest
+            this.contacts = [
+                ...mapped.filter(c =>  c.isPrimary),
+                ...mapped.filter(c => !c.isPrimary)
+            ];
             this.contactsError = null;
         } else if (error) {
             this.contacts = [];
@@ -95,6 +114,7 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         const state = pageRef?.state || {};
         const stateRecordId = state.c__recordId;
         const stateObjectApiName = state.c__objectApiName;
+        const stateVisitId = state.c__visitId;
 
         let didChange = false;
         if (stateRecordId && stateRecordId !== this.recordId) {
@@ -104,6 +124,9 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         if (stateObjectApiName && stateObjectApiName !== this.objectApiName) {
             this.objectApiName = stateObjectApiName;
             didChange = true;
+        }
+        if (stateVisitId && stateVisitId !== this.sourceVisitId) {
+            this.sourceVisitId = stateVisitId;
         }
 
         if (didChange) {
@@ -122,12 +145,16 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
             const params = new URLSearchParams(window.location.search);
             const urlRecordId = params.get('c__recordId');
             const urlObjectApiName = params.get('c__objectApiName');
+            const urlVisitId = params.get('c__visitId');
 
             if (urlRecordId && !this.recordId) {
                 this.recordId = urlRecordId;
             }
             if (urlObjectApiName && !this.objectApiName) {
                 this.objectApiName = urlObjectApiName;
+            }
+            if (urlVisitId && !this.sourceVisitId) {
+                this.sourceVisitId = urlVisitId;
             }
         } catch (error) {
             // no-op
@@ -151,7 +178,7 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
     }
 
     get displayOutletName() {
-        return this.outletName || 'Outlet';
+        return this.outletName || 'Store';
     }
 
     get avatarLetter() {
@@ -188,6 +215,14 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         return this.cases.length > 0;
     }
 
+    get hasAssets() {
+        return this.assets.length > 0;
+    }
+
+    get hasAllAssets() {
+        return this.allAssets.length > 0;
+    }
+
     get hasRecentInvoices() {
         return this.recentInvoices.length > 0;
     }
@@ -206,6 +241,10 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
 
     get casesSectionLabel() {
         return `Cases (${this.totalCasesCount || this.casesCount})`;
+    }
+
+    get assetsSectionLabel() {
+        return `Assets (${this.totalAssetsCount || this.assetsCount || 0})`;
     }
 
     get pendingAmountLabel() {
@@ -284,6 +323,10 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         return (this.totalCasesCount || 0) > 5;
     }
 
+    get showViewAllAssets() {
+        return (this.totalAssetsCount || 0) > 5;
+    }
+
     get hasContacts() {
         return this.contacts.length > 0;
     }
@@ -341,6 +384,20 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                     amountLabel: this.formatCurrency(item.amount),
                     dateLabel: this.formatDate(item.recordDate)
                 }));
+
+                // Placeholder — remove once real invoice functionality is built
+                if (this.recentInvoices.length === 0) {
+                    const today = new Date();
+                    const invoiceDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 3);
+                    this.recentInvoices = [{
+                        rowKey:      'invoice-demo-001',
+                        name:        'INV-2025-00142',
+                        amountLabel: this.formatCurrency(1450),
+                        dateLabel:   this.formatDate(invoiceDate.toISOString()),
+                        status:      'Paid'
+                    }];
+                    this.invoicesCount = 1;
+                }
                 this.allOrders = (result?.allOrders || []).map((item) => ({
                     ...item,
                     rowKey: `all-order-${item.recordId}`,
@@ -353,6 +410,20 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                     unitPriceLabel: this.formatCurrency(item.unitPrice),
                     totalPriceLabel: this.formatCurrency(item.totalPrice)
                 }));
+                this.assets = (result?.assets || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `asset-${item.assetId || index}`,
+                    lastAuditDateLabel: this.formatDate(item.lastAuditDate),
+                    outletName: item.outletName || '--'
+                }));
+                this.allAssets = (result?.allAssets || []).map((item, index) => ({
+                    ...item,
+                    rowKey: `all-asset-${item.assetId || index}`,
+                    lastAuditDateLabel: this.formatDate(item.lastAuditDate),
+                    outletName: item.outletName || '--'
+                }));
+                this.assetsCount = result?.assetsCount || this.assets.length;
+                this.totalAssetsCount = result?.totalAssetsCount || this.assetsCount;
                 this.allOrderProducts = (result?.allOrderProducts || []).map((item, index) => ({
                     ...item,
                     rowKey: `all-order-product-${item.orderItemId || index}`,
@@ -397,6 +468,10 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                 this.allOrders = [];
                 this.orderProducts = [];
                 this.allOrderProducts = [];
+                this.assets = [];
+                this.allAssets = [];
+                this.assetsCount = 0;
+                this.totalAssetsCount = 0;
                 this.orderProductsCount = 0;
                 this.totalOrderProductsCount = 0;
                 this.cases = [];
@@ -417,11 +492,225 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
                 // Reset payment and visit ratings on error
                 this.paymentRating = 0;
                 this.visitRating = 0;
-                this.loadError = error?.body?.message || 'Unable to load outlet 360 details.';
+                this.loadError = error?.body?.message || 'Unable to load store 360 details.';
             })
             .finally(() => {
                 this.isLoading = false;
             });
+    }
+
+    // ── Custom tab getters ────────────────────────────────────────────
+    get isTabAssets()   { return this.activeTab === 'assets';   }
+    get isTabOrders()   { return this.activeTab === 'orders';   }
+    get isTabProducts() { return this.activeTab === 'products'; }
+    get isTabCases()    { return this.activeTab === 'cases';    }
+    get tabClassAssets()   { return `tab-pill${this.activeTab === 'assets'   ? ' active' : ''}`; }
+    get tabClassOrders()   { return `tab-pill${this.activeTab === 'orders'   ? ' active' : ''}`; }
+    get tabClassProducts() { return `tab-pill${this.activeTab === 'products' ? ' active' : ''}`; }
+    get tabClassCases()    { return `tab-pill${this.activeTab === 'cases'    ? ' active' : ''}`; }
+
+    handleTabClick(event) {
+        this.activeTab = event.currentTarget.dataset.tab;
+    }
+
+    // ── Contacts: visible slice + view-all gate ───────────────────────
+    get visibleContacts() {
+        return this.contacts.slice(0, 2);
+    }
+
+    get showViewAllContacts() {
+        return this.contacts.length > 2;
+    }
+
+    // ── All Contacts dialog ───────────────────────────────────────────
+    _openContactsDialog() {
+        const dlg = this.template.querySelector('dialog.contacts-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+    }
+    _closeContactsDialog() {
+        const dlg = this.template.querySelector('dialog.contacts-dialog');
+        if (dlg && dlg.open) dlg.close();
+    }
+    handleContactsDialogClose() { /* Esc key — dialog already closed */ }
+    handleContactsBackdropClick(event) {
+        if (event.target === event.currentTarget) this._closeContactsDialog();
+    }
+    handleOpenContactsModal()  { this._openContactsDialog();  }
+    handleCloseContactsModal() { this._closeContactsDialog(); }
+
+    _openAssetsDialog() {
+        const dlg = this.template.querySelector('dialog.assets-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+    }
+    _closeAssetsDialog() {
+        const dlg = this.template.querySelector('dialog.assets-dialog');
+        if (dlg && dlg.open) dlg.close();
+    }
+    handleAssetsDialogClose() { /* Esc key — dialog already closed */ }
+    handleAssetsBackdropClick(event) {
+        if (event.target === event.currentTarget) this._closeAssetsDialog();
+    }
+    handleOpenAssetModal()  { this._openAssetsDialog();  }
+    handleCloseAssetModal() { this._closeAssetsDialog(); }
+
+    // ── Add Contact dialog ────────────────────────────────────────────
+    _openAddContactDialog() {
+        const dlg = this.template.querySelector('dialog.add-contact-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+    }
+    _closeAddContactDialog() {
+        const dlg = this.template.querySelector('dialog.add-contact-dialog');
+        if (dlg && dlg.open) dlg.close();
+    }
+    handleAddContactDialogClose() { /* Esc key — dialog already closed */ }
+    handleAddContactBackdropClick(event) {
+        if (event.target === event.currentTarget) this._closeAddContactDialog();
+    }
+
+    // ── Add Contact: CSS class getters ────────────────────────────────
+    get salutationSelectClass() {
+        return this.salutationError ? 'form-select has-error' : 'form-select';
+    }
+    get lastNameInputClass() {
+        return this.lastNameError ? 'form-input has-error' : 'form-input';
+    }
+
+    // ── Add Contact: open / close / field / save ──────────────────────
+    handleOpenAddContactModal() {
+        this._closeContactsDialog();
+        this.newContact       = { salutation: '', firstName: '', lastName: '', phone: '', email: '' };
+        this.salutationError  = null;
+        this.lastNameError    = null;
+        this.contactSaveError = null;
+        this._openAddContactDialog();
+    }
+    handleCloseAddContactModal() {
+        this._closeAddContactDialog();
+    }
+    handleContactFieldChange(event) {
+        const field = event.target.dataset.field;
+        const value = event.target.value;
+        this.newContact = { ...this.newContact, [field]: value };
+        if (field === 'salutation') this.salutationError = null;
+        if (field === 'lastName')   this.lastNameError   = null;
+    }
+    handleSaveContact() {
+        let valid = true;
+        if (!this.newContact.salutation) {
+            this.salutationError = 'Salutation is required.';
+            valid = false;
+        }
+        if (!this.newContact.lastName || !this.newContact.lastName.trim()) {
+            this.lastNameError = 'Last Name is required.';
+            valid = false;
+        }
+        if (!valid) return;
+
+        this.isSavingContact  = true;
+        this.contactSaveError = null;
+
+        createContact({
+            accountId  : this.recordId,
+            salutation : this.newContact.salutation,
+            firstName  : this.newContact.firstName  || null,
+            lastName   : this.newContact.lastName.trim(),
+            phone      : this.newContact.phone       || null,
+            email      : this.newContact.email       || null
+        })
+            .then(() => {
+                this._closeAddContactDialog();
+                if (this._wiredContactsResult) refresh(this._wiredContactsResult);
+            })
+            .catch(err => {
+                this.contactSaveError = err?.body?.message || 'Unable to save contact. Please try again.';
+            })
+            .finally(() => {
+                this.isSavingContact = false;
+            });
+    }
+
+    // ── Orders dialog ─────────────────────────────────────────────────
+    _openOrdersDialog() {
+        const dlg = this.template.querySelector('dialog.orders-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+    }
+    _closeOrdersDialog() {
+        const dlg = this.template.querySelector('dialog.orders-dialog');
+        if (dlg && dlg.open) dlg.close();
+    }
+    handleOrdersDialogClose()   { /* Esc — already closed */ }
+    handleOrdersBackdropClick(event) {
+        if (event.target === event.currentTarget) this._closeOrdersDialog();
+    }
+    handleOpenOrderModal()  { this._openOrdersDialog();  }
+    handleCloseOrderModal() { this._closeOrdersDialog(); }
+
+    // ── Order Products dialog ──────────────────────────────────────────
+    _openProductsDialog() {
+        const dlg = this.template.querySelector('dialog.products-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+    }
+    _closeProductsDialog() {
+        const dlg = this.template.querySelector('dialog.products-dialog');
+        if (dlg && dlg.open) dlg.close();
+    }
+    handleProductsDialogClose()   { /* Esc — already closed */ }
+    handleProductsBackdropClick(event) {
+        if (event.target === event.currentTarget) this._closeProductsDialog();
+    }
+    handleOpenProductModal()  { this._openProductsDialog();  }
+    handleCloseProductModal() { this._closeProductsDialog(); }
+
+    // ── Cases dialog ───────────────────────────────────────────────────
+    _openCasesDialog() {
+        const dlg = this.template.querySelector('dialog.cases-dialog');
+        if (dlg && !dlg.open) dlg.showModal();
+    }
+    _closeCasesDialog() {
+        const dlg = this.template.querySelector('dialog.cases-dialog');
+        if (dlg && dlg.open) dlg.close();
+    }
+    handleCasesDialogClose()   { /* Esc — already closed */ }
+    handleCasesBackdropClick(event) {
+        if (event.target === event.currentTarget) this._closeCasesDialog();
+    }
+    handleOpenCaseModal()  { this._openCasesDialog();  }
+    handleCloseCaseModal() { this._closeCasesDialog(); }
+
+    // ── Order Detail ──────────────────────────────────────────────────
+    handleOrderClick(event) {
+        const orderId = event.currentTarget.dataset.id;
+        if (!orderId) return;
+        // Close the All Orders dialog if it was open, then open detail
+        this._closeOrdersDialog();
+        const orderDetail = this.template.querySelector('c-order-detail');
+        if (orderDetail) orderDetail.openForOrder(orderId);
+    }
+
+    handleOrderDetailClose() {
+        // No-op — child closes itself; hook available for future use
+    }
+
+    handleCaseClick(event) {
+        const caseId = event.currentTarget.dataset.id;
+        if (!caseId) return;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: caseId,
+                actionName: 'view'
+            }
+        });
+    }
+
+    handleAssetClick(event) {
+        const assetId = event.currentTarget.dataset.id;
+        if (!assetId) return;
+        this._closeAssetsDialog();
+        const assetDetail = this.template.querySelector('c-asset-audit-detail');
+        if (assetDetail) {
+            assetDetail.openForAsset(assetId);
+        }
     }
 
     handleBack() {
@@ -447,29 +736,6 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         this.loadData();
     }
 
-    handleOpenOrderModal() {
-        this.isOrderModalOpen = true;
-    }
-
-    handleCloseOrderModal() {
-        this.isOrderModalOpen = false;
-    }
-
-    handleOpenProductModal() {
-        this.isProductModalOpen = true;
-    }
-
-    handleCloseProductModal() {
-        this.isProductModalOpen = false;
-    }
-
-    handleOpenCaseModal() {
-        this.isCaseModalOpen = true;
-    }
-
-    handleCloseCaseModal() {
-        this.isCaseModalOpen = false;
-    }
 
     formatCurrency(value) {
         const numeric = Number(value || 0);

@@ -640,6 +640,26 @@ lightning-combobox::part(dropdown) {
     z-index: 100;
 }
 
+.saving-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 1000;
+}
+
+.saving-overlay-text {
+    margin: 0;
+    color: #1a3a6b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
 .cart-modal-panel {
     position: fixed;
     bottom: 135px;
@@ -885,6 +905,14 @@ lightning-combobox::part(dropdown) {
     transition: background .2s, transform .1s; font-family: inherit;
 }
 .btn-place-order:hover { background: #122a52; }
+
+.btn-place-order:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+}
 
 /* ===== Confirm / Review Step ===== */
 .confirm-banner {

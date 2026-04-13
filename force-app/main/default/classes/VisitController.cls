@@ -265,6 +265,16 @@ public with sharing class VisitController {
     @AuraEnabled
     public static void saveRatingAndFeedback(Id visitId, Integer rating, String feedback){
 
+        if (visitId == null) {
+            throw new AuraHandledException('Visit Id is required.');
+        }
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new AuraHandledException('Rating must be between 1 and 5.');
+        }
+        if (String.isBlank(feedback)) {
+            throw new AuraHandledException('Feedback is required.');
+        }
+
         Visit__c v = [
             SELECT Id
             FROM Visit__c
@@ -283,6 +293,10 @@ public with sharing class VisitController {
     ========================================================= */
     @AuraEnabled
     public static void saveMeetingNotes(Id visitId, String notes){
+
+        if (visitId == null) {
+            throw new AuraHandledException('Visit Id is required.');
+        }
 
         Visit__c v = [
             SELECT Id
@@ -307,12 +321,49 @@ public with sharing class VisitController {
     @AuraEnabled
     public static void checkInVisit(Id visitId, String lat, String lon){
 
+        if (visitId == null) {
+            throw new AuraHandledException('Visit Id is required.');
+        }
+        if (String.isBlank(lat) || String.isBlank(lon)) {
+            throw new AuraHandledException('Location permission is required.');
+        }
+
+        List<Day_Attendance__c> attendance = [
+            SELECT Id, End_Time__c
+            FROM Day_Attendance__c
+            WHERE Sales_Rep__c = :UserInfo.getUserId()
+            AND Attendance_Date__c = :Date.today()
+            LIMIT 1
+        ];
+
+        if (!attendance.isEmpty() && attendance[0].End_Time__c != null) {
+            throw new AuraHandledException('Day has already ended.');
+        }
+
         Visit__c v = [
-            SELECT Id
+            SELECT Id, Visit_Status__c
             FROM Visit__c
             WHERE Id = :visitId
             LIMIT 1
         ];
+
+        if (v.Visit_Status__c != 'Approved') {
+            throw new AuraHandledException('Only approved visits can be checked in.');
+        }
+
+        Boolean anotherInProgress = ![
+            SELECT Id
+            FROM Visit__c
+            WHERE Sales_Rep__c = :UserInfo.getUserId()
+            AND Visit_Date__c = :Date.today()
+            AND Visit_Status__c = 'In Progress'
+            AND Id != :visitId
+            LIMIT 1
+        ].isEmpty();
+
+        if (anotherInProgress) {
+            throw new AuraHandledException('Only one visit may be in progress at a time.');
+        }
 
         v.Visit_Status__c = 'In Progress';
         v.Check_In_Time__c = System.now();
@@ -328,12 +379,26 @@ public with sharing class VisitController {
     @AuraEnabled
     public static void checkOutVisit(Id visitId, String lat, String lon){
 
+        if (visitId == null) {
+            throw new AuraHandledException('Visit Id is required.');
+        }
+        if (String.isBlank(lat) || String.isBlank(lon)) {
+            throw new AuraHandledException('Location permission is required.');
+        }
+
         Visit__c v = [
-            SELECT Id
+            SELECT Id, Visit_Status__c, Rating__c, Feedback__c
             FROM Visit__c
             WHERE Id = :visitId
             LIMIT 1
         ];
+
+        if (v.Visit_Status__c != 'In Progress') {
+            throw new AuraHandledException('Visit must be in progress before checkout.');
+        }
+        if (v.Rating__c == null || String.isBlank(v.Feedback__c)) {
+            throw new AuraHandledException('Rating and feedback are required before checkout.');
+        }
 
         v.Visit_Status__c = 'Completed';
         v.Check_Out_Time__c = System.now();
@@ -349,13 +414,26 @@ public with sharing class VisitController {
     @AuraEnabled
     public static void endDay(String lat, String lon){
 
-        Day_Attendance__c att = [
-            SELECT Id
+        if (String.isBlank(lat) || String.isBlank(lon)) {
+            throw new AuraHandledException('Location permission is required.');
+        }
+
+        List<Day_Attendance__c> attendance = [
+            SELECT Id, End_Time__c
             FROM Day_Attendance__c
             WHERE Sales_Rep__c = :UserInfo.getUserId()
             AND Attendance_Date__c = :Date.today()
             LIMIT 1
         ];
+
+        if (attendance.isEmpty()) {
+            throw new AuraHandledException('Day has not been started.');
+        }
+
+        Day_Attendance__c att = attendance[0];
+        if (att.End_Time__c != null) {
+            throw new AuraHandledException('Day already ended.');
+        }
 
         att.End_Time__c = System.now();
         att.End_Location__Latitude__s = Decimal.valueOf(lat);
@@ -370,7 +448,22 @@ public with sharing class VisitController {
     @AuraEnabled
     public static Id uploadVisitPhoto(Id visitId, String base64Data, String contentType){
 
-        Blob body = EncodingUtil.base64Decode(base64Data);
+        if (visitId == null) {
+            throw new AuraHandledException('Visit Id is required.');
+        }
+        if (String.isBlank(base64Data)) {
+            throw new AuraHandledException('Photo data is required.');
+        }
+        if (String.isBlank(contentType)) {
+            contentType = 'image/jpeg';
+        }
+
+        Blob body;
+        try {
+            body = EncodingUtil.base64Decode(base64Data);
+        } catch (Exception ex) {
+            throw new AuraHandledException('Invalid base64 data.');
+        }
 
         Visit__c v = [
             SELECT Name
@@ -409,6 +502,10 @@ public with sharing class VisitController {
     ========================================================= */
     @AuraEnabled(cacheable=true)
     public static ContentVersion getVisitPhoto(Id visitId){
+
+        if (visitId == null) {
+            return null;
+        }
 
         // Collect all ContentDocumentIds linked to this visit
         List<ContentDocumentLink> links = [
@@ -495,6 +592,10 @@ public with sharing class VisitController {
     ========================================================= */
     @AuraEnabled(cacheable=true)
     public static ContentVersion getOutletPhoto(Id accountId){
+
+        if (accountId == null) {
+            return null;
+        }
 
         List<ContentDocumentLink> links = [
             SELECT ContentDocumentId,

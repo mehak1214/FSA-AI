@@ -98,6 +98,7 @@
 .status-submitted { background:#d8edff; color:#004e8c; }
 .status-approved  { background:#cdecd4; color:#1a5e34; }
 .status-rejected  { background:#fce8e8; color:#8e1a1a; }
+.status-abandoned { background:#f3f3f3; color:#706e6b; }
 .status-paid      { background:#f3e8fb; color:#6a1585; }
 
 .card-actions { display: flex; align-items: center; gap: 8px; }
@@ -130,3 +131,31 @@
 }
 .rejection-icon { --lwc-colorTextIconDefault: #ba0517; flex-shrink: 0; margin-top: 1px; }
 .rejection-text { font-size: 12px; color: #6b0e16; line-height: 1.4; }
+
+/* ── Resubmit / Abandon action buttons ──────────────── */
+.btn-resubmit-expense,
+.btn-abandon-expense {
+    display      : inline-flex;
+    align-items  : center;
+    gap          : 4px;
+    padding      : 5px 12px;
+    border-radius: 6px;
+    font-size    : 12px;
+    font-weight  : 600;
+    cursor       : pointer;
+    border       : 1.5px solid;
+    transition   : background .13s;
+}
+.btn-resubmit-expense {
+    background   : #e8f3ff;
+    border-color : #c2dff7;
+    color        : #005fb2;
+}
+.btn-resubmit-expense:hover { background: #cce4ff; }
+.btn-abandon-expense {
+    background   : #fff4f4;
+    border-color : #f5c0bf;
+    color        : #c23934;
+}
+.btn-abandon-expense:hover { background: #fce8e8; }
+.btn-icon { --lwc-colorTextIconDefault: currentColor; }

@@ -1,294 +1,195 @@
 :host {
-    --page-bg:      #e7eef8;
-    --panel-bg:     #f8fbff;
-    --panel-border: #c8d6e8;
-    --text-main:    #102a4c;
-    --text-muted:   #415a78;
     --brand:        #0a4ea8;
-    --panel-shadow: 0 2px 10px rgba(19, 53, 97, 0.06);
+    --brand-2:      #2f74c8;
+    --brand-light:  #eef5ff;
+    --panel-border: #c8d9ef;
+    --title:        #102a4c;
+    --subtle:       #476586;
+    --success:      #0e8a50;
+    --danger:       #c0392b;
+    --page-bg:      #eef3fb;
+    display: block;
+    font-family: "Salesforce Sans", Arial, sans-serif;
 }
 
 /* ── Page shell ── */
-.orders-page {
+.obu-page {
     background: var(--page-bg);
-    padding: 0.45rem;
     min-height: 100%;
+    padding: 0.6rem 0.6rem 1rem;
     box-sizing: border-box;
-}
-
-/* ── Shared panel card ── */
-.page-panel {
-    background: linear-gradient(180deg, #fbfdff 0%, var(--panel-bg) 100%);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 0.7rem 0.85rem;
-    margin-bottom: 0.45rem;
-    box-shadow: var(--panel-shadow);
-}
-
-/* ── List header panel ── */
-.header-panel {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.5rem;
 }
 
-/* ── Detail header panel ── */
-.detail-header-panel {
+/* ── Tab strip — matches outlet360Details .tab-bar / .tab-pill ── */
+.obu-tab-wrap {
+    padding: 0 0.1rem;
+}
+
+.obu-tab-bar {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
+    background: #e8f0fb;
+    border-radius: 999px;
+    padding: 3px;
+    width: fit-content;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
+.obu-tab-bar::-webkit-scrollbar { display: none; }
 
-.detail-header-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    flex: 1;
-}
-
-/* Back button */
-.back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #17396e;
-    color: #fff;
+.obu-tab-pill {
     border: none;
-    border-radius: 10px;
-    padding: 6px 12px 6px 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    align-self: flex-start;
-    transition: opacity 120ms ease;
-    --slds-c-icon-color-foreground-default: #ffffff;
-}
-.back-btn:hover { opacity: 0.88; }
-
-/* ── Titles ── */
-.page-title {
-    margin: 0;
-    color: var(--text-main);
-    font-size: 1.05rem;
-    font-weight: 700;
-}
-
-.page-subtitle {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-}
-
-/* ── Content panel ── */
-.content-panel {
-    padding: 0.7rem;
-    margin-bottom: 0;
-}
-
-/* ── Tabs ── */
-.orders-tabs {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    margin-bottom: 0.65rem;
-    flex-wrap: wrap;
-}
-
-.orders-tab {
-    border: 1px solid var(--panel-border);
+    background: transparent;
     border-radius: 999px;
-    background: #f3f8ff;
-    color: #2a4f7b;
+    padding: 0.3rem 0.9rem;
     font-size: 0.78rem;
     font-weight: 700;
-    padding: 0.32rem 0.72rem;
+    color: var(--subtle);
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.orders-tab:hover { border-color: #8fb0d8; background: #ebf3ff; }
-
-.orders-tab.active {
-    background: linear-gradient(180deg, #0f5abb 0%, #0a4ea8 100%);
-    border-color: #0a4ea8;
-    color: #ffffff;
-    box-shadow: 0 4px 10px rgba(15, 66, 131, 0.22);
-}
-
-/* ── Spinner ── */
-.spinner-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 0;
-    min-height: 100px;
-}
-
-/* ── Empty & error states ── */
-.empty-state {
-    text-align: center;
-    padding: 32px 16px;
-    color: var(--text-muted);
-    font-size: 0.88rem;
-}
-
-.error-box {
-    background: #fee2e2;
-    border: 1px solid #fca5a5;
-    border-radius: 10px;
-    padding: 12px;
-    color: #7f1d1d;
-    font-size: 0.85rem;
-    margin-top: 8px;
-}
-.error-box p { margin: 0; }
-
-/* ── Order cards (list view) ── */
-.orders-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-}
-
-.order-card {
-    position: relative;
-    border: 1px solid var(--panel-border);
-    border-radius: 8px;
-    background: linear-gradient(180deg, #f7fbff 0%, #f1f6fc 100%);
-    overflow: hidden;
-    cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.order-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0;
-    width: 4px; height: 100%;
-    background: linear-gradient(180deg, #0a4ea8 0%, #5f96da 100%);
-}
-
-.order-card:hover {
-    border-color: #99b2d3;
-    box-shadow: 0 6px 18px rgba(22, 61, 108, 0.12);
-}
-
-.order-header {
-    padding: 0.58rem 0.68rem 0.58rem 0.85rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.8rem;
-}
-
-.header-content { flex: 1; min-width: 0; }
-
-.order-number {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--brand);
-    line-height: 1.2;
-}
-
-.order-meta-line {
-    margin-top: 0.25rem;
-    color: #2c4f79;
-    font-size: 0.78rem;
-    font-weight: 600;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    row-gap: 0.2rem;
-}
-
-.meta-separator { margin: 0 0.3rem; color: #6f86a6; }
-
-.meta-field {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2rem;
-}
-
-.meta-icon {
-    --slds-c-icon-color-foreground-default: #4e6e97;
-}
-
-.status-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.3rem;
-    flex-shrink: 0;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 0.22rem 0.56rem;
-    border-radius: 999px;
-    font-size: 0.64rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.45px;
+    transition: background 0.15s, color 0.15s;
     white-space: nowrap;
 }
 
-.status-badge[data-status="Draft"]     { background: #edf1f6; color: #42556f; }
-.status-badge[data-status="Activated"] { background: #d8ebdd; color: #1d5f31; }
-.status-badge[data-status="Completed"] { background: #dae8fb; color: #134e95; }
-.status-badge[data-status="Cancelled"] { background: #f7dedd; color: #8a2a25; }
-
-.chevron {
-    font-size: 1.2rem;
-    color: #8fb0d8;
-    line-height: 1;
+.obu-tab-pill.active {
+    background: #fff;
+    color: var(--brand);
+    box-shadow: 0 1px 4px rgba(10, 78, 168, 0.15);
 }
 
-/* ── Detail grid (detail view) ── */
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
+/* ── Spinner ── */
+.obu-spinner-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 0;
 }
 
-.detail-item {
+/* ── Empty / error states ── */
+.obu-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--subtle);
+    font-size: 0.85rem;
+}
+
+.obu-error {
+    background: #fdecea;
+    border: 1px solid #f5b8b5;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--danger);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* ── Card list ── */
+.obu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+/* ── Order card — matches od-item-card from orderDetail ── */
+.obu-card {
+    background: #fff;
     border: 1px solid var(--panel-border);
-    border-radius: 9px;
-    background: #f1f7ff;
-    padding: 0.62rem;
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.15s;
 }
 
-.detail-item label {
-    display: block;
-    font-size: 0.69rem;
+.obu-card:hover {
+    box-shadow: 0 3px 12px rgba(14, 45, 92, 0.10);
+    border-color: #a8c4e0;
+}
+
+.obu-card:active {
+    box-shadow: none;
+    background: #f4f8ff;
+}
+
+/* ── Card top row ── */
+.obu-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.obu-card-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.obu-order-num {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--brand);
+    white-space: nowrap;
+}
+
+.obu-order-type {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--subtle);
+    background: var(--brand-light);
+    border: 1px solid #c2d8f5;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Status badges — same colours as od-status-badge ── */
+.obu-status-badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.18rem 0.6rem;
+    font-size: 0.67rem;
     font-weight: 700;
-    color: #4f6480;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    margin-bottom: 0.16rem;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.detail-item p {
-    margin: 0;
-    color: #1f3656;
-    line-height: 1.4;
-    word-break: break-word;
-    font-size: 0.9rem;
+.obu-status-active    { background: #e8f8f1; color: var(--success);    border: 1px solid #a3d9be; }
+.obu-status-draft     { background: #eef3fc; color: #2d527d;            border: 1px solid var(--panel-border); }
+.obu-status-done      { background: #f0faf5; color: #0e6940;            border: 1px solid #a3d9be; }
+.obu-status-cancelled { background: #fdecea; color: var(--danger);      border: 1px solid #f5b8b5; }
+.obu-status-default   { background: #f4f6f9; color: var(--subtle);      border: 1px solid var(--panel-border); }
+
+/* ── Card meta row ── */
+.obu-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.obu-meta-chip {
+    font-size: 0.72rem;
+    color: var(--subtle);
     font-weight: 500;
+    background: #f4f8ff;
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    white-space: nowrap;
 }
 
-.detail-item.full-width { grid-column: 1 / -1; }
-
-/* ── Responsive ── */
+/* ── Mobile ── */
 @media (max-width: 480px) {
-    .orders-page { padding: 0.35rem; }
-
-    .order-header { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
-    .status-wrapper { flex-direction: row; align-items: center; gap: 0.5rem; }
-    .chevron { display: none; }
-
-    .detail-grid { grid-template-columns: 1fr; }
+    .obu-page { padding: 0.4rem 0.4rem 1rem; }
+    .obu-card-top { flex-wrap: wrap; }
 }

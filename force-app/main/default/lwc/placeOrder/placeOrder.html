@@ -1,5 +1,11 @@
 <template>
     <div class="page-bg">
+        <template if:true={isSavingOrder}>
+            <div class="saving-overlay">
+                <lightning-spinner alternative-text="Creating order" size="medium"></lightning-spinner>
+                <p class="saving-overlay-text">Creating order...</p>
+            </div>
+        </template>
 
         <!-- ===== TOP NAV ===== -->
         <div class="top-nav">
@@ -407,13 +413,19 @@
 
             <!-- Footer with Navigation Buttons -->
             <div class="step-footer">
-                <button class="btn-secondary" onclick={handlePrev}>← Back</button>
+                <button class="btn-secondary" onclick={handlePrev} disabled={isBackButtonDisabled}>← Back</button>
                 <template if:true={showNextButton}>
-                    <button class="btn-primary" onclick={handleNext}>Next →</button>
+                    <button class="btn-primary" onclick={handleNext} disabled={isNextButtonDisabled}>Next →</button>
                 </template>
                 <template if:true={showPlaceOrder}>
-                    <button class="btn-place-order" onclick={saveOrder}>
-                        <span>Place Sample Order</span>
+                    <button class="btn-place-order" onclick={saveOrder} disabled={isPlaceOrderDisabled}>
+                        <template if:true={isSavingOrder}>
+                            <lightning-spinner alternative-text="Creating sample order" size="small" variant="brand"></lightning-spinner>
+                            <span>Creating Sample Order...</span>
+                        </template>
+                        <template if:false={isSavingOrder}>
+                            <span>Place Sample Order</span>
+                        </template>
                     </button>
                 </template>
             </div>
@@ -500,13 +512,19 @@
 
             <!-- Footer with Navigation Buttons -->
             <div class="step-footer">
-                <button class="btn-secondary" onclick={handlePrev}>← Back</button>
+                <button class="btn-secondary" onclick={handlePrev} disabled={isBackButtonDisabled}>← Back</button>
                 <template if:true={showNextButton}>
-                    <button class="btn-primary" onclick={handleNext}>Review Order →</button>
+                    <button class="btn-primary" onclick={handleNext} disabled={isNextButtonDisabled}>Review Order →</button>
                 </template>
                 <template if:true={showPlaceOrder}>
-                    <button class="btn-place-order" onclick={saveOrder}>
-                        <span>Place Order</span>
+                    <button class="btn-place-order" onclick={saveOrder} disabled={isPlaceOrderDisabled}>
+                        <template if:true={isSavingOrder}>
+                            <lightning-spinner alternative-text="Creating order" size="small" variant="brand"></lightning-spinner>
+                            <span>Creating Order...</span>
+                        </template>
+                        <template if:false={isSavingOrder}>
+                            <span>Place Order</span>
+                        </template>
                     </button>
                 </template>
             </div>

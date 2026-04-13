@@ -81,6 +81,7 @@ export default class PlaceOrder extends LightningElement {
     @track selectedFranchise;
     @track selectedDistributor;
     @track selectedSchemeId = null;
+    @track isSavingOrder = false;
 
     @track isCartModalOpen = false;
     @track isCartButtonHidden = false;
@@ -456,11 +457,21 @@ export default class PlaceOrder extends LightningElement {
     orderAmt;
 
     saveOrder() {
+        if (this.isSavingOrder) {
+            return;
+        }
+
         const selectedItems = this.currentProducts.filter(p => p.quantity > 0).map(p => ({
             productId: p.productId, productName: p.productName, quantity: parseInt(p.quantity, 10), unitPrice: p.unitPrice, productItemId: p.productItemId || null
         }));
 
+        if (!selectedItems.length) {
+            this.showToast('Error', 'Please select at least one product before placing the order.', 'error');
+            return;
+        }
+
         this.orderAmt = this.computedTotalPriceDisplay;
+        this.isSavingOrder = true;
 
         placeOrder({
             franchiseId: this.selectedFranchise,
@@ -498,8 +509,20 @@ export default class PlaceOrder extends LightningElement {
 
             // Also force a server-side cache refresh so subsequent wire calls get fresh data
             refreshApex(this._wiredProductsResult);
+
+            this.dispatchEvent(new CustomEvent('ordercreated', {
+                detail: {
+                    orderId: result,
+                    orderType: this.selectedOrderType
+                },
+                bubbles: true,
+                composed: true
+            }));
         })
-        .catch(error => this.showToast('Error', error.body?.message || 'Error', 'error'));
+        .catch(error => this.showToast('Error', error.body?.message || 'Error', 'error'))
+        .finally(() => {
+            this.isSavingOrder = false;
+        });
     }
 
     get selectedItemsForSummary() {
@@ -563,11 +586,15 @@ export default class PlaceOrder extends LightningElement {
     }
 
     get isBackButtonDisabled() {
-        return !this.canGoBack;
+        return !this.canGoBack || this.isSavingOrder;
     }
 
     get isNextButtonDisabled() {
-        return !this.canProceedNext;
+        return !this.canProceedNext || this.isSavingOrder;
+    }
+
+    get isPlaceOrderDisabled() {
+        return this.isSavingOrder || !this.hasSelectedItems;
     }
 
     get shouldShowFooter() {

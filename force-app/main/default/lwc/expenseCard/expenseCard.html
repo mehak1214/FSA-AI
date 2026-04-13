@@ -65,6 +65,18 @@
                     </lightning-button-icon>
                 </div>
             </template>
+            <template lwc:if={isRejected}>
+                <div class="card-actions" onclick={stopPropagation}>
+                    <button class="btn-resubmit-expense" onclick={handleResubmit} title="Reset to Draft and edit before resubmitting">
+                        <lightning-icon icon-name="utility:refresh" size="xx-small" class="btn-icon"></lightning-icon>
+                        Resubmit
+                    </button>
+                    <button class="btn-abandon-expense" onclick={handleAbandon} title="Abandon this expense">
+                        <lightning-icon icon-name="utility:close" size="xx-small" class="btn-icon"></lightning-icon>
+                        Abandon
+                    </button>
+                </div>
+            </template>
         </div>
 
     </div>

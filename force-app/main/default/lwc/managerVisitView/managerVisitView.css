@@ -81,6 +81,11 @@
     border: 1px solid #f2ccca;
 }
 
+.missed-pill {
+    background: #f0f0f0;
+    border: 1px solid #d0d0d0;
+}
+
 .stat-count {
     font-size: 1.08rem;
     font-weight: 700;
@@ -230,6 +235,21 @@
     color: #fff;
 }
 
+.action-abandon {
+    background: #888888;
+    color: #fff;
+}
+
+.action-escalate {
+    background: #ff9500;
+    color: #fff;
+}
+
+.action-ask-reason {
+    background: #007aff;
+    color: #fff;
+}
+
 .modal-cancel {
     background: #eef3fb;
     color: #2a4f7b;
@@ -250,6 +270,10 @@
 
 .rejected-card {
     border-left-color: #d27c79;
+}
+
+.missed-card {
+    border-left-color: #888888;
 }
 
 .card-top {
@@ -279,6 +303,10 @@
 
 .rejected-avatar {
     background: linear-gradient(180deg, #d98f8c 0%, #c7726f 100%);
+}
+
+.missed-avatar {
+    background: linear-gradient(180deg, #888888 0%, #666666 100%);
 }
 
 .card-info {
@@ -318,6 +346,12 @@
     background: #fbe9e8;
     color: #a73a36;
     border: 1px solid #f2ccca;
+}
+
+.status-missed {
+    background: #f0f0f0;
+    color: #555555;
+    border: 1px solid #d0d0d0;
 }
 
 .empty-state {
@@ -389,6 +423,237 @@
 @keyframes slideIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   POPUP STYLES
+   ──────────────────────────────────────────────────────────────── */
+
+.popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.popup-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    z-index: 9999;
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem;
+    border-bottom: 1px solid var(--panel-border);
+    background: linear-gradient(180deg, #fbfdff 0%, var(--panel-bg) 100%);
+    border-radius: 12px 12px 0 0;
+}
+
+.popup-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.popup-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #0f5abb 0%, #0a4ea8 100%);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.popup-visit-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.popup-rep-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.popup-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.popup-close:hover {
+    background: #f0f4fa;
+    color: var(--text-main);
+}
+
+.popup-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.popup-content {
+    padding: 1.2rem;
+}
+
+.popup-section {
+    margin-bottom: 1.5rem;
+}
+
+.popup-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e1e9f3;
+}
+
+.section-header-icon {
+    font-size: 1.2rem;
+}
+
+.section-header-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.popup-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.popup-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.popup-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.35rem;
+}
+
+.popup-value {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    word-break: break-word;
+}
+
+.popup-id {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.popup-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.2rem;
+    border-top: 1px solid var(--panel-border);
+    background: #f8fafb;
+    border-radius: 0 0 12px 12px;
+    justify-content: flex-end;
+}
+
+.popup-action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.popup-approve-btn {
+    background: #2f7a46;
+    color: #fff;
+}
+
+.popup-approve-btn:hover {
+    background: #236d3a;
+}
+
+.popup-reject-btn {
+    background: #b54a46;
+    color: #fff;
+}
+
+.popup-reject-btn:hover {
+    background: #9d3d39;
+}
+
+.popup-abandon-btn {
+    background: #888888;
+    color: #fff;
+}
+
+.popup-abandon-btn:hover {
+    background: #6d6d6d;
+}
+
+.popup-escalate-btn {
+    background: #ff9500;
+    color: #fff;
+}
+
+.popup-escalate-btn:hover {
+    background: #e68500;
+}
+
+.popup-ask-reason-btn {
+    background: #007aff;
+    color: #fff;
+}
+
+.popup-ask-reason-btn:hover {
+    background: #0051cc;
 }
 
 @media (max-width: 600px) {

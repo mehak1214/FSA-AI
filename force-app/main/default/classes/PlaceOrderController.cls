@@ -76,7 +76,7 @@ public with sharing class PlaceOrderController {
             FROM Product2
             WHERE Id IN :productIds
             AND IsActive = true
-            AND Is_Vashi_Product__c = true Order By CreatedDate ASC Limit 5
+            AND Is_Veeglow_products__c = true Order By CreatedDate ASC Limit 6
         ];
 
         Map<Id, ProductOrderWrapper> productsById = new Map<Id, ProductOrderWrapper>();
@@ -134,7 +134,7 @@ public with sharing class PlaceOrderController {
             SELECT Id, Name, isSample__c, SampleOrderLimit__c
             FROM Product2
             WHERE IsActive = true
-            AND Is_Vashi_Product__c = true
+            AND Is_Veeglow_products__c = true
             AND isSample__c = true
             AND SampleOrderLimit__c != null
             AND SampleOrderLimit__c != 0
@@ -236,7 +236,7 @@ public with sharing class PlaceOrderController {
             SELECT Id, Name, isSample__c
             FROM Product2
             WHERE IsActive = true
-            AND Is_Vashi_Product__c = true
+            AND Is_Veeglow_products__c = true
         ];
 
 
@@ -280,16 +280,15 @@ public with sharing class PlaceOrderController {
        ========================================================= */
     @AuraEnabled(cacheable=true)
     public static List<Account> getFranchiseAccounts() {
+        String query =
+            'SELECT Id, Name ' +
+            'FROM Account ' +
+            (Schema.SObjectType.Account.fields.getMap().containsKey('RecordTypeId')
+                ? 'WHERE RecordType.DeveloperName = \'Franchise\' '
+                : '') +
+            'ORDER BY Name';
 
-        List<Account> accts = [
-            SELECT Id, Name
-            FROM Account
-            WHERE RecordType.DeveloperName = 'Franchise'
-            WITH SECURITY_ENFORCED
-            ORDER BY Name
-        ];
-
-        return accts;
+        return Database.query(query);
     }
 
     /* =========================================================
@@ -297,16 +296,15 @@ public with sharing class PlaceOrderController {
        ========================================================= */
     @AuraEnabled(cacheable=true)
     public static List<Account> getDistributorAccounts() {
+        String query =
+            'SELECT Id, Name ' +
+            'FROM Account ' +
+            (Schema.SObjectType.Account.fields.getMap().containsKey('RecordTypeId')
+                ? 'WHERE RecordType.DeveloperName = \'Dealer_Distributor\' '
+                : '') +
+            'ORDER BY Name';
 
-        List<Account> accts = [
-            SELECT Id, Name
-            FROM Account
-            WHERE RecordType.DeveloperName = 'Dealer_Distributor'
-            WITH SECURITY_ENFORCED
-            ORDER BY Name
-        ];
-
-        return accts;
+        return Database.query(query);
     }
     
     
@@ -367,7 +365,6 @@ public with sharing class PlaceOrderController {
                 FROM Scheme__c
                 WHERE Threshold_Quantity__c <= :thresholdQuantity
                 AND Active__c = true
-                WITH SECURITY_ENFORCED
                 ORDER BY Threshold_Quantity__c DESC, Discount__c DESC
             ];
 

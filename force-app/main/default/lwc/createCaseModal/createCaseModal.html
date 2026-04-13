@@ -1,44 +1,26 @@
 <template>
-    <!-- Modal Backdrop & Container -->
-    <template if:true={isModalOpen}>
-        <section role="dialog" 
-                 aria-modal="true" 
-                 aria-labelledby="modal-heading"
-                 aria-describedby="modal-description" 
-                 class="slds-modal slds-fade-in-open modal-mobile">
-            <div class="slds-modal__container modal-container-mobile">
+    <dialog class="ccm-dialog" onclose={handleDialogClose}>
 
-                <!-- ═══════════════════════════════════════════ -->
-                <!-- MODAL HEADER -->
-                <!-- ═══════════════════════════════════════════ -->
-                <header class="slds-modal__header slds-modal__header_empty" role="banner">
-                    <h1 id="modal-heading" class="slds-modal__title slds-text-heading_medium">
-                        <lightning-icon icon-name="utility:case" size="small" class="slds-m-right_small"></lightning-icon>
-                        Create Support Case
-                    </h1>
-                    <p id="modal-description" class="slds-assistive-text">
-                        Create a new support case for your order. Fill in all required fields marked with an asterisk (*). 
-                        Use Tab to navigate, Escape to close, or Ctrl+Enter to submit.
-                    </p>
-                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
-                            title="Close dialog" 
-                            onclick={handleCloseModal}
-                            aria-label="Close Create Case modal">
-                        <lightning-icon icon-name="utility:close" size="small" alternative-text="Close"></lightning-icon>
-                        <span class="slds-assistive-text">Close dialog</span>
-                    </button>
-                </header>
+        <div class="ccm-backdrop" onclick={handleCloseModal}></div>
 
-                <!-- ═══════════════════════════════════════════ -->
-                <!-- MODAL BODY -->
-                <!-- ═══════════════════════════════════════════ -->
-                <div class="slds-modal__content slds-p-around_medium">
+        <div class="ccm-shell">
+
+            <!-- ── Header ── -->
+            <header class="ccm-header">
+                <div class="ccm-title-row">
+                    <span class="ccm-badge">Case</span>
+                    <h2 class="ccm-title">Create Support Case</h2>
+                </div>
+                <button class="ccm-close-btn" type="button" onclick={handleCloseModal} aria-label="Close">&#10005;</button>
+            </header>
+
+            <!-- ── Body ── -->
+            <div class="ccm-body">
 
                     <!-- Loading Spinner -->
                     <template if:true={isLoading}>
-                        <div class="slds-text-align_center slds-p-vertical_large">
+                        <div class="ccm-spinner-wrap">
                             <lightning-spinner alternative-text="Loading form data" size="medium"></lightning-spinner>
-                            <p class="slds-m-top_small" aria-live="polite">Loading...</p>
                         </div>
                     </template>
 
@@ -46,307 +28,217 @@
                     <template if:false={isLoading}>
 
                         <!-- Order Info Card -->
-                        <div class="slds-box slds-m-bottom_medium order-info-panel">
-                            <h2 class="slds-text-heading_small slds-m-bottom_small">
-                                <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                Order Information
-                            </h2>
-                            <div class="order-info-grid">
-                                <div class="info-item">
-                                    <dt class="info-label">Order #</dt>
-                                    <dd class="info-value">{orderInfo.orderNumber}</dd>
+                        <div class="ccm-info-card">
+                            <div class="ccm-info-grid">
+                                <div class="ccm-info-item">
+                                    <span class="ccm-info-label">Order #</span>
+                                    <span class="ccm-info-value">{orderInfo.orderNumber}</span>
                                 </div>
-                                <div class="info-item">
-                                    <dt class="info-label">Account</dt>
-                                    <dd class="info-value">{orderInfo.accountName}</dd>
+                                <div class="ccm-info-item">
+                                    <span class="ccm-info-label">Account</span>
+                                    <span class="ccm-info-value">{orderInfo.accountName}</span>
                                 </div>
-                                <div class="info-item">
-                                    <dt class="info-label">Amount</dt>
-                                    <dd class="info-value">{orderInfo.orderAmount}</dd>
+                                <div class="ccm-info-item">
+                                    <span class="ccm-info-label">Amount</span>
+                                    <span class="ccm-info-value">{orderInfo.orderAmount}</span>
                                 </div>
-                                <div class="info-item">
-                                    <dt class="info-label">Status</dt>
-                                    <dd class="info-value">{orderInfo.orderStatus}</dd>
+                                <div class="ccm-info-item">
+                                    <span class="ccm-info-label">Status</span>
+                                    <span class="ccm-info-value">{orderInfo.orderStatus}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Error Message -->
                         <template if:true={errorMessage}>
-                            <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium" 
-                                 role="alert"
-                                 aria-live="assertive">
-                                <span class="slds-assistive-text">error</span>
-                                <div class="slds-align-content_center slds-grid">
-                                    <lightning-icon icon-name="utility:error" 
-                                                   size="small" 
-                                                   class="slds-m-right_small"
-                                                   alternative-text="Error"></lightning-icon>
-                                    <h2 class="slds-text-heading_small">{errorMessage}</h2>
-                                </div>
+                            <div class="ccm-error-box" role="alert" aria-live="assertive">
+                                {errorMessage}
                             </div>
                         </template>
 
                         <!-- Form Section -->
-                        <form class="form-section" role="form" aria-label="Create Case Form">
-                            <h2 class="slds-text-heading_small slds-m-bottom_medium">
-                                Case Details 
-                                <span class="slds-text-body_small" aria-label="All fields are required">
-                                    (All fields required)
-                                </span>
-                            </h2>
+                        <form class="ccm-form" role="form" aria-label="Create Case Form">
+
+                            <h3 class="ccm-form-section-title">Case Details <span class="ccm-required-note">(All fields required)</span></h3>
 
                             <!-- Subject Input -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label" for="subject-input">
-                                    <abbr class="slds-required" title="required">*</abbr>Subject
+                            <div class="ccm-field">
+                                <label class="ccm-label" for="subject-input">
+                                    <abbr class="ccm-required" title="required">*</abbr>Subject
                                 </label>
-                                <div class="slds-form-element__control">
-                                    <input id="subject-input" 
-                                           class="slds-input"
-                                           type="text" 
-                                           placeholder="Enter case subject (10-255 characters)"
-                                           value={formData.subject}
-                                           onchange={handleSubjectChange}
-                                           disabled={isSaving}
-                                           maxlength="255"
-                                           required
-                                           aria-required="true"
-                                           aria-describedby="subject-error subject-counter" />
-                                    <span id="subject-counter" class="char-counter" aria-live="polite">
-                                        {charCounts.subject}/255 characters
-                                    </span>
-                                </div>
+                                <input id="subject-input"
+                                       class="ccm-input"
+                                       type="text"
+                                       placeholder="Enter case subject (10-255 characters)"
+                                       value={formData.subject}
+                                       onchange={handleSubjectChange}
+                                       disabled={isSaving}
+                                       maxlength="255"
+                                       required
+                                       aria-required="true"
+                                       aria-describedby="subject-error subject-counter" />
+                                <span id="subject-counter" class="ccm-char-counter" aria-live="polite">
+                                    {charCounts.subject}/255
+                                </span>
                                 <template if:true={fieldErrors.subject}>
-                                    <div id="subject-error" class="field-error" role="alert">
-                                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                        {fieldErrors.subject}
-                                    </div>
+                                    <div id="subject-error" class="ccm-field-error" role="alert">{fieldErrors.subject}</div>
                                 </template>
                             </div>
 
                             <!-- Description Input -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label" for="description-input">
-                                    <abbr class="slds-required" title="required">*</abbr>Description
+                            <div class="ccm-field">
+                                <label class="ccm-label" for="description-input">
+                                    <abbr class="ccm-required" title="required">*</abbr>Description
                                 </label>
-                                <div class="slds-form-element__control">
-                                    <textarea id="description-input" 
-                                              class="slds-input"
-                                              placeholder="Describe the issue in detail (20-4000 characters)"
-                                              value={formData.description}
-                                              onchange={handleDescriptionChange}
-                                              disabled={isSaving}
-                                              rows="4"
-                                              maxlength="4000"
-                                              required
-                                              aria-required="true"
-                                              aria-describedby="description-error description-counter"></textarea>
-                                    <span id="description-counter" class="char-counter" aria-live="polite">
-                                        {charCounts.description}/4000 characters
-                                    </span>
-                                </div>
+                                <textarea id="description-input"
+                                          class="ccm-input ccm-textarea"
+                                          placeholder="Describe the issue in detail (20-4000 characters)"
+                                          value={formData.description}
+                                          onchange={handleDescriptionChange}
+                                          disabled={isSaving}
+                                          rows="4"
+                                          maxlength="4000"
+                                          required
+                                          aria-required="true"
+                                          aria-describedby="description-error description-counter"></textarea>
+                                <span id="description-counter" class="ccm-char-counter" aria-live="polite">
+                                    {charCounts.description}/4000
+                                </span>
                                 <template if:true={fieldErrors.description}>
-                                    <div id="description-error" class="field-error" role="alert">
-                                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                        {fieldErrors.description}
-                                    </div>
+                                    <div id="description-error" class="ccm-field-error" role="alert">{fieldErrors.description}</div>
                                 </template>
                             </div>
 
                             <!-- Case Type Combobox -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label">
-                                    <abbr class="slds-required" title="required">*</abbr>Case Type
+                            <div class="ccm-field">
+                                <label class="ccm-label">
+                                    <abbr class="ccm-required" title="required">*</abbr>Case Type
                                 </label>
-                                <div class="slds-form-element__control">
-                                    <lightning-combobox
-                                        name="type"
-                                        label="Select Case Type"
-                                        value={formData.caseType}
-                                        options={typeOptions}
-                                        onchange={handleCaseTypeChange}
-                                        disabled={isSaving}
-                                        required
-                                        aria-required="true"
-                                        aria-describedby="type-error">
-                                    </lightning-combobox>
-                                </div>
+                                <lightning-combobox
+                                    name="type"
+                                    label="Select Case Type"
+                                    value={formData.caseType}
+                                    options={typeOptions}
+                                    onchange={handleCaseTypeChange}
+                                    disabled={isSaving}
+                                    required
+                                    aria-required="true"
+                                    aria-describedby="type-error">
+                                </lightning-combobox>
                                 <template if:true={fieldErrors.caseType}>
-                                    <div id="type-error" class="field-error" role="alert">
-                                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                        {fieldErrors.caseType}
-                                    </div>
+                                    <div id="type-error" class="ccm-field-error" role="alert">{fieldErrors.caseType}</div>
                                 </template>
                             </div>
 
                             <!-- Reason Combobox -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label">
-                                    <abbr class="slds-required" title="required">*</abbr>Reason
+                            <div class="ccm-field">
+                                <label class="ccm-label">
+                                    <abbr class="ccm-required" title="required">*</abbr>Reason
                                 </label>
-                                <div class="slds-form-element__control">
-                                    <lightning-combobox
-                                        name="reason"
-                                        label="Select Reason"
-                                        value={formData.reason}
-                                        options={reasonOptions}
-                                        onchange={handleReasonChange}
-                                        disabled={isSaving}
-                                        required
-                                        aria-required="true"
-                                        aria-describedby="reason-error">
-                                    </lightning-combobox>
-                                </div>
+                                <lightning-combobox
+                                    name="reason"
+                                    label="Select Reason"
+                                    value={formData.reason}
+                                    options={reasonOptions}
+                                    onchange={handleReasonChange}
+                                    disabled={isSaving}
+                                    required
+                                    aria-required="true"
+                                    aria-describedby="reason-error">
+                                </lightning-combobox>
                                 <template if:true={fieldErrors.reason}>
-                                    <div id="reason-error" class="field-error" role="alert">
-                                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                        {fieldErrors.reason}
-                                    </div>
+                                    <div id="reason-error" class="ccm-field-error" role="alert">{fieldErrors.reason}</div>
                                 </template>
                             </div>
 
                             <!-- Solution Required Combobox -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label">
-                                    <abbr class="slds-required" title="required">*</abbr>Solution Required
+                            <div class="ccm-field">
+                                <label class="ccm-label">
+                                    <abbr class="ccm-required" title="required">*</abbr>Solution Required
                                 </label>
-                                <div class="slds-form-element__control">
-                                    <lightning-combobox
-                                        name="solution"
-                                        label="Select Solution Type"
-                                        value={formData.solution}
-                                        options={solutionOptions}
-                                        onchange={handleSolutionChange}
-                                        disabled={isSaving}
-                                        required
-                                        aria-required="true"
-                                        aria-describedby="solution-error">
-                                    </lightning-combobox>
-                                </div>
+                                <lightning-combobox
+                                    name="solution"
+                                    label="Select Solution Type"
+                                    value={formData.solution}
+                                    options={solutionOptions}
+                                    onchange={handleSolutionChange}
+                                    disabled={isSaving}
+                                    required
+                                    aria-required="true"
+                                    aria-describedby="solution-error">
+                                </lightning-combobox>
                                 <template if:true={fieldErrors.solution}>
-                                    <div id="solution-error" class="field-error" role="alert">
-                                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                        {fieldErrors.solution}
-                                    </div>
+                                    <div id="solution-error" class="ccm-field-error" role="alert">{fieldErrors.solution}</div>
                                 </template>
                             </div>
 
                             <!-- File Upload -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label">
+                            <div class="ccm-field">
+                                <label class="ccm-label">
                                     Upload Proof/Product Image
-                                    <span class="file-info">(Optional | Max 5MB | JPG, PNG, GIF, PDF)</span>
+                                    <span class="ccm-optional-note">(Optional | Max 5MB | JPG, PNG, GIF, PDF)</span>
                                 </label>
-                                <div class="slds-form-element__control">
-                                    
-                                    <!-- No file selected - Show upload component -->
-                                    <template if:false={uploadState.fileName}>
-                                        <lightning-file-upload
-                                            accept=".jpg,.jpeg,.png,.gif,.pdf"
-                                            onuploadfinished={handleFileUploadFinished}
-                                            disabled={uploadState.isUploading}
-                                            multiple="false"
-                                            class="upload-file-component">
-                                        </lightning-file-upload>
-                                        <p class="slds-text-body_small slds-m-top_small" style="color: var(--text-muted);">
-                                            You can attach a photo or document to support your case. Maximum file size is 5MB. Allowed types: JPG, PNG, GIF, PDF.
-                                        </p>
-                                    </template>
-                                    
-                                    <!-- File selected - Show preview and remove button -->
-                                    <template if:true={uploadState.fileName}>
-                                        <div class="file-uploaded">
-                                            <lightning-icon icon-name="utility:success" size="small" 
-                                                           alternative-text="File selected"></lightning-icon>
-                                            <div class="file-info-box">
-                                                <div class="file-name">{uploadState.fileName}</div>
-                                                <div class="file-size">{uploadState.fileSize}</div>
-                                            </div>
-                                            <button class="slds-button slds-button_icon slds-button_icon-border-filled" 
-                                                    onclick={handleClearFile} 
-                                                    type="button"
-                                                    title="Remove file"
-                                                    aria-label="Remove selected file">
-                                                <lightning-icon icon-name="utility:close" size="small" 
-                                                               alternative-text="Remove"></lightning-icon>
-                                            </button>
+                                <template if:false={uploadState.fileName}>
+                                    <lightning-file-upload
+                                        accept=".jpg,.jpeg,.png,.gif,.pdf"
+                                        onuploadfinished={handleFileUploadFinished}
+                                        disabled={uploadState.isUploading}
+                                        multiple="false"
+                                        class="ccm-file-upload">
+                                    </lightning-file-upload>
+                                </template>
+                                <template if:true={uploadState.fileName}>
+                                    <div class="ccm-file-uploaded">
+                                        <lightning-icon icon-name="utility:success" size="small" alternative-text="File selected"></lightning-icon>
+                                        <div class="ccm-file-info">
+                                            <span class="ccm-file-name">{uploadState.fileName}</span>
+                                            <span class="ccm-file-size">{uploadState.fileSize}</span>
                                         </div>
-                                    </template>
-                                </div>
-                                
-                                <template if:true={uploadState.uploadError}>
-                                    <div class="upload-error" role="alert" aria-live="assertive">
-                                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_small"></lightning-icon>
-                                        {uploadState.uploadError}
+                                        <button class="ccm-file-remove-btn" onclick={handleClearFile} type="button" aria-label="Remove file">&#10005;</button>
                                     </div>
+                                </template>
+                                <template if:true={uploadState.uploadError}>
+                                    <div class="ccm-field-error" role="alert">{uploadState.uploadError}</div>
                                 </template>
                             </div>
 
-
-
-                            <!-- Comments Textarea -->
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label" for="comments-input">
-                                    Additional Comments
-                                </label>
-                                <div class="slds-form-element__control">
-                                    <textarea id="comments-input" 
-                                              class="slds-textarea" 
-                                              placeholder="Add any additional notes or comments (optional)"
-                                              value={formData.comments}
-                                              onchange={handleCommentsChange}
-                                              disabled={isSaving}
-                                              rows="3"
-                                              maxlength="1000"
-                                              aria-describedby="comments-counter"></textarea>
-                                    <span id="comments-counter" class="char-counter" aria-live="polite">
-                                        {charCounts.comments}/1000 characters
-                                    </span>
-                                </div>
+                            <!-- Additional Comments -->
+                            <div class="ccm-field">
+                                <label class="ccm-label" for="comments-input">Additional Comments</label>
+                                <textarea id="comments-input"
+                                          class="ccm-input ccm-textarea"
+                                          placeholder="Add any additional notes or comments (optional)"
+                                          value={formData.comments}
+                                          onchange={handleCommentsChange}
+                                          disabled={isSaving}
+                                          rows="3"
+                                          maxlength="1000"
+                                          aria-describedby="comments-counter"></textarea>
+                                <span id="comments-counter" class="ccm-char-counter" aria-live="polite">
+                                    {charCounts.comments}/1000
+                                </span>
                             </div>
 
                         </form>
 
                     </template>
 
-                </div>
+            </div><!-- /ccm-body -->
 
-                <!-- ═══════════════════════════════════════════ -->
-                <!-- MODAL FOOTER -->
-                <!-- ═══════════════════════════════════════════ -->
-                <footer class="slds-modal__footer modal-footer-mobile" role="contentinfo">
-                    <button class="slds-button slds-button_neutral modal-action-btn modal-action-btn--cancel" 
-                            type="button"
-                            onclick={handleCloseModal}
-                            disabled={isSaving}
-                            aria-label="Cancel and close the case creation form">
-                        Cancel
-                    </button>
-                    <button class="slds-button slds-button_brand modal-action-btn modal-action-btn--submit" 
-                            type="submit"
-                            onclick={handleSaveCase}
-                            disabled={hasValidationDisabled}
-                            aria-label="Create and submit the support case for approval"
-                            title="Ctrl+Enter to submit">
-                        <template if:false={isSaving}>
-                            <lightning-icon icon-name="utility:success" size="x-small" class="slds-m-right_small"></lightning-icon>
-                            Create Case
-                        </template>
-                        <template if:true={isSaving}>
-                            <lightning-spinner size="small" class="slds-m-right_small" alternative-text="Creating case"></lightning-spinner>
-                            Creating...
-                        </template>
-                    </button>
-                </footer>
+            <!-- ── Footer ── -->
+            <footer class="ccm-footer">
+                <button class="ccm-btn-secondary" type="button" onclick={handleCloseModal} disabled={isSaving}>
+                    Cancel
+                </button>
+                <button class="ccm-btn-primary" type="submit" onclick={handleSaveCase} disabled={hasValidationDisabled}>
+                    <template if:false={isSaving}>&#10003; Create Case</template>
+                    <template if:true={isSaving}>
+                        <lightning-spinner size="small" alternative-text="Creating case"></lightning-spinner>
+                        Creating...
+                    </template>
+                </button>
+            </footer>
 
-            </div>
-        </section>
-
-        <!-- Modal Backdrop -->
-        <div class="slds-backdrop slds-backdrop_open" 
-             onclick={handleCloseModal} 
-             role="presentation"
-             aria-hidden="true"></div>
-    </template>
+        </div><!-- /ccm-shell -->
+    </dialog>
 </template>

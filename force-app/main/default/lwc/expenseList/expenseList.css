@@ -264,8 +264,10 @@
     from { transform: translate(-50%,-50%) scale(.92); opacity: 0; }
     to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
 }
-.confirm-icon-wrap { margin-bottom: 14px; }
-.confirm-icon      { --lwc-colorTextIconDefault: #e8a000; }
+.confirm-icon-wrap          { margin-bottom: 14px; }
+.confirm-icon               { --lwc-colorTextIconDefault: #e8a000; }
+.confirm-icon--abandon      { --lwc-colorTextIconDefault: #706e6b; }
+.confirm-icon--submit       { --lwc-colorTextIconDefault: #0070d2; }
 .confirm-title     { font-size: 17px; font-weight: 700; color: #181818; margin: 0 0 8px; }
 .confirm-body      { font-size: 14px; color: #555; margin: 0 0 22px; line-height: 1.5; }
 .confirm-actions   { display: flex; gap: 10px; }
@@ -280,6 +282,20 @@
 }
 .btn-delete-confirm:hover:not([disabled]) { background: #a61c17; }
 .btn-delete-confirm[disabled] { background: #e8a5a2; cursor: not-allowed; }
+.btn-abandon-confirm {
+    flex: 1; padding: 11px; border: none; border-radius: 8px;
+    background: #706e6b; font-size: 15px; font-weight: 700; color: #fff;
+    cursor: pointer; transition: background .15s;
+}
+.btn-abandon-confirm:hover:not([disabled]) { background: #4a4a4a; }
+.btn-abandon-confirm[disabled] { background: #b0adab; cursor: not-allowed; }
+.btn-submit-confirm {
+    flex: 1; padding: 11px; border: none; border-radius: 8px;
+    background: #0070d2; font-size: 15px; font-weight: 700; color: #fff;
+    cursor: pointer; transition: background .15s;
+}
+.btn-submit-confirm:hover:not([disabled]) { background: #005fb2; }
+.btn-submit-confirm[disabled] { background: #9ec5e9; cursor: not-allowed; }
 
 /* ── Edit bottom sheet ───────────────────────────── */
 .edit-sheet {

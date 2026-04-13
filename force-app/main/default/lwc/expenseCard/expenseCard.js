@@ -14,6 +14,7 @@ const STATUS_CLASSES = {
     'Submitted': 'status-badge status-submitted',
     'Approved' : 'status-badge status-approved',
     'Rejected' : 'status-badge status-rejected',
+    'Abandoned': 'status-badge status-abandoned',
     'Paid'     : 'status-badge status-paid'
 };
 
@@ -86,6 +87,24 @@ export default class ExpenseCard extends LightningElement {
     handleSubmit(event) {
         event.stopPropagation();
         this.dispatchEvent(new CustomEvent('submitexpense', {
+            detail : { expenseId: this.expense.id },
+            bubbles: true,
+            composed: true
+        }));
+    }
+
+    handleResubmit(event) {
+        event.stopPropagation();
+        this.dispatchEvent(new CustomEvent('resubmitexpense', {
+            detail : { expenseId: this.expense.id },
+            bubbles: true,
+            composed: true
+        }));
+    }
+
+    handleAbandon(event) {
+        event.stopPropagation();
+        this.dispatchEvent(new CustomEvent('abandonexpense', {
             detail : { expenseId: this.expense.id },
             bubbles: true,
             composed: true

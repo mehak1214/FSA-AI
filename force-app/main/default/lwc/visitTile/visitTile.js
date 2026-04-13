@@ -26,27 +26,16 @@ export default class VisitTile extends LightningElement {
 
     get outletAddress() {
         const account = this.outletAccount;
-        if (!account || !account.ShippingAddress) {
-            return 'No Address Provided';
-        }
-        
-        // Handle the case where ShippingAddress might be an object with address components
-        if (typeof account.ShippingAddress === 'object' && account.ShippingAddress !== null) {
-            const addr = account.ShippingAddress;
-            const addressParts = [];
-            
-            // Build address from components
-            if (addr.street) addressParts.push(addr.street);
-            if (addr.city) addressParts.push(addr.city);
-            if (addr.state) addressParts.push(addr.state);
-            if (addr.postalCode) addressParts.push(addr.postalCode);
-            if (addr.country) addressParts.push(addr.country);
-            
-            return addressParts.join(', ');
-        }
-        
-        // If it's already a string, return as-is
-        return account.ShippingAddress;
+        if (!account) return 'No Address Provided';
+
+        const street  = account.ShippingStreet     ?? account.ibfsa__ShippingStreet     ?? '';
+        const city    = account.ShippingCity       ?? account.ibfsa__ShippingCity       ?? '';
+        const state   = account.ShippingState      ?? account.ibfsa__ShippingState      ?? '';
+        const postal  = account.ShippingPostalCode ?? account.ibfsa__ShippingPostalCode ?? '';
+        const country = account.ShippingCountry    ?? account.ibfsa__ShippingCountry    ?? '';
+
+        const parts = [street, city, state, postal, country].filter(v => v && v.trim());
+        return parts.length ? parts.join(', ') : 'No Address Provided';
     }
 
     get visitStatus() {
@@ -75,17 +64,18 @@ export default class VisitTile extends LightningElement {
     /* =====================
        MAP (FIXED)
     ====================== */
+    static DEFAULT_LAT = 18.54944;
+    static DEFAULT_LON = 73.79127;
+
     navigateToMap(event) {
         event?.stopPropagation();
         const account = this.outletAccount;
 
-        const lat = account?.ibfsa__Outlet_Location__Latitude__s ?? account?.Outlet_Location__Latitude__s;
-        const lon = account?.ibfsa__Outlet_Location__Longitude__s ?? account?.Outlet_Location__Longitude__s;
+        const rawLat = account?.ibfsa__Outlet_Location__Latitude__s ?? account?.Outlet_Location__Latitude__s;
+        const rawLon = account?.ibfsa__Outlet_Location__Longitude__s ?? account?.Outlet_Location__Longitude__s;
 
-        if (lat === null || lat === undefined || lon === null || lon === undefined) {
-            this.showToast('Location unavailable', 'Outlet location is not available.', 'error');
-            return;
-        }
+        const lat = (rawLat === null || rawLat === undefined) ? VisitTile.DEFAULT_LAT : rawLat;
+        const lon = (rawLon === null || rawLon === undefined) ? VisitTile.DEFAULT_LON : rawLon;
 
         const mapUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
 

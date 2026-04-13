@@ -37,6 +37,14 @@ public with sharing class Outlet360Controller {
         @AuraEnabled public List<CaseRecord> allCases;
         @AuraEnabled public Integer casesCount;
         @AuraEnabled public Integer totalCasesCount;
+        @AuraEnabled public List<AssetRecord> assets;
+        @AuraEnabled public List<AssetRecord> allAssets;
+        @AuraEnabled public Integer assetsCount;
+        @AuraEnabled public Integer totalAssetsCount;
+        @AuraEnabled public List<AssetRequestRecord> assetRequests;
+        @AuraEnabled public List<AssetRequestRecord> allAssetRequests;
+        @AuraEnabled public Integer assetRequestsCount;
+        @AuraEnabled public Integer totalAssetRequestsCount;
         @AuraEnabled public List<BusinessRecord> recentInvoices;
         @AuraEnabled public Decimal pendingAmount;
         @AuraEnabled public Integer overdueCount;
@@ -77,6 +85,27 @@ public with sharing class Outlet360Controller {
         @AuraEnabled public String solutionRequired;
         @AuraEnabled public String ownerName;
         @AuraEnabled public Decimal totalPrice;
+    }
+
+    public class AssetRecord {
+        @AuraEnabled public Id assetId;
+        @AuraEnabled public String name;
+        @AuraEnabled public String serialNumber;
+        @AuraEnabled public String productName;
+        @AuraEnabled public String status;
+        @AuraEnabled public String outletName;
+        @AuraEnabled public Date lastAuditDate;
+        @AuraEnabled public String lastCondition;
+    }
+
+    public class AssetRequestRecord {
+        @AuraEnabled public Id requestId;
+        @AuraEnabled public String requestNumber;
+        @AuraEnabled public String productName;
+        @AuraEnabled public String requestType;
+        @AuraEnabled public String status;
+        @AuraEnabled public Date requestedInstallationDate;
+        @AuraEnabled public Datetime createdDate;
     }
 
     @AuraEnabled(cacheable=true)
@@ -128,6 +157,14 @@ public with sharing class Outlet360Controller {
             response.allCases = new List<CaseRecord>();
             response.casesCount = 0;
             response.totalCasesCount = 0;
+            response.assets = new List<AssetRecord>();
+            response.allAssets = new List<AssetRecord>();
+            response.assetsCount = 0;
+            response.totalAssetsCount = 0;
+            response.assetRequests = new List<AssetRequestRecord>();
+            response.allAssetRequests = new List<AssetRequestRecord>();
+            response.assetRequestsCount = 0;
+            response.totalAssetRequestsCount = 0;
             response.recentInvoices = new List<BusinessRecord>();
             response.pendingAmount = 0;
             response.overdueCount = 0;
@@ -190,6 +227,10 @@ public with sharing class Outlet360Controller {
             populateBusinessSummary(response, recordId, globalDescribe);
             // Populate cases associated with the outlet
             populateCases(response, recordId, globalDescribe);
+            // Populate assets associated with the outlet
+            populateAssets(response, recordId);
+            // Populate asset requests associated with the outlet
+            populateAssetRequests(response, recordId);
             // Populate payment summary.
             populatePaymentSummary(response, recordId, globalDescribe);
             // Calculate payment rating: average of Payment_Score__c from Payment records
@@ -418,7 +459,7 @@ public with sharing class Outlet360Controller {
             (!String.isBlank(statusField) ? (', ' + statusField) : '') +
             ' FROM ' + objectApiName +
             ' WHERE ' + accountField + ' = :recordId' +
-            ' ORDER BY ' + (!String.isBlank(dateField) ? dateField : 'CreatedDate') + ' DESC LIMIT 5';
+            ' ORDER BY CreatedDate DESC LIMIT 5';
 
         try {
             List<SObject> recentRows = Database.query(listSoql);
@@ -447,7 +488,7 @@ public with sharing class Outlet360Controller {
             (!String.isBlank(statusField) ? (', ' + statusField) : '') +
             ' FROM ' + objectApiName +
             ' WHERE ' + accountField + ' = :recordId' +
-            ' ORDER BY ' + (!String.isBlank(dateField) ? dateField : 'CreatedDate') + ' DESC LIMIT 200';
+            ' ORDER BY CreatedDate DESC LIMIT 200';
 
         List<Id> allOrderIds = new List<Id>();
         try {
@@ -718,6 +759,131 @@ public with sharing class Outlet360Controller {
         return item;
     }
 
+    private static void populateAssets(Outlet360Response response, Id recordId) {
+        if (response == null || recordId == null) {
+            return;
+        }
+
+        try {
+            Set<Id> plannedOrActiveAssetIds = new Set<Id>();
+            for (Asset_Allocation__c allocation : [
+                SELECT Asset__c
+                FROM Asset_Allocation__c
+                WHERE Account__c = :recordId
+                AND Allocation_Status__c IN ('Planned', 'Active')
+                AND Asset__c != null
+                ORDER BY CreatedDate DESC
+                LIMIT 200
+            ]) {
+                plannedOrActiveAssetIds.add(allocation.Asset__c);
+            }
+
+            List<Asset__c> assetRows = [
+                SELECT Id, Name, Serial_Number__c, Asset_Status__c,
+                       Current_Account__r.Name,
+                       Product__r.Name,
+                       (SELECT Condition__c, Visit__r.Visit_Date__c
+                        FROM AssetAuditsByAsset__r
+                        ORDER BY CreatedDate DESC
+                        LIMIT 1)
+                FROM Asset__c
+                WHERE Current_Account__c = :recordId
+                OR Id IN :plannedOrActiveAssetIds
+                ORDER BY Name ASC
+                LIMIT 200
+            ];
+
+            response.totalAssetsCount = assetRows.size();
+            response.assetsCount = Math.min(assetRows.size(), 5);
+
+            Integer index = 0;
+            for (Asset__c assetRow : assetRows) {
+                AssetRecord item = buildAssetRecord(assetRow);
+                response.allAssets.add(item);
+                if (index < 5) {
+                    response.assets.add(item);
+                }
+                index++;
+            }
+        } catch (Exception ex) {
+            System.debug('Error loading assets: ' + ex.getMessage());
+            response.assets = new List<AssetRecord>();
+            response.allAssets = new List<AssetRecord>();
+            response.assetsCount = 0;
+            response.totalAssetsCount = 0;
+        }
+    }
+
+    private static AssetRecord buildAssetRecord(Asset__c assetRow) {
+        AssetRecord item = new AssetRecord();
+        item.assetId = assetRow.Id;
+        item.name = assetRow.Name;
+        item.serialNumber = assetRow.Serial_Number__c;
+        item.productName = assetRow.Product__r != null ? assetRow.Product__r.Name : null;
+        item.status = assetRow.Asset_Status__c;
+        item.outletName = assetRow.Current_Account__r != null ? assetRow.Current_Account__r.Name : null;
+
+        if (assetRow.AssetAuditsByAsset__r != null && !assetRow.AssetAuditsByAsset__r.isEmpty()) {
+            Asset_Audit__c latestAudit = assetRow.AssetAuditsByAsset__r[0];
+            item.lastCondition = latestAudit.Condition__c;
+            if (latestAudit.Visit__r != null) {
+                item.lastAuditDate = latestAudit.Visit__r.Visit_Date__c;
+            }
+        }
+
+        return item;
+    }
+
+    private static void populateAssetRequests(Outlet360Response response, Id recordId) {
+        if (response == null || recordId == null) {
+            return;
+        }
+
+        try {
+            List<Asset_Request__c> requestRows = [
+                SELECT Id, Name, Request_Type__c, Status__c, Requested_Installation_Date__c, CreatedDate,
+                       Requested_Catalog_Item__r.Name
+                FROM Asset_Request__c
+                WHERE Account__c = :recordId
+                ORDER BY CreatedDate DESC
+                LIMIT 200
+            ];
+
+            response.totalAssetRequestsCount = requestRows.size();
+            response.assetRequestsCount = Math.min(requestRows.size(), 5);
+
+            Integer index = 0;
+            for (Asset_Request__c requestRow : requestRows) {
+                AssetRequestRecord item = buildAssetRequestRecord(requestRow);
+                response.allAssetRequests.add(item);
+                if (index < 5) {
+                    response.assetRequests.add(item);
+                }
+                index++;
+            }
+        } catch (Exception ex) {
+            System.debug('Error loading asset requests: ' + ex.getMessage());
+            response.assetRequests = new List<AssetRequestRecord>();
+            response.allAssetRequests = new List<AssetRequestRecord>();
+            response.assetRequestsCount = 0;
+            response.totalAssetRequestsCount = 0;
+        }
+    }
+
+    private static AssetRequestRecord buildAssetRequestRecord(Asset_Request__c requestRow) {
+        AssetRequestRecord item = new AssetRequestRecord();
+        item.requestId = requestRow.Id;
+        item.requestNumber = requestRow.Name;
+        item.productName = requestRow.Requested_Catalog_Item__r != null
+            ? requestRow.Requested_Catalog_Item__r.Name
+            : null;
+        item.requestType = requestRow.Request_Type__c;
+        item.status = requestRow.Status__c;
+        item.requestedInstallationDate = requestRow.Requested_Installation_Date__c;
+        item.createdDate = requestRow.CreatedDate;
+        return item;
+    }
+
     private static void populatePaymentSummary(
         Outlet360Response response,
         Id recordId,
@@ -931,5 +1097,46 @@ public with sharing class Outlet360Controller {
             }
         }
         return null;
+    }
+
+    /**
+     * Creates a new Contact linked to the given Account (the outlet record).
+     * accountId comes from the LWC recordId and is never shown in the UI form.
+     * Salutation and LastName are mandatory; FirstName, MobilePhone and Email are optional.
+     */
+    @AuraEnabled
+    public static Id createContact(
+        Id     accountId,
+        String salutation,
+        String firstName,
+        String lastName,
+        String phone,
+        String email
+    ) {
+        if (accountId == null) {
+            throw new AuraHandledException('Account ID is required to create a contact.');
+        }
+        if (String.isBlank(salutation)) {
+            throw new AuraHandledException('Salutation is required.');
+        }
+        if (String.isBlank(lastName)) {
+            throw new AuraHandledException('Last Name is required.');
+        }
+
+        try {
+            Contact c = new Contact();
+            c.AccountId   = accountId;
+            c.Salutation  = salutation;
+            c.FirstName   = String.isBlank(firstName) ? null : firstName.trim();
+            c.LastName    = lastName.trim();
+            c.MobilePhone = String.isBlank(phone) ? null : phone.trim();
+            c.Email       = String.isBlank(email) ? null : email.trim();
+            insert c;
+            return c.Id;
+        } catch (DmlException dmlEx) {
+            throw new AuraHandledException(dmlEx.getDmlMessage(0));
+        } catch (Exception ex) {
+            throw new AuraHandledException('Unable to create contact: ' + ex.getMessage());
+        }
     }
 }

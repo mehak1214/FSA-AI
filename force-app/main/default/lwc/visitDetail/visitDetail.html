@@ -9,49 +9,47 @@
             <!-- Hero / Header -->
             <div class="hero">
 
-                <!-- Row 1: Back + Status badge + Outlet photo -->
+                <!-- Row 1: Back + Status badge -->
                 <div class="hero-top">
                     <button class="back-btn" onclick={handleClose} title="Back">&#8592;</button>
                     <div class="hero-top-right">
                         <span class={statusBadgeClass}>{visitStatus}</span>
-                        <template if:true={hasOutletPhoto}>
-                            <div class="hero-thumb">
-                                <img src={outletPhotoUrl} alt="Outlet photo" />
-                            </div>
-                        </template>
                     </div>
                 </div>
 
-                <!-- Row 2: Eyebrow — visit name + sequence -->
-                <p class="hero-eyebrow">
-                    <span class="hero-eyebrow-name">{visitName}</span>
-                    <template if:true={sequenceLabel}>
-                        <span class="hero-eyebrow-seq"> · Visit #{sequenceLabel}</span>
+                <!-- Row 2: Store photo + eyebrow + name side by side -->
+                <div class="hero-identity">
+                    <template if:true={hasOutletPhoto}>
+                        <div class="hero-thumb">
+                            <img src={outletPhotoUrl} alt="Store photo" />
+                        </div>
                     </template>
-                </p>
-
-                <!-- Row 3: Outlet name (tappable) -->
-                <h2 class="hero-outlet-name">
-                    <button type="button" class="outlet-link" onclick={handleOpenOutlet360}
-                        disabled={outletLinkDisabled} title="Open Outlet 360">
-                        {outletName}
-                    </button>
-                </h2>
-
-                <!-- Row 4: Phone -->
-                <template if:true={outletPhone}>
-                    <div class="hero-detail-row">
-                        <a href="tel:{outletPhone}" class="hero-detail-item hero-detail-link">&#128222; {outletPhone}</a>
+                    <div class="hero-identity-text">
+                        <!-- Eyebrow — visit name + sequence -->
+                        <p class="hero-eyebrow">
+                            <span class="hero-eyebrow-name">{visitName}</span>
+                            <template if:true={sequenceLabel}>
+                                <span class="hero-eyebrow-seq"> · Visit #{sequenceLabel}</span>
+                            </template>
+                        </p>
+                        <!-- Store name (tappable) -->
+                        <h2 class="hero-outlet-name">
+                            <button type="button" class="outlet-link" onclick={handleOpenOutlet360}
+                                disabled={outletLinkDisabled} title="Open Store 360">
+                                {outletName}
+                            </button>
+                        </h2>
                     </div>
-                </template>
+                </div>
 
-                <!-- Row 5: Address -->
-                <template if:true={hasAddress}>
-                    <p class="hero-address">&#128205; {outletAddress}</p>
-                </template>
-
-                <!-- Row 6: Directions button -->
-                <div class="hero-actions">
+                <!-- Row 3: Phone chip + Address chip + Directions pill — all inline -->
+                <div class="hero-meta-row">
+                    <template if:true={outletPhone}>
+                        <a href="tel:{outletPhone}" class="hero-meta-chip hero-meta-link">&#128222; {outletPhone}</a>
+                    </template>
+                    <template if:true={hasAddress}>
+                        <span class="hero-meta-chip hero-meta-address">&#128205; {outletAddress}</span>
+                    </template>
                     <button class="map-mini-btn" onclick={navigateToMap} type="button" disabled={mapDisabled}
                         title="Directions">
                         <lightning-icon icon-name="utility:location" size="x-small"></lightning-icon>
@@ -63,22 +61,21 @@
 
             <div class="content">
                 <!-- Visit Timing -->
-                <div class="card">
-                    <div class="card-head">
-                        <span class="card-title">Timing</span>
-                    </div>
-                    <div class="detail-grid">
-                        <div class="detail">
-                            <p class="label">Planned Window</p>
-                            <p class="value">{plannedStart} - {plannedEnd}</p>
+                <div class="card card--timing">
+                    <div class="timing-row">
+                        <div class="timing-item">
+                            <span class="timing-label">Planned</span>
+                            <span class="timing-value">{plannedStart} – {plannedEnd}</span>
                         </div>
-                        <div class="detail">
-                            <p class="label">Check-in / out</p>
-                            <p class="value">{checkInTime} - {checkOutTime}</p>
+                        <div class="timing-divider"></div>
+                        <div class="timing-item">
+                            <span class="timing-label">Check-in / out</span>
+                            <span class="timing-value">{checkInTime} – {checkOutTime}</span>
                         </div>
-                        <div class="detail">
-                            <p class="label">Duration</p>
-                            <p class="value">{duration}</p>
+                        <div class="timing-divider"></div>
+                        <div class="timing-item timing-item--duration">
+                            <span class="timing-label">Duration</span>
+                            <span class="timing-value timing-value--accent">{duration}</span>
                         </div>
                     </div>
                 </div>
@@ -142,6 +139,16 @@
                         <button class="btn secondary action-orders" onclick={handleOpenSchemesModal} type="button">
                             <span>Schemes</span>
                         </button>
+
+                        <button class="btn secondary action-request" onclick={handleOpenAssetRequest} type="button">
+                            <span>Request New Asset</span>
+                        </button>
+
+                        <template if:true={hasAssetRequestSuccessMessage}>
+                            <div class="asset-request-success" role="status">
+                                {assetRequestSuccessMessage}
+                            </div>
+                        </template>
 
                     </div>
                 </div>
@@ -233,7 +240,7 @@
                 <template if:true={showRelatedLists}>
                     <div class="card related-card">
                         <div class="card-head">
-                            <span class="card-title">Outlet Related Data</span>
+                            <span class="card-title">Store Related Data</span>
                         </div>
 
                         <template if:true={isLoadingRelated}>
@@ -241,12 +248,18 @@
                         </template>
 
                         <template if:false={isLoadingRelated}>
-                            <div class="tab-bar">
-                                <button type="button" class={relatedTabClassAssets} data-tab="assets" onclick={handleRelatedTabClick}>Assets</button>
-                                <button type="button" class={relatedTabClassOrders} data-tab="orders" onclick={handleRelatedTabClick}>Order History</button>
-                                <button type="button" class={relatedTabClassProducts} data-tab="products" onclick={handleRelatedTabClick}>Order Products</button>
-                                <button type="button" class={relatedTabClassCases} data-tab="cases" onclick={handleRelatedTabClick}>Cases</button>
+                            <div class="tab-bar-wrap">
+                                <span class="tab-scroll-hint tab-scroll-hint--left" aria-hidden="true">&#8249;</span>
+                                <div class="tab-bar" role="tablist" aria-label="Store related data tabs">
+                                    <button type="button" class={relatedTabClassAssets} data-tab="assets" onclick={handleRelatedTabClick}>Assets</button>
+                                    <button type="button" class={relatedTabClassOrders} data-tab="orders" onclick={handleRelatedTabClick}>Order History</button>
+                                    <button type="button" class={relatedTabClassProducts} data-tab="products" onclick={handleRelatedTabClick}>Order Products</button>
+                                    <button type="button" class={relatedTabClassCases} data-tab="cases" onclick={handleRelatedTabClick}>Cases</button>
+                                    <button type="button" class={relatedTabClassAssetRequests} data-tab="assetRequests" onclick={handleRelatedTabClick}>Asset Requests</button>
+                                </div>
+                                <span class="tab-scroll-hint tab-scroll-hint--right" aria-hidden="true">&#8250;</span>
                             </div>
+                            <div class="tab-scroll-copy">Swipe horizontally to see more tabs</div>
 
                             <template if:true={isRelatedTabAssets}>
                                 <div class="section-head">
@@ -274,7 +287,7 @@
                                     </div>
                                 </template>
                                 <template if:false={hasRelatedAssets}>
-                                    <div class="state">No assets found for this outlet.</div>
+                                    <div class="state">No assets found for this store.</div>
                                 </template>
                             </template>
 
@@ -303,7 +316,7 @@
                                     </div>
                                 </template>
                                 <template if:false={hasRelatedOrders}>
-                                    <div class="state">No orders found for this outlet.</div>
+                                    <div class="state">No orders found for this store.</div>
                                 </template>
                             </template>
 
@@ -333,7 +346,7 @@
                                     </div>
                                 </template>
                                 <template if:false={hasRelatedProducts}>
-                                    <div class="state">No order products found for this outlet.</div>
+                                    <div class="state">No order products found for this store.</div>
                                 </template>
                             </template>
 
@@ -365,7 +378,38 @@
                                     </div>
                                 </template>
                                 <template if:false={hasRelatedCases}>
-                                    <div class="state">No cases found for this outlet.</div>
+                                    <div class="state">No cases found for this store.</div>
+                                </template>
+                            </template>
+
+                            <template if:true={isRelatedTabAssetRequests}>
+                                <div class="section-head">
+                                    <h2 class="section-title">{relatedAssetRequestsLabel}</h2>
+                                    <template if:true={showViewAllRelatedAssetRequests}>
+                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedAssetRequestsModal}>View All</button>
+                                    </template>
+                                </div>
+                                <template if:true={hasRelatedAssetRequests}>
+                                    <div class="table-wrap">
+                                        <table class="summary">
+                                            <thead><tr><th>Request</th><th>Product</th><th>Type</th><th>Status</th><th>Requested Install</th><th>Created</th></tr></thead>
+                                            <tbody>
+                                                <template for:each={assetRequests} for:item="item">
+                                                    <tr key={item.rowKey} class="order-row-clickable" data-id={item.requestId} onclick={handleRelatedAssetRequestClick}>
+                                                        <td class="order-name-cell">{item.requestNumber}</td>
+                                                        <td>{item.productName}</td>
+                                                        <td>{item.requestType}</td>
+                                                        <td>{item.status}</td>
+                                                        <td>{item.requestedInstallationDateLabel}</td>
+                                                        <td>{item.createdDateLabel}</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </template>
+                                <template if:false={hasRelatedAssetRequests}>
+                                    <div class="state">No asset requests found for this store.</div>
                                 </template>
                             </template>
                         </template>
@@ -803,8 +847,52 @@
             </div>
         </dialog>
 
+        <dialog class="vd-dialog vd-dialog-wide related-asset-requests-dialog" onclose={handleRelatedDialogClose}>
+            <div class="vd-backdrop" onclick={handleCloseRelatedAssetRequestsModal}></div>
+            <div class="vd-shell">
+                <header class="vd-header">
+                    <div class="vd-title-row">
+                        <span class="vd-badge">Asset Requests</span>
+                        <h2 class="vd-title">All Asset Requests</h2>
+                    </div>
+                    <button class="vd-close-btn" type="button" onclick={handleCloseRelatedAssetRequestsModal} aria-label="Close">&#10005;</button>
+                </header>
+                <div class="vd-body">
+                    <template if:true={hasAllRelatedAssetRequests}>
+                        <div class="table-wrap table-wrap--flush">
+                            <table class="summary">
+                                <thead><tr><th>Request</th><th>Product</th><th>Type</th><th>Status</th><th>Requested Install</th><th>Created</th></tr></thead>
+                                <tbody>
+                                    <template for:each={allAssetRequests} for:item="item">
+                                        <tr key={item.rowKey} class="order-row-clickable" data-id={item.requestId} onclick={handleRelatedAssetRequestClick}>
+                                            <td class="order-name-cell">{item.requestNumber}</td>
+                                            <td>{item.productName}</td>
+                                            <td>{item.requestType}</td>
+                                            <td>{item.status}</td>
+                                            <td>{item.requestedInstallationDateLabel}</td>
+                                            <td>{item.createdDateLabel}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+                <footer class="vd-footer">
+                    <button class="vd-btn-secondary" type="button" onclick={handleCloseRelatedAssetRequestsModal}>Close</button>
+                </footer>
+            </div>
+        </dialog>
+
         <c-order-detail onclose={handleOrderDetailClose}></c-order-detail>
         <c-asset-audit-detail visit-id={currentVisitId}></c-asset-audit-detail>
+        <c-asset-request-detail></c-asset-request-detail>
+        <c-asset-request-form
+            visit-id={currentVisitId}
+            account-id={outletRecordId}
+            account-name={outletName}
+            onrequestsubmitted={handleAssetRequestSubmitted}>
+        </c-asset-request-form>
 
     </section>
 </template>

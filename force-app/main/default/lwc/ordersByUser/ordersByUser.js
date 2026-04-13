@@ -2,7 +2,6 @@ import { LightningElement, track, api } from 'lwc';
 import currencyCode from '@salesforce/i18n/currency';
 import getOrdersByFranchiseId from '@salesforce/apex/OrdersByUserController.getOrdersByActivatedByUser';
 import getOrdersByFranchiseIdWithStatus from '@salesforce/apex/OrdersByUserController.getOrdersByActivatedByUserWithStatus';
-import getOrderDetail from '@salesforce/apex/OrdersByUserController.getOrderDetail';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class OrdersByUser extends LightningElement {
@@ -10,16 +9,12 @@ export default class OrdersByUser extends LightningElement {
     /* =========================================================
        TRACKED PROPERTIES
        ========================================================= */
-    @track orders          = [];
-    @track isLoading       = false;
-    @track errorMessage    = '';
-    @track selectedStatus  = 'All';
+    @track orders           = [];
+    @track isLoading        = false;
+    @track errorMessage     = '';
+    @track selectedStatus   = 'All';
     @track selectedOrderTab = 'ALL';
-    @track isDetailOpen    = false;   // true = detail view, false = list view
-    @track isDetailLoading = false;
-    @track selectedOrder   = null;
-    @track isCreateCaseModalOpen = false;
-    _visitFranchiseId      = null;
+    _visitFranchiseId       = null;
 
     @api
     get visitFranchiseId() {
@@ -27,46 +22,10 @@ export default class OrdersByUser extends LightningElement {
     }
 
     set visitFranchiseId(value) {
-        const nextFranchiseId = value || null;
-        if (nextFranchiseId === this._visitFranchiseId) return;
-        this._visitFranchiseId = nextFranchiseId;
+        const next = value || null;
+        if (next === this._visitFranchiseId) return;
+        this._visitFranchiseId = next;
         this.loadOrders();
-    }
-
-    /* =========================================================
-       STATUS OPTIONS
-       ========================================================= */
-    statusOptions = [
-        { label: 'All',       value: 'All' },
-        { label: 'Draft',     value: 'Draft' },
-        { label: 'Activated', value: 'Activated' },
-        { label: 'Completed', value: 'Completed' },
-        { label: 'Cancelled', value: 'Cancelled' }
-    ];
-
-    /* =========================================================
-       GETTERS
-       ========================================================= */
-    get hasOrders() {
-        return this.visibleOrders && this.visibleOrders.length > 0;
-    }
-
-    get noOrdersToDisplay() {
-        return !this.isLoading && !this.hasOrders && !this.errorMessage;
-    }
-
-    get isAllTab()     { return this.selectedOrderTab === 'ALL'; }
-    get isSampleTab()  { return this.selectedOrderTab === 'SAMPLE'; }
-    get isRegularTab() { return this.selectedOrderTab === 'REGULAR'; }
-
-    get allTabClass()     { return `orders-tab${this.isAllTab     ? ' active' : ''}`; }
-    get sampleTabClass()  { return `orders-tab${this.isSampleTab  ? ' active' : ''}`; }
-    get regularTabClass() { return `orders-tab${this.isRegularTab ? ' active' : ''}`; }
-
-    get visibleOrders() {
-        if (!this.orders || this.orders.length === 0) return [];
-        if (this.selectedOrderTab === 'ALL') return this.orders;
-        return this.orders.filter(o => this.matchesOrderTab(o.orderType));
     }
 
     /* =========================================================
@@ -75,6 +34,27 @@ export default class OrdersByUser extends LightningElement {
     connectedCallback() {
         this.loadOrders();
     }
+
+    /* =========================================================
+       GETTERS
+       ========================================================= */
+    get hasOrders() {
+        return this.visibleOrders.length > 0;
+    }
+
+    get noOrdersToDisplay() {
+        return !this.isLoading && !this.hasOrders && !this.errorMessage;
+    }
+
+    get visibleOrders() {
+        if (!this.orders || this.orders.length === 0) return [];
+        if (this.selectedOrderTab === 'ALL') return this.orders;
+        return this.orders.filter(o => this.matchesOrderTab(o.orderType));
+    }
+
+    get allTabClass()     { return `obu-tab-pill${this.selectedOrderTab === 'ALL'     ? ' active' : ''}`; }
+    get sampleTabClass()  { return `obu-tab-pill${this.selectedOrderTab === 'SAMPLE'  ? ' active' : ''}`; }
+    get regularTabClass() { return `obu-tab-pill${this.selectedOrderTab === 'REGULAR' ? ' active' : ''}`; }
 
     /* =========================================================
        LOAD ORDERS
@@ -104,7 +84,8 @@ export default class OrdersByUser extends LightningElement {
                     orderType:          order.orderType || 'N/A',
                     productCount:       order.productCount || 0,
                     formattedAmount:    this.formatCurrency(order.totalAmount),
-                    formattedOrderDate: this.formatDate(order.orderDate)
+                    formattedOrderDate: this.formatDate(order.orderDate),
+                    statusClass:        this.getStatusClass(order.status)
                 }));
                 this.isLoading = false;
             })
@@ -117,93 +98,49 @@ export default class OrdersByUser extends LightningElement {
     /* =========================================================
        EVENT HANDLERS
        ========================================================= */
-    handleStatusChange(event) {
-        this.selectedStatus = event.detail.value;
-        this.loadOrders();
-    }
-
     handleTabChange(event) {
         this.selectedOrderTab = event.currentTarget.dataset.tab;
     }
 
     handleCardClick(event) {
         const orderId = event.currentTarget.dataset.orderId;
-        this.openOrderDetail(orderId);
-    }
-
-    openOrderDetail(orderId) {
-        this.isDetailOpen    = true;
-        this.isDetailLoading = true;
-        this.selectedOrder   = null;
-
-        getOrderDetail({ orderId })
-            .then(result => {
-                this.selectedOrder = {
-                    ...result,
-                    orderType:               result.orderType || 'N/A',
-                    productCount:            result.productCount || 0,
-                    formattedAmount:         this.formatCurrency(result.totalAmount),
-                    formattedOrderStartDate: this.formatDate(result.orderStartDate),
-                    billingAddress:          this.formatAddress(
-                        result.billingStreet, result.billingCity,
-                        result.billingState,  result.billingPostalCode, result.billingCountry
-                    ),
-                    shippingAddress: this.formatAddress(
-                        result.shippingStreet, result.shippingCity,
-                        result.shippingState,  result.shippingPostalCode, result.shippingCountry
-                    )
-                };
-                this.isDetailLoading = false;
-                // Emit event to parent (visitDetail) when order is selected
-                this.dispatchEvent(new CustomEvent('orderselected', {
-                    detail: { order: this.selectedOrder },
-                    bubbles: true,
-                    composed: true
-                }));
-            })
-            .catch(error => {
-                this.isDetailLoading = false;
-                this.handleError('Failed to load order details', error);
-            });
-    }
-
-    // "Back to Orders" — returns to list view
-    handleCloseDetail() {
-        this.isDetailOpen  = false;
-        this.selectedOrder = null;
-        // Emit event to parent that order selection is cleared
+        if (!orderId) return;
+        // Dispatch to parent (visitDetail) which opens c-order-detail
         this.dispatchEvent(new CustomEvent('orderselected', {
-            detail: { order: null },
+            detail: { order: { orderId } },
             bubbles: true,
             composed: true
         }));
     }
 
-    showToast(title, message, variant) {
-        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
-    }
-
     /* =========================================================
        UTILITIES
        ========================================================= */
+    getStatusClass(status) {
+        const map = {
+            'Draft':     'obu-status-badge obu-status-draft',
+            'Activated': 'obu-status-badge obu-status-active',
+            'Completed': 'obu-status-badge obu-status-done',
+            'Cancelled': 'obu-status-badge obu-status-cancelled'
+        };
+        return map[status] || 'obu-status-badge obu-status-default';
+    }
+
     formatCurrency(amount) {
-        return new Intl.NumberFormat('en-US', {
-            style:    'currency',
-            currency: currencyCode
+        return new Intl.NumberFormat('en-IN', {
+            style:                 'currency',
+            currency:              currencyCode || 'INR',
+            maximumFractionDigits: 2
         }).format(amount || 0);
     }
 
     formatDate(dateValue) {
-        if (!dateValue) return '-';
-        return new Intl.DateTimeFormat('en-US', {
-            year: 'numeric', month: 'short', day: '2-digit'
-        }).format(new Date(dateValue));
-    }
-
-    formatAddress(street, city, state, postalCode, country) {
-        const line2 = [city, state, postalCode].filter(Boolean).join(', ');
-        const parts = [street, line2, country].filter(Boolean);
-        return parts.length ? parts.join(' | ') : 'Not available';
+        if (!dateValue) return '--';
+        try {
+            return new Date(dateValue).toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+        } catch { return '--'; }
     }
 
     handleError(message, error) {
