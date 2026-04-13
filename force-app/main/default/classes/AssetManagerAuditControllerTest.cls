@@ -18,7 +18,7 @@ private class AssetManagerAuditControllerTest {
         asset = [SELECT Asset_Status__c FROM Asset__c WHERE Id = :asset.Id];
         System.assertEquals('Scrapped', asset.Asset_Status__c);
 
-        Visit_Task__c task = AssetManagerAuditController.createFollowUpTask(visit.Id, asset.Id, 'Follow Up', 'Inspect condition', true);
+        Visit_Task__c task = AssetManagerAuditController.createFollowUpTask(visit.Id, asset.Id, 'Maintenance Verification', 'Inspect condition', true);
         System.assertEquals('Pending', task.Status__c);
         System.assertEquals(asset.Id, task.Related_Asset__c);
     }
