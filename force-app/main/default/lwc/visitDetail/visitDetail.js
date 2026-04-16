@@ -16,7 +16,7 @@ import renameAttachment from '@salesforce/apex/VisitController.renameAttachment'
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
 import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
 import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
-import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360SummaryFresh';
+import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360Summary';
 
 export default class VisitDetail extends NavigationMixin(LightningElement) {
     _visit;
