@@ -555,7 +555,123 @@
             </div><!-- /.step-wrapper -->
         </template>
 
-        <!-- ===== STEP 4 / SUCCESS ===== -->
+        <!-- ===== STEP 3 (Sample) or STEP 4 (Regular): CONFIRMATION/REVIEW ===== -->
+        <template if:true={stepConfirm}>
+            <div class="step-wrapper">
+            <div class="step-content">
+            <div class="checkout-layout">
+                <div class="main-col">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <span class="section-icon">✅</span>
+                            <span class="section-title">Order Confirmation</span>
+                        </div>
+                        <div class="section-body">
+                            <p style="margin: 0 0 20px 0; color: #333;">Please review your order details before placing the order.</p>
+                            
+                            <!-- Products Summary -->
+                            <div style="margin-bottom: 20px;">
+                                <h4 style="margin: 0 0 15px 0; color: #0070d2; font-size: 14px; font-weight: 600;">📦 Products</h4>
+                                <template for:each={selectedItemsForSummary} for:item="item">
+                                    <div key={item.productId} style="padding: 12px; background: #f3f3f3; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <p style="margin: 0 0 5px 0; font-weight: 500;">{item.productName}</p>
+                                            <p style="margin: 0; font-size: 12px; color: #666;">Qty: {item.quantity} × ₹{item.unitPriceDisplay}</p>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <p style="margin: 0; font-weight: 600;">₹{item.discountedTotalDisplay}</p>
+                                            <template if:true={item.discountAmount}>
+                                                <p style="margin: 5px 0 0 0; font-size: 12px; color: #27ae60;">-₹{item.discountAmountDisplay}</p>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Pricing Summary -->
+                            <div style="border-top: 1px solid #ddd; padding-top: 15px; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Subtotal:</span>
+                                    <span>₹{selectedItemsSubtotalDisplay}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #27ae60;">
+                                    <span>Discount:</span>
+                                    <span>-₹{selectedItemsTotalDiscountDisplay}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 16px; border-top: 1px solid #ddd; padding-top: 10px;">
+                                    <span>Grand Total:</span>
+                                    <span>₹{computedTotalPriceDisplay}</span>
+                                </div>
+                            </div>
+
+                            <!-- Payment Info (Regular Orders only) -->
+                            <template if:false={isSampleOrder}>
+                                <div style="background: #e8f5e9; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                                    <h4 style="margin: 0 0 15px 0; color: #0070d2; font-size: 14px; font-weight: 600;">💳 Payment Summary</h4>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                        <span>Payment Method:</span>
+                                        <span style="font-weight: 500;">{payment.mode}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                        <span>Grand Total:</span>
+                                        <span style="font-weight: 600;">₹{computedTotalPriceDisplay}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; background: rgba(0,0,0,0.05); padding: 8px 10px; border-radius: 3px;">
+                                        <span>Payable Amount:</span>
+                                        <span style="font-weight: 600; color: #0070d2;">₹{payableAmountDisplay}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; color: #d32f2f;">
+                                        <span>Outstanding Amount:</span>
+                                        <span style="font-weight: 600;">₹{outstandingAmount}</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side Summary -->
+                <div class="side-col">
+                    <div class="price-card">
+                        <div class="price-card-header"><span>📋</span><span>Order Summary</span></div>
+                        <template for:each={selectedItemsForSummary} for:item="item">
+                            <div key={item.productId} class="mini-item">
+                                <span class="mini-item-name">{item.productName}</span>
+                                <span class="mini-item-qty">×{item.quantity}</span>
+                            </div>
+                        </template>
+                        <div class="price-divider"></div>
+                        <div class="price-line"><span>Subtotal</span><span>₹{selectedItemsSubtotalDisplay}</span></div>
+                        <div class="price-line discount"><span>Discount</span><span>-₹{selectedItemsTotalDiscountDisplay}</span></div>
+                        <div class="price-divider"></div>
+                        <div class="price-total-line"><span>Grand Total</span><span>₹{computedTotalPriceDisplay}</span></div>
+                    </div>
+                </div>
+            </div>
+            </div><!-- /.step-content -->
+
+            <!-- Footer with Navigation Buttons -->
+            <div class="step-footer">
+                <button class="btn-secondary" onclick={handlePrev} disabled={isBackButtonDisabled}>← Back</button>
+                <button class="btn-place-order" onclick={saveOrder} disabled={isPlaceOrderDisabled}>
+                    <template if:true={isSavingOrder}>
+                        <lightning-spinner alternative-text="Creating order" size="small" variant="brand"></lightning-spinner>
+                        <span>Creating Order...</span>
+                    </template>
+                    <template if:false={isSavingOrder}>
+                        <template if:true={isSampleOrder}>
+                            <span>Place Sample Order</span>
+                        </template>
+                        <template if:false={isSampleOrder}>
+                            <span>Place Order</span>
+                        </template>
+                    </template>
+                </button>
+            </div>
+            </div><!-- /.step-wrapper -->
+        </template>
+
+        <!-- ===== STEP 4 (Sample) or STEP 5 (Regular): SUCCESS ===== -->
         <template if:true={stepFour}>
             <div class="success-page">
                 <div class="success-card">

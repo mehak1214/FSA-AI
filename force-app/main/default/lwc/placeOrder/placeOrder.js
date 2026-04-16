@@ -134,9 +134,10 @@ export default class PlaceOrder extends LightningElement {
     get stepTwo() { return this.currentStep === 2; }
     // For Sample Orders, stepThree (payment) is skipped; step 3 maps directly to success
     get stepThree() { return this.currentStep === 3 && !this.isSampleOrder; }
-    get stepFour() { return this.isSampleOrder ? this.currentStep === 3 : this.currentStep === 4; }
-    // Show Place Order on stepTwo for Sample Orders, stepThree for Regular Orders
-    get showPlaceOrder() { return (this.isSampleOrder && this.currentStep === 2) || (!this.isSampleOrder && this.currentStep === 3); }
+    get stepConfirm() { return this.isSampleOrder ? this.currentStep === 3 : this.currentStep === 4; }
+    get stepFour() { return this.isSampleOrder ? this.currentStep === 4 : this.currentStep === 5; }
+    // Show Place Order on stepConfirm for both Sample and Regular Orders
+    get showPlaceOrder() { return this.stepConfirm; }
     get showNextButton() { return !this.showPlaceOrder && !this.stepFour; }
 
     get isCard() { return this.payment.mode === 'Card'; }
@@ -303,6 +304,12 @@ export default class PlaceOrder extends LightningElement {
             }
             // Also update payment.amount to grand total
             this.payment.amount = parseFloat(this.computedTotalPriceDisplay) || 0;
+            this.currentStep = 3;
+        } else if (this.currentStep === 3 && !this.isSampleOrder) {
+            // Regular Order: from Payment to Confirmation
+            this.currentStep = 4;
+        } else if (this.currentStep === 2 && this.isSampleOrder) {
+            // Sample Order: from Details directly to Confirmation
             this.currentStep = 3;
         }
     }
@@ -555,8 +562,10 @@ export default class PlaceOrder extends LightningElement {
             appliedSchemeId: this.selectedSchemeId || null           // NEW
         })
         .then((result) => {
-            // For Sample Orders, success is currentStep=3; for Regular Orders, currentStep=4
-            this.currentStep = this.isSampleOrder ? 3 : 4;
+            // Navigate to success page
+            // For Sample Orders: Step 4 = Success
+            // For Regular Orders: Step 5 = Success
+            this.currentStep = this.isSampleOrder ? 4 : 5;
 
             // Optimistically update local stock and alreadyOrderedQty so the
             // product grid is accurate immediately if the user starts a new order.
