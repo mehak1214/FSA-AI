@@ -16,7 +16,7 @@ import renameAttachment from '@salesforce/apex/VisitController.renameAttachment'
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
 import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
 import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
-import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360Summary';
+import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360SummaryFresh';
 
 export default class VisitDetail extends NavigationMixin(LightningElement) {
     _visit;
@@ -56,6 +56,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     blockReason = '';
     isActingOnTask = false;
     isLoadingRelated = false;
+    isRefreshingRelated = false;
     activeRelatedTab = 'assets';
     assets = [];
     allAssets = [];
@@ -285,7 +286,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         }
     }
 
-    loadOutletRelatedData() {
+    loadOutletRelatedData(options = {}) {
+        const { preserveVisible = false } = options;
         const outletId = this.outletRecordId;
         if (!outletId) {
             this.assets = [];
@@ -308,10 +310,15 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             this.allAssetRequests = [];
             this.assetRequestsCount = 0;
             this.totalAssetRequestsCount = 0;
+            this.isRefreshingRelated = false;
             return;
         }
 
-        this.isLoadingRelated = true;
+        if (preserveVisible) {
+            this.isRefreshingRelated = true;
+        } else {
+            this.isLoadingRelated = true;
+        }
         getOutlet360Summary({ recordId: outletId, objectApiName: 'Account' })
             .then((result) => {
                 this.assets = (result?.assets || []).map((item, index) => ({
@@ -404,6 +411,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             })
             .finally(() => {
                 this.isLoadingRelated = false;
+                this.isRefreshingRelated = false;
             });
     }
 
@@ -621,6 +629,12 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     get relatedOrdersLabel() { return `Orders (${this.totalOrdersCount || this.ordersCount || 0})`; }
     get relatedCasesLabel() { return `Cases (${this.totalCasesCount || this.casesCount || 0})`; }
     get relatedAssetRequestsLabel() { return `Asset Requests (${this.totalAssetRequestsCount || this.assetRequestsCount || 0})`; }
+    get isRelatedRefreshDisabled() { return this.isLoadingRelated || this.isRefreshingRelated; }
+    get relatedRefreshButtonClass() {
+        return this.isRefreshingRelated
+            ? 'related-refresh-btn related-refresh-btn--spinning'
+            : 'related-refresh-btn';
+    }
 
     get showViewAllRelatedAssets() { return (this.totalAssetsCount || 0) > 5; }
     get showViewAllRelatedOrders() { return (this.totalOrdersCount || 0) > 5; }
@@ -1379,6 +1393,10 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         this.activeRelatedTab = event.currentTarget.dataset.tab;
     }
 
+    handleRefreshRelatedData() {
+        this.loadOutletRelatedData({ preserveVisible: true });
+    }
+
     handleOpenRelatedAssetsModal() {
         const dlg = this.template.querySelector('dialog.related-assets-dialog');
         if (dlg && !dlg.open) {
@@ -1489,10 +1507,14 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         const assetId = event.currentTarget.dataset.id;
         if (!assetId) return;
         this.handleCloseRelatedAssetsModal();
-        const assetDetail = this.template.querySelector('c-asset-audit-detail');
+        const assetDetail = this.template.querySelector('c-asset-detail');
         if (assetDetail) {
             assetDetail.openForAsset(assetId);
         }
+    }
+
+    handleAssetAuditCreated() {
+        this.loadOutletRelatedData();
     }
 
     handleRelatedAssetRequestClick(event) {

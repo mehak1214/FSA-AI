@@ -264,9 +264,23 @@
                             <template if:true={isRelatedTabAssets}>
                                 <div class="section-head">
                                     <h2 class="section-title">{relatedAssetsLabel}</h2>
-                                    <template if:true={showViewAllRelatedAssets}>
-                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedAssetsModal}>View All</button>
-                                    </template>
+                                    <div class="section-actions">
+                                        <button
+                                            class={relatedRefreshButtonClass}
+                                            type="button"
+                                            onclick={handleRefreshRelatedData}
+                                            title="Refresh assets"
+                                            aria-label="Refresh assets"
+                                            disabled={isRelatedRefreshDisabled}>
+                                            &#8635;
+                                        </button>
+                                        <template if:true={isRefreshingRelated}>
+                                            <span class="related-refresh-status" role="status">Refreshing...</span>
+                                        </template>
+                                        <template if:true={showViewAllRelatedAssets}>
+                                            <button class="btn secondary" type="button" onclick={handleOpenRelatedAssetsModal}>View All</button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <template if:true={hasRelatedAssets}>
                                     <div class="table-wrap">
@@ -294,9 +308,23 @@
                             <template if:true={isRelatedTabOrders}>
                                 <div class="section-head">
                                     <h2 class="section-title">{relatedOrdersLabel}</h2>
-                                    <template if:true={showViewAllRelatedOrders}>
-                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedOrdersModal}>View All</button>
-                                    </template>
+                                    <div class="section-actions">
+                                        <button
+                                            class={relatedRefreshButtonClass}
+                                            type="button"
+                                            onclick={handleRefreshRelatedData}
+                                            title="Refresh orders"
+                                            aria-label="Refresh orders"
+                                            disabled={isRelatedRefreshDisabled}>
+                                            &#8635;
+                                        </button>
+                                        <template if:true={isRefreshingRelated}>
+                                            <span class="related-refresh-status" role="status">Refreshing...</span>
+                                        </template>
+                                        <template if:true={showViewAllRelatedOrders}>
+                                            <button class="btn secondary" type="button" onclick={handleOpenRelatedOrdersModal}>View All</button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <template if:true={hasRelatedOrders}>
                                     <div class="table-wrap">
@@ -323,9 +351,23 @@
                             <template if:true={isRelatedTabProducts}>
                                 <div class="section-head">
                                     <h2 class="section-title">Order Products</h2>
-                                    <template if:true={showViewAllRelatedProducts}>
-                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedProductsModal}>View All</button>
-                                    </template>
+                                    <div class="section-actions">
+                                        <button
+                                            class={relatedRefreshButtonClass}
+                                            type="button"
+                                            onclick={handleRefreshRelatedData}
+                                            title="Refresh order products"
+                                            aria-label="Refresh order products"
+                                            disabled={isRelatedRefreshDisabled}>
+                                            &#8635;
+                                        </button>
+                                        <template if:true={isRefreshingRelated}>
+                                            <span class="related-refresh-status" role="status">Refreshing...</span>
+                                        </template>
+                                        <template if:true={showViewAllRelatedProducts}>
+                                            <button class="btn secondary" type="button" onclick={handleOpenRelatedProductsModal}>View All</button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <template if:true={hasRelatedProducts}>
                                     <div class="table-wrap">
@@ -353,9 +395,23 @@
                             <template if:true={isRelatedTabCases}>
                                 <div class="section-head">
                                     <h2 class="section-title">{relatedCasesLabel}</h2>
-                                    <template if:true={showViewAllRelatedCases}>
-                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedCasesModal}>View All</button>
-                                    </template>
+                                    <div class="section-actions">
+                                        <button
+                                            class={relatedRefreshButtonClass}
+                                            type="button"
+                                            onclick={handleRefreshRelatedData}
+                                            title="Refresh cases"
+                                            aria-label="Refresh cases"
+                                            disabled={isRelatedRefreshDisabled}>
+                                            &#8635;
+                                        </button>
+                                        <template if:true={isRefreshingRelated}>
+                                            <span class="related-refresh-status" role="status">Refreshing...</span>
+                                        </template>
+                                        <template if:true={showViewAllRelatedCases}>
+                                            <button class="btn secondary" type="button" onclick={handleOpenRelatedCasesModal}>View All</button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <template if:true={hasRelatedCases}>
                                     <div class="table-wrap">
@@ -385,9 +441,23 @@
                             <template if:true={isRelatedTabAssetRequests}>
                                 <div class="section-head">
                                     <h2 class="section-title">{relatedAssetRequestsLabel}</h2>
-                                    <template if:true={showViewAllRelatedAssetRequests}>
-                                        <button class="btn secondary" type="button" onclick={handleOpenRelatedAssetRequestsModal}>View All</button>
-                                    </template>
+                                    <div class="section-actions">
+                                        <button
+                                            class={relatedRefreshButtonClass}
+                                            type="button"
+                                            onclick={handleRefreshRelatedData}
+                                            title="Refresh asset requests"
+                                            aria-label="Refresh asset requests"
+                                            disabled={isRelatedRefreshDisabled}>
+                                            &#8635;
+                                        </button>
+                                        <template if:true={isRefreshingRelated}>
+                                            <span class="related-refresh-status" role="status">Refreshing...</span>
+                                        </template>
+                                        <template if:true={showViewAllRelatedAssetRequests}>
+                                            <button class="btn secondary" type="button" onclick={handleOpenRelatedAssetRequestsModal}>View All</button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <template if:true={hasRelatedAssetRequests}>
                                     <div class="table-wrap">
@@ -885,7 +955,7 @@
         </dialog>
 
         <c-order-detail onclose={handleOrderDetailClose}></c-order-detail>
-        <c-asset-audit-detail visit-id={currentVisitId}></c-asset-audit-detail>
+        <c-asset-detail visit-id={currentVisitId} onauditcreated={handleAssetAuditCreated}></c-asset-detail>
         <c-asset-request-detail></c-asset-request-detail>
         <c-asset-request-form
             visit-id={currentVisitId}

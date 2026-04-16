@@ -567,6 +567,10 @@ export default class PlaceOrder extends LightningElement {
             appliedSchemeId: this.selectedSchemeId || null           // NEW
         })
         .then((result) => {
+            // Hide spinner first, then navigate to success page so the
+            // reactive render shows the success step cleanly.
+            this.isSavingOrder = false;
+
             // Navigate to success page
             // For Sample Orders: Step 4 = Success
             // For Regular Orders: Step 5 = Success
@@ -574,26 +578,37 @@ export default class PlaceOrder extends LightningElement {
 
             // Optimistically update local stock and alreadyOrderedQty so the
             // product grid is accurate immediately if the user starts a new order.
-            if (this.selectedOrderType === 'Sample Order') {
-                const orderedQtyById = {};
-                selectedItems.forEach(item => { orderedQtyById[item.productId] = item.quantity; });
+            try {
+                if (this.selectedOrderType === 'Sample Order') {
+                    const orderedQtyById = {};
+                    selectedItems.forEach(item => { orderedQtyById[item.productId] = item.quantity; });
 
-                this.sampleProducts = this.sampleProducts.map(p => {
-                    const ordered = orderedQtyById[p.productId] || 0;
-                    if (ordered > 0) {
-                        const currentStock = p.quantityOnHand != null ? p.quantityOnHand : 0;
-                        const newStock = Math.max(0, currentStock - ordered);
-                        const newAlreadyOrdered = (p.alreadyOrderedQty || 0) + ordered;
-                        return { ...p, quantity: 0, quantityOnHand: newStock, alreadyOrderedQty: newAlreadyOrdered };
-                    }
-                    return { ...p, quantity: 0 };
-                });
-            } else {
-                this.setCurrentProducts(this.currentProducts.map(p => ({ ...p, quantity: 0 })));
+                    this.sampleProducts = this.sampleProducts.map(p => {
+                        const ordered = orderedQtyById[p.productId] || 0;
+                        if (ordered > 0) {
+                            const currentStock = p.quantityOnHand != null ? p.quantityOnHand : 0;
+                            const newStock = Math.max(0, currentStock - ordered);
+                            const newAlreadyOrdered = (p.alreadyOrderedQty || 0) + ordered;
+                            return { ...p, quantity: 0, quantityOnHand: newStock, alreadyOrderedQty: newAlreadyOrdered };
+                        }
+                        return { ...p, quantity: 0 };
+                    });
+                } else {
+                    this.setCurrentProducts(this.currentProducts.map(p => ({ ...p, quantity: 0 })));
+                }
+
+                // Guard refreshApex — _wiredProductsResult is only set when
+                // getProductsByDistributor was wired (Regular Orders with a distributor).
+                // Calling refreshApex(undefined) throws a JS error that would
+                // otherwise be caught by .catch() and show a false error toast.
+                if (this._wiredProductsResult) {
+                    refreshApex(this._wiredProductsResult);
+                }
+            } catch (postSaveError) {
+                // Non-critical cleanup failed — order was already saved, so
+                // do not surface this as an error to the user.
+                console.error('Post-save cleanup error (non-critical):', postSaveError);
             }
-
-            // Also force a server-side cache refresh so subsequent wire calls get fresh data
-            refreshApex(this._wiredProductsResult);
 
             this.dispatchEvent(new CustomEvent('ordercreated', {
                 detail: {
@@ -604,9 +619,9 @@ export default class PlaceOrder extends LightningElement {
                 composed: true
             }));
         })
-        .catch(error => this.showToast('Error', error.body?.message || 'Error', 'error'))
-        .finally(() => {
+        .catch(error => {
             this.isSavingOrder = false;
+            this.showToast('Error', error.body?.message || error.message || 'Failed to place order. Please try again.', 'error');
         });
     }
 
