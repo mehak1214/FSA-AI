@@ -707,7 +707,7 @@ export default class Outlet360Details extends NavigationMixin(LightningElement) 
         const assetId = event.currentTarget.dataset.id;
         if (!assetId) return;
         this._closeAssetsDialog();
-        const assetDetail = this.template.querySelector('c-asset-audit-detail');
+        const assetDetail = this.template.querySelector('c-asset-detail');
         if (assetDetail) {
             assetDetail.openForAsset(assetId);
         }
