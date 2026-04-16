@@ -89,6 +89,8 @@ export default class PlaceOrder extends LightningElement {
     @track cartLongPressTimer = null;
     @track calculatedDiscountAmount = 0;   // NEW - Total discount amount
     @track payableAmount = 0;               // NEW - Payable amount (editable by user)
+    @track storedGrandTotal = 0;            // Store grand total when order is placed
+    @track storedPayableAmount = 0;         // Store payable amount when order is placed
 
     paymentModes = [{ label: 'Cash', value: 'Cash' }, { label: 'UPI', value: 'UPI' }, { label: 'Card', value: 'Card' }];
     cardOptions = [{ label: 'Visa', value: 'Visa' }, { label: 'MasterCard', value: 'MasterCard' }, { label: 'RuPay', value: 'RuPay'}];
@@ -546,6 +548,10 @@ export default class PlaceOrder extends LightningElement {
 
         this.orderAmt = this.computedTotalPriceDisplay;
         
+        // Store the grand total and payable amount for success page display
+        this.storedGrandTotal = parseFloat(this.computedTotalPriceDisplay) || 0;
+        this.storedPayableAmount = parseFloat(this.payableAmount) || 0;
+        
         // For Regular Orders, ensure payment data has both grand total and payable amount
         if (!this.isSampleOrder) {
             this.payment.amount = parseFloat(this.computedTotalPriceDisplay) || 0;  // Grand Total
@@ -658,23 +664,33 @@ export default class PlaceOrder extends LightningElement {
     get grandTotal() { return parseFloat(this.computedTotalPriceDisplay) || 0; }
     
     get outstandingAmount() {
-        if (this.payableAmount < this.grandTotal) {
-            return (this.grandTotal - this.payableAmount).toFixed(2);
+        // On success page, use stored values for accurate display
+        const grandTotal = this.stepFour ? this.storedGrandTotal : this.grandTotal;
+        const payableAmt = this.stepFour ? this.storedPayableAmount : this.payableAmount;
+        
+        if (payableAmt < grandTotal) {
+            return (grandTotal - payableAmt).toFixed(2);
         }
         return '0.00';
     }
     
     get displayPaymentStatus() {
-        if (this.payableAmount > 0 && this.payableAmount < this.grandTotal) {
+        // On success page, use stored values for accurate display
+        const grandTotal = this.stepFour ? this.storedGrandTotal : this.grandTotal;
+        const payableAmt = this.stepFour ? this.storedPayableAmount : this.payableAmount;
+        
+        if (payableAmt > 0 && payableAmt < grandTotal) {
             return 'Partially Paid';
-        } else if (this.payableAmount >= this.grandTotal && this.payableAmount > 0) {
+        } else if (payableAmt >= grandTotal && payableAmt > 0) {
             return 'Paid';
         }
         return 'Pending';
     }
     
     get payableAmountDisplay() {
-        return this.payableAmount.toFixed(2);
+        // On success page, use stored value for accurate display
+        const amount = this.stepFour ? this.storedPayableAmount : this.payableAmount;
+        return amount.toFixed(2);
     }
     get currentProducts() {
         if (this.selectedOrderType === 'Sample Order') return this.sampleProducts;

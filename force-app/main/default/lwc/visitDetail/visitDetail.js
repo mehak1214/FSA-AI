@@ -159,20 +159,18 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     handleOrderCreated(event) {
-        // The success page is now shown inside the dialog (placeOrder advances
-        // to stepFour before dispatching this event).  We do NOT auto-close
-        // the dialog — the user can read the success screen and close it
-        // themselves using the ✕ button.  The toast fires immediately so it
-        // is visible once the dialog is dismissed.
+        // The placeOrder component navigates to its success page (stepFour)
+        // BEFORE dispatching this event — the dialog is still open showing
+        // the success screen.  We only do background data refresh here.
+        // The toast is shown in handleOrderDialogClose so it fires AFTER
+        // the user dismisses the dialog and the success screen is gone.
+        this._orderWasCreated = true;
 
         // Background data refresh — non-blocking
         Promise.all([
             this.refreshVisitData({ showErrorToast: false }),
             Promise.resolve().then(() => this.loadOutletRelatedData())
         ]).catch(() => {});
-
-        // Show success toast immediately (will appear after user closes dialog)
-        this.showToast('Order Created', 'Order created successfully.', 'success');
     }
 
     handleOpenAssetRequest() {
@@ -793,6 +791,11 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         if (dlg.open) {
             dlg.close();
             this._unlockScroll();
+            // If an order was placed and user closes via ✕, show toast now
+            if (this._orderWasCreated) {
+                this._orderWasCreated = false;
+                this.showToast('Order Created', 'Order created successfully.', 'success');
+            }
         } else {
             // Reset placeOrder to step 1 before opening so a fresh form
             // is always shown, even after a previously completed order.
@@ -806,6 +809,12 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     // Esc key fires native 'close' event — just sync scroll lock, don't re-toggle
     handleOrderDialogClose() {
         this._unlockScroll();
+        // If an order was placed, show the toast now — after the dialog has
+        // closed and the success screen is gone, so it appears on visitDetail.
+        if (this._orderWasCreated) {
+            this._orderWasCreated = false;
+            this.showToast('Order Created', 'Order created successfully.', 'success');
+        }
     }
 
     handleOpenSchemesModal() {
