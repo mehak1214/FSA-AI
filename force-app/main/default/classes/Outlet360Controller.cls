@@ -901,7 +901,7 @@ public with sharing class Outlet360Controller {
         try {
             // Query Payment records linked to the account
             List<Payment> payments = [
-                SELECT Id, Amount, Date, Outstanding_Amount__c, Payment_Status__c
+                SELECT Id, Amount, Date, Outstanding_Amount1__c, Payment_Status__c
                 FROM Payment
                 WHERE AccountId = :recordId
                 ORDER BY Date DESC
@@ -922,8 +922,8 @@ public with sharing class Outlet360Controller {
             for (Payment payment : payments) {
                 // Calculate pending amount (sum of outstanding amounts for Pending and Overdue status)
                 if ((payment.Payment_Status__c == 'Pending' || payment.Payment_Status__c == 'Overdue') &&
-                    payment.Outstanding_Amount__c != null) {
-                    pendingAmount += payment.Outstanding_Amount__c;
+                    payment.Outstanding_Amount1__c != null) {
+                    pendingAmount += payment.Outstanding_Amount1__c;
                 }
 
                 // Count overdue payments
