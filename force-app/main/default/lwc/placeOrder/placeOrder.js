@@ -87,6 +87,7 @@ export default class PlaceOrder extends LightningElement {
     @track isCartButtonHidden = false;
     @track showCartRemoveBtn = false;
     @track cartLongPressTimer = null;
+    @track calculatedDiscountAmount = 0;   // NEW - Total discount amount
 
     paymentModes = [{ label: 'Cash', value: 'Cash' }, { label: 'UPI', value: 'UPI' }, { label: 'Card', value: 'Card' }];
     cardOptions = [{ label: 'Visa', value: 'Visa' }, { label: 'MasterCard', value: 'MasterCard' }, { label: 'RuPay', value: 'RuPay'}];
@@ -372,7 +373,23 @@ export default class PlaceOrder extends LightningElement {
     handlePaymentChange(event) { this.payment[event.target.name] = event.target.value;}
     
     // if(computedTotalPriceDisplay) }
-    handleSummarySchemeChange(event) { this.selectedSchemeId = event.detail.value; }
+    // handleSummarySchemeChange(event) { this.selectedSchemeId = event.detail.value; }
+
+    handleSummarySchemeChange(event) {
+    this.selectedSchemeId = event.detail.value;
+
+    if (this.selectedSchemeId) {
+        const selectedScheme = this.availableSchemes.find(s => s.value === this.selectedSchemeId);
+        if (selectedScheme) {
+            const discountPercent = selectedScheme.discount || 0;
+            this.calculatedDiscountAmount = this.selectedItemsForSummary.reduce((sum, item) => {
+                return sum + ((item.lineTotal || 0) * (discountPercent / 100));
+            }, 0);
+        }
+    } else {
+        this.calculatedDiscountAmount = 0;
+    }
+}
 
     // Unified Quantity Logic
     handleSummaryQtyChange(event) {
@@ -481,7 +498,9 @@ export default class PlaceOrder extends LightningElement {
             selectedSchemeId: this.selectedSchemeId ? String(this.selectedSchemeId) : null,
             addressData: this.address,
             paymentData: this.payment,
-            visitId: this.visitId || null
+            visitId: this.visitId || null,
+            discountAmount: this.calculatedDiscountAmount || 0,      // NEW
+            appliedSchemeId: this.selectedSchemeId || null           // NEW
         })
         .then((result) => {
             // For Sample Orders, success is currentStep=3; for Regular Orders, currentStep=4
