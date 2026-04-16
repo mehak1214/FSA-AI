@@ -301,6 +301,8 @@ export default class PlaceOrder extends LightningElement {
             if (this.payableAmount === 0) {
                 this.payableAmount = parseFloat(this.computedTotalPriceDisplay) || 0;
             }
+            // Also update payment.amount to grand total
+            this.payment.amount = parseFloat(this.computedTotalPriceDisplay) || 0;
             this.currentStep = 3;
         }
     }
@@ -377,8 +379,25 @@ export default class PlaceOrder extends LightningElement {
     handlePaymentChange(event) { this.payment[event.target.name] = event.target.value; }
     
     handlePayableAmountChange(event) {
-        let newAmount = parseFloat(event.target.value) || 0;
+        const inputValue = event.target.value;
+        
+        // Handle empty/cleared field
+        if (inputValue === '' || inputValue == null) {
+            this.payableAmount = 0;
+            this.payment.amount = 0;
+            return;
+        }
+        
+        let newAmount = parseFloat(inputValue) || 0;
         const grandTotal = parseFloat(this.computedTotalPriceDisplay) || 0;
+        
+        // Prevent negative amounts
+        if (newAmount < 0) {
+            this.showToast('Invalid Amount', 'Payable amount cannot be negative.', 'warning');
+            this.payableAmount = 0;
+            this.payment.amount = 0;
+            return;
+        }
         
         // Validation: Prevent amount > grand total (Option A)
         if (newAmount > grandTotal) {
@@ -389,18 +408,13 @@ export default class PlaceOrder extends LightningElement {
             );
             // Reset to grand total
             this.payableAmount = grandTotal;
-            return;
-        }
-        
-        // Prevent negative amounts
-        if (newAmount < 0) {
-            this.showToast('Invalid Amount', 'Payable amount cannot be negative.', 'warning');
-            this.payableAmount = 0;
+            this.payment.amount = grandTotal;
             return;
         }
         
         // Set the validated amount
         this.payableAmount = newAmount;
+        this.payment.amount = newAmount;  // Keep payment.amount in sync
     }
     
     // if(computedTotalPriceDisplay) }
@@ -520,9 +534,10 @@ export default class PlaceOrder extends LightningElement {
 
         this.orderAmt = this.computedTotalPriceDisplay;
         
-        // For Regular Orders, set payment amount to the user-entered payable amount
+        // For Regular Orders, ensure payment data has both grand total and payable amount
         if (!this.isSampleOrder) {
-            this.payment.amount = this.payableAmount;
+            this.payment.amount = parseFloat(this.computedTotalPriceDisplay) || 0;  // Grand Total
+            this.payment.paidAmount = this.payableAmount;  // Payable Amount (user entered)
         }
         
         this.isSavingOrder = true;

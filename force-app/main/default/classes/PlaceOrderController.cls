@@ -734,27 +734,36 @@ System.debug('Payment creation failed: ' + ex.getMessage());
         
         if (orderType != 'Sample Order' && paymentData != null) {
             
-            Decimal paymentAmount = 0;
+            // Get Grand Total (full order amount) from paymentData
+            Decimal grandTotal = 0;
             try {
-                paymentAmount = Decimal.valueOf(String.valueOf(paymentData.get('amount')));
+                grandTotal = Decimal.valueOf(String.valueOf(paymentData.get('amount')));
             } catch (Exception e) {
-                paymentAmount = 0;
+                grandTotal = orderTotal;  // Fallback to calculated orderTotal
+            }
+            
+            // Get Paid Amount (payable amount user entered) from paymentData
+            Decimal paidAmount = 0;
+            try {
+                paidAmount = Decimal.valueOf(String.valueOf(paymentData.get('paidAmount')));
+            } catch (Exception e) {
+                paidAmount = 0;
             }
             
             String paymentMode = (String) paymentData.get('mode');   // Cash, UPI, or Card
             
-            // Calculate Outstanding Amount
+            // Calculate Outstanding Amount based on Grand Total - Paid Amount
             Decimal outstandingAmount = 0;
-            if (paymentAmount < orderTotal) {
-                outstandingAmount = orderTotal - paymentAmount;
+            if (paidAmount < grandTotal) {
+                outstandingAmount = grandTotal - paidAmount;
             }
-            // If paymentAmount >= orderTotal, Outstanding_Amount__c = 0 (fully paid or overpaid)
+            // If paidAmount >= grandTotal, Outstanding_Amount__c = 0 (fully paid or overpaid)
             
-            // Determine Payment Status
+            // Determine Payment Status based on paid amount
             String paymentStatus = 'Pending';
-            if (paymentAmount > 0 && paymentAmount < orderTotal) {
+            if (paidAmount > 0 && paidAmount < grandTotal) {
                 paymentStatus = 'Partially Paid';
-            } else if (paymentAmount >= orderTotal) {
+            } else if (paidAmount >= grandTotal) {
                 paymentStatus = 'Paid';
             }
             
@@ -764,8 +773,8 @@ System.debug('Payment creation failed: ' + ex.getMessage());
                 // Standard + Existing Custom Fields Only
                 pay.AccountId       = franchiseId;
                 pay.Order__c        = order.Id;
-                pay.Amount          = paymentAmount;
-                pay.Paid_Amount__c  = paymentAmount;        // Your custom field
+                pay.Amount          = grandTotal;             // Grand Total (full order value)
+                pay.Paid_Amount__c  = paidAmount;             // Paid Amount (what user is paying now)
                 pay.Date            = System.today();
                 pay.Type            = 'Sale';
                 pay.ProcessingMode  = 'External';
@@ -788,7 +797,10 @@ System.debug('Payment creation failed: ' + ex.getMessage());
                 insert pay;
                 
                 System.debug('✅ Payment record created successfully! ID: ' + pay.Id);
+                System.debug('Grand Total: ' + grandTotal);
+                System.debug('Paid Amount: ' + paidAmount);
                 System.debug('Outstanding Amount: ' + outstandingAmount);
+                System.debug('Payment Status: ' + paymentStatus);
                 
             } catch (Exception ex) {
                 System.debug('❌ Payment creation failed: ' + ex.getMessage());
