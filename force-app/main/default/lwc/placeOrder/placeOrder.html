@@ -468,6 +468,25 @@
                             </div>
                         </div>
 
+                        <!-- NEW: Payable Amount (Editable) -->
+                        <div class="payment-extra">
+                            <div class="field-group">
+                                <lightning-input 
+                                    label="Payable Amount (₹)" 
+                                    name="payableAmount" 
+                                    type="number" 
+                                    value={payableAmountDisplay} 
+                                    onchange={handlePayableAmountChange}
+                                    placeholder="Enter amount to pay"
+                                    step="0.01"
+                                    min="0">
+                                </lightning-input>
+                                <small style="display: block; margin-top: 5px; color: #666;">
+                                    Grand Total: ₹{computedTotalPriceDisplay} | Outstanding: ₹{outstandingAmount}
+                                </small>
+                            </div>
+                        </div>
+
                         <!-- UPI extra -->
                         <template if:true={isUPI}>
                             <div class="payment-extra">
@@ -504,7 +523,12 @@
                         <div class="price-line"><span>Subtotal</span><span>₹{selectedItemsSubtotalDisplay}</span></div>
                         <div class="price-line discount"><span>Discount</span><span>-₹{selectedItemsTotalDiscountDisplay}</span></div>
                         <div class="price-divider"></div>
-                        <div class="price-total-line"><span>Total Payable</span><span>₹{computedTotalPriceDisplay}</span></div>
+                        <div class="price-line"><span>Grand Total</span><span>₹{computedTotalPriceDisplay}</span></div>
+                        <div class="price-divider"></div>
+                        <div class="price-line highlight"><span>Payable Amount</span><span>₹{payableAmountDisplay}</span></div>
+                        <div class="price-line"><span>Outstanding</span><span>₹{outstandingAmount}</span></div>
+                        <div class="price-divider"></div>
+                        <div class="price-line status-line"><span>Payment Status</span><span style="font-weight: 600; color: #0070d2;">{displayPaymentStatus}</span></div>
                     </div>
                 </div>
             </div>
@@ -546,12 +570,24 @@
                     <template if:false={isSampleOrder}>
                         <div class="success-order-detail">
                             <div class="success-detail-row">
-                                <span>Total Amount</span>
+                                <span>Grand Total</span>
                                 <span>₹{orderAmt}</span>
+                            </div>
+                            <div class="success-detail-row">
+                                <span>Payable Amount</span>
+                                <span>₹{payableAmountDisplay}</span>
+                            </div>
+                            <div class="success-detail-row">
+                                <span>Outstanding Amount</span>
+                                <span>₹{outstandingAmount}</span>
                             </div>
                             <div class="success-detail-row">
                                 <span>Payment Mode</span>
                                 <span>{payment.mode}</span>
+                            </div>
+                            <div class="success-detail-row">
+                                <span>Status</span>
+                                <span style="font-weight: 600; color: #0070d2;">{displayPaymentStatus}</span>
                             </div>
                         </div>
                     </template>

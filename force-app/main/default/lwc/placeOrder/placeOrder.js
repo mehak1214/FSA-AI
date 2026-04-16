@@ -88,6 +88,7 @@ export default class PlaceOrder extends LightningElement {
     @track showCartRemoveBtn = false;
     @track cartLongPressTimer = null;
     @track calculatedDiscountAmount = 0;   // NEW - Total discount amount
+    @track payableAmount = 0;               // NEW - Payable amount (editable by user)
 
     paymentModes = [{ label: 'Cash', value: 'Cash' }, { label: 'UPI', value: 'UPI' }, { label: 'Card', value: 'Card' }];
     cardOptions = [{ label: 'Visa', value: 'Visa' }, { label: 'MasterCard', value: 'MasterCard' }, { label: 'RuPay', value: 'RuPay'}];
@@ -296,7 +297,10 @@ export default class PlaceOrder extends LightningElement {
                 });
         } else if (this.currentStep === 2 && !this.isSampleOrder) {
             // Regular Order: proceed to payment step
-            this.payment.amount = parseFloat(this.computedTotalPriceDisplay) || 0;
+            // Initialize payable amount to grand total if not set
+            if (this.payableAmount === 0) {
+                this.payableAmount = parseFloat(this.computedTotalPriceDisplay) || 0;
+            }
             this.currentStep = 3;
         }
     }
@@ -370,7 +374,34 @@ export default class PlaceOrder extends LightningElement {
         }
     }
 
-    handlePaymentChange(event) { this.payment[event.target.name] = event.target.value;}
+    handlePaymentChange(event) { this.payment[event.target.name] = event.target.value; }
+    
+    handlePayableAmountChange(event) {
+        let newAmount = parseFloat(event.target.value) || 0;
+        const grandTotal = parseFloat(this.computedTotalPriceDisplay) || 0;
+        
+        // Validation: Prevent amount > grand total (Option A)
+        if (newAmount > grandTotal) {
+            this.showToast(
+                'Amount Limit',
+                `Payable amount cannot exceed Grand Total of ₹${grandTotal.toFixed(2)}. Please enter a valid amount.`,
+                'warning'
+            );
+            // Reset to grand total
+            this.payableAmount = grandTotal;
+            return;
+        }
+        
+        // Prevent negative amounts
+        if (newAmount < 0) {
+            this.showToast('Invalid Amount', 'Payable amount cannot be negative.', 'warning');
+            this.payableAmount = 0;
+            return;
+        }
+        
+        // Set the validated amount
+        this.payableAmount = newAmount;
+    }
     
     // if(computedTotalPriceDisplay) }
     // handleSummarySchemeChange(event) { this.selectedSchemeId = event.detail.value; }
@@ -488,6 +519,12 @@ export default class PlaceOrder extends LightningElement {
         }
 
         this.orderAmt = this.computedTotalPriceDisplay;
+        
+        // For Regular Orders, set payment amount to the user-entered payable amount
+        if (!this.isSampleOrder) {
+            this.payment.amount = this.payableAmount;
+        }
+        
         this.isSavingOrder = true;
 
         placeOrder({
@@ -572,6 +609,29 @@ export default class PlaceOrder extends LightningElement {
     get selectedItemsSubtotalDisplay() { return this.selectedItemsForSummary.reduce((s, i) => s + i.lineTotal, 0).toFixed(2); }
     get selectedItemsTotalDiscountDisplay() { return this.selectedItemsForSummary.reduce((s, i) => s + i.discountAmount, 0).toFixed(2); }
     get computedTotalPriceDisplay() { return this.selectedItemsForSummary.reduce((s, i) => s + i.discountedTotal, 0).toFixed(2); }
+    
+    // NEW GETTERS FOR PAYMENT LOGIC
+    get grandTotal() { return parseFloat(this.computedTotalPriceDisplay) || 0; }
+    
+    get outstandingAmount() {
+        if (this.payableAmount < this.grandTotal) {
+            return (this.grandTotal - this.payableAmount).toFixed(2);
+        }
+        return '0.00';
+    }
+    
+    get displayPaymentStatus() {
+        if (this.payableAmount > 0 && this.payableAmount < this.grandTotal) {
+            return 'Partially Paid';
+        } else if (this.payableAmount >= this.grandTotal && this.payableAmount > 0) {
+            return 'Paid';
+        }
+        return 'Pending';
+    }
+    
+    get payableAmountDisplay() {
+        return this.payableAmount.toFixed(2);
+    }
     get currentProducts() {
         if (this.selectedOrderType === 'Sample Order') return this.sampleProducts;
         if (this.selectedOrderType === 'Regular Order') return this.regularProducts;

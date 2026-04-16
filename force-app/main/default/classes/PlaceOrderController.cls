@@ -743,6 +743,13 @@ System.debug('Payment creation failed: ' + ex.getMessage());
             
             String paymentMode = (String) paymentData.get('mode');   // Cash, UPI, or Card
             
+            // Calculate Outstanding Amount
+            Decimal outstandingAmount = 0;
+            if (paymentAmount < orderTotal) {
+                outstandingAmount = orderTotal - paymentAmount;
+            }
+            // If paymentAmount >= orderTotal, Outstanding_Amount__c = 0 (fully paid or overpaid)
+            
             // Determine Payment Status
             String paymentStatus = 'Pending';
             if (paymentAmount > 0 && paymentAmount < orderTotal) {
@@ -766,6 +773,7 @@ System.debug('Payment creation failed: ' + ex.getMessage());
                 
                 // Only using fields that already exist
                 pay.put('Payment_Status__c', paymentStatus);
+                pay.put('Outstanding_Amount__c', outstandingAmount);
                 
                 // Payment Mode - ONLY if the field exists, otherwise comment it out
                 if (String.isNotBlank(paymentMode)) {
@@ -780,6 +788,7 @@ System.debug('Payment creation failed: ' + ex.getMessage());
                 insert pay;
                 
                 System.debug('✅ Payment record created successfully! ID: ' + pay.Id);
+                System.debug('Outstanding Amount: ' + outstandingAmount);
                 
             } catch (Exception ex) {
                 System.debug('❌ Payment creation failed: ' + ex.getMessage());
