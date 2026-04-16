@@ -901,7 +901,7 @@ public with sharing class Outlet360Controller {
         try {
             // Query Payment records linked to the account
             List<Payment> payments = [
-                SELECT Id, Amount, Date, Outstanding_Amount__c, Payment_Status__c
+                SELECT Id, Amount, Date, Outstanding_Amount__c, Payment_Status__c, Paid_Amount__c
                 FROM Payment
                 WHERE AccountId = :recordId
                 ORDER BY Date DESC
@@ -921,7 +921,7 @@ public with sharing class Outlet360Controller {
 
             for (Payment payment : payments) {
                 // Calculate pending amount (sum of outstanding amounts for Pending and Overdue status)
-                if ((payment.Payment_Status__c == 'Pending' || payment.Payment_Status__c == 'Overdue') &&
+                if ((payment.Payment_Status__c == 'Pending' || payment.Payment_Status__c == 'Overdue'  || payment.Payment_Status__c == 'Partially Paid') &&
                     payment.Outstanding_Amount__c != null) {
                     pendingAmount += payment.Outstanding_Amount__c;
                 }
@@ -931,9 +931,8 @@ public with sharing class Outlet360Controller {
                     overdueCount++;
                 }
 
-                // Get the most recent payment date (only for paid payments)
-                //&& payment.Payment_Status__c == 'Paid'
-                if (lastPaymentDate == null  && payment.Date != null) {
+                // Get the most recent payment date (only if paid amount exists)
+                if (lastPaymentDate == null && payment.Date != null && payment.Paid_Amount__c != null && payment.Paid_Amount__c > 0) {
                     lastPaymentDate = ((Datetime) payment.Date).date();
                 }
             }

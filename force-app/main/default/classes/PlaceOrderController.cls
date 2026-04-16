@@ -730,7 +730,7 @@ System.debug('Payment creation failed: ' + ex.getMessage());
 }
 } */
         
-        /* ---------- CREATE PAYMENT (Regular Orders only) new code(Manisha) ---------- */
+        /* ---------- CREATE PAYMENT (Regular Orders only) new code---------- */
         
         if (orderType != 'Sample Order' && paymentData != null) {
             
