@@ -511,14 +511,19 @@ export default class PlaceOrder extends LightningElement {
                 if (!this.availableSchemes.length) {
                     // No schemes qualify for this qty — clear selection
                     this.selectedSchemeId = null;
+                    this.calculatedDiscountAmount = 0;
                 } else {
-                    // Keep the current selection only if it still exists in the
-                    // updated list (e.g. user manually picked a scheme earlier).
-                    // Otherwise auto-select the first (best) available scheme.
-                    const stillValid = this.availableSchemes.some(s => s.value === this.selectedSchemeId);
-                    if (!stillValid) {
-                        this.selectedSchemeId = this.availableSchemes[0].value;
-                    }
+                    // Always auto-select the first (best/highest threshold) available scheme
+                    // The Apex query orders by Threshold_Quantity DESC, Discount DESC
+                    // so the first scheme is the best one available
+                    const bestScheme = this.availableSchemes[0];
+                    this.selectedSchemeId = bestScheme.value;
+                    
+                    // Update discount amount for the best scheme
+                    const discountPercent = bestScheme.discount || 0;
+                    this.calculatedDiscountAmount = this.selectedItemsForSummary.reduce((sum, item) => {
+                        return sum + ((item.lineTotal || 0) * (discountPercent / 100));
+                    }, 0);
                 }
             });
     }
