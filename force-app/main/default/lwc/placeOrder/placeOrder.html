@@ -7,7 +7,8 @@
             </div>
         </template>
 
-        <!-- ===== TOP NAV ===== -->
+        <!-- ===== TOP NAV (hidden on success page) ===== -->
+        <template if:false={stepFour}>
         <div class="top-nav">
             <div class="nav-brand">
                 <div class="brand-icon">🧾</div>
@@ -57,16 +58,19 @@
                 </div>
             </template>
         </div>
+        </template>
 
-        <!-- Sample free banner -->
-        <template if:true={isSampleOrder}>
-            <div class="free-banner">
-                <span class="free-banner-icon">🎁</span>
-                <div>
-                    <strong>Sample Order — 100% Free</strong>
-                    <span class="free-banner-sub"> · No payment required · Products are for evaluation only</span>
+        <!-- Sample free banner (hidden on success page) -->
+        <template if:false={stepFour}>
+            <template if:true={isSampleOrder}>
+                <div class="free-banner">
+                    <span class="free-banner-icon">🎁</span>
+                    <div>
+                        <strong>Sample Order — 100% Free</strong>
+                        <span class="free-banner-sub"> · No payment required · Products are for evaluation only</span>
+                    </div>
                 </div>
-            </div>
+            </template>
         </template>
 
         <!-- ===== STEP 1: Select Order Type + Products ===== -->

@@ -159,20 +159,20 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     handleOrderCreated(event) {
-        this.showToast(
-            'Order Created',
-            'Order created successfully.',
-            'success'
-        );
+        // The success page is now shown inside the dialog (placeOrder advances
+        // to stepFour before dispatching this event).  We do NOT auto-close
+        // the dialog — the user can read the success screen and close it
+        // themselves using the ✕ button.  The toast fires immediately so it
+        // is visible once the dialog is dismissed.
 
-        // Close modal
-        const orderDlg = this.template.querySelector('dialog.order-dialog');
-        if (orderDlg && orderDlg.open) { orderDlg.close(); this._unlockScroll(); }
-
+        // Background data refresh — non-blocking
         Promise.all([
             this.refreshVisitData({ showErrorToast: false }),
             Promise.resolve().then(() => this.loadOutletRelatedData())
         ]).catch(() => {});
+
+        // Show success toast immediately (will appear after user closes dialog)
+        this.showToast('Order Created', 'Order created successfully.', 'success');
     }
 
     handleOpenAssetRequest() {
