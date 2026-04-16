@@ -561,92 +561,81 @@
             <div class="step-content">
             <div class="checkout-layout">
                 <div class="main-col">
+                    <!-- Products Card -->
                     <div class="section-card">
                         <div class="section-header">
-                            <span class="section-icon">✅</span>
-                            <span class="section-title">Order Confirmation</span>
+                            <span class="section-icon">📦</span>
+                            <span class="section-title">Products</span>
                         </div>
-                        <div class="section-body">
-                            <p style="margin: 0 0 20px 0; color: #333;">Please review your order details before placing the order.</p>
-                            
-                            <!-- Products Summary -->
-                            <div style="margin-bottom: 20px;">
-                                <h4 style="margin: 0 0 15px 0; color: #0070d2; font-size: 14px; font-weight: 600;">📦 Products</h4>
-                                <template for:each={selectedItemsForSummary} for:item="item">
-                                    <div key={item.productId} style="padding: 12px; background: #f3f3f3; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-                                        <div>
-                                            <p style="margin: 0 0 5px 0; font-weight: 500;">{item.productName}</p>
+                        <div class="summary-items-list">
+                            <template for:each={selectedItemsForSummary} for:item="item">
+                                <div key={item.productId} class="confirmation-item-card">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                                        <div style="flex: 1;">
+                                            <p style="margin: 0 0 5px 0; font-weight: 600; color: #1a3a6b;">{item.productName}</p>
                                             <p style="margin: 0; font-size: 12px; color: #666;">Qty: {item.quantity} × ₹{item.unitPriceDisplay}</p>
                                         </div>
-                                        <div style="text-align: right;">
-                                            <p style="margin: 0; font-weight: 600;">₹{item.discountedTotalDisplay}</p>
+                                        <div style="text-align: right; flex-shrink: 0;">
+                                            <p style="margin: 0 0 5px 0; font-weight: 700; color: #1a3a6b;">₹{item.discountedTotalDisplay}</p>
                                             <template if:true={item.discountAmount}>
-                                                <p style="margin: 5px 0 0 0; font-size: 12px; color: #27ae60;">-₹{item.discountAmountDisplay}</p>
+                                                <p style="margin: 0; font-size: 11px; color: #27ae60;">-₹{item.discountAmountDisplay}</p>
                                             </template>
                                         </div>
                                     </div>
-                                </template>
-                            </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
 
-                            <!-- Pricing Summary -->
-                            <div style="border-top: 1px solid #ddd; padding-top: 15px; margin-bottom: 20px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                    <span>Subtotal:</span>
-                                    <span>₹{selectedItemsSubtotalDisplay}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #27ae60;">
-                                    <span>Discount:</span>
-                                    <span>-₹{selectedItemsTotalDiscountDisplay}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 16px; border-top: 1px solid #ddd; padding-top: 10px;">
-                                    <span>Grand Total:</span>
-                                    <span>₹{computedTotalPriceDisplay}</span>
-                                </div>
+                    <!-- Unified Order Financials Card -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <span class="section-icon">💰</span>
+                            <span class="section-title">Order Financials</span>
+                        </div>
+                        <div class="section-body confirm-financials">
+                            <div class="cf-row">
+                                <span class="cf-label">Subtotal</span>
+                                <span class="cf-val">₹{selectedItemsSubtotalDisplay}</span>
                             </div>
-
-                            <!-- Payment Info (Regular Orders only) -->
+                            <div class="cf-row cf-discount">
+                                <span class="cf-label">Discount</span>
+                                <span class="cf-val">−₹{selectedItemsTotalDiscountDisplay}</span>
+                            </div>
+                            <div class="cf-divider"></div>
+                            <div class="cf-row cf-grand">
+                                <span class="cf-label">Grand Total</span>
+                                <span class="cf-val cf-grand-val">₹{computedTotalPriceDisplay}</span>
+                            </div>
                             <template if:false={isSampleOrder}>
-                                <div style="background: #e8f5e9; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                                    <h4 style="margin: 0 0 15px 0; color: #0070d2; font-size: 14px; font-weight: 600;">💳 Payment Summary</h4>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                        <span>Payment Method:</span>
-                                        <span style="font-weight: 500;">{payment.mode}</span>
+                                <div class="cf-divider"></div>
+                                <div class="cf-row">
+                                    <span class="cf-label">Payment Method</span>
+                                    <span class="cf-val cf-badge">{payment.mode}</span>
+                                </div>
+                                <div class="cf-highlight-box">
+                                    <div class="cf-row">
+                                        <span class="cf-label">Payable Now</span>
+                                        <span class="cf-val cf-payable">₹{payableAmountDisplay}</span>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                        <span>Grand Total:</span>
-                                        <span style="font-weight: 600;">₹{computedTotalPriceDisplay}</span>
+                                    <div class="cf-row">
+                                        <span class="cf-label">Outstanding</span>
+                                        <span class="cf-val cf-outstanding">₹{outstandingAmount}</span>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; background: rgba(0,0,0,0.05); padding: 8px 10px; border-radius: 3px;">
-                                        <span>Payable Amount:</span>
-                                        <span style="font-weight: 600; color: #0070d2;">₹{payableAmountDisplay}</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; color: #d32f2f;">
-                                        <span>Outstanding Amount:</span>
-                                        <span style="font-weight: 600;">₹{outstandingAmount}</span>
-                                    </div>
+                                </div>
+                            </template>
+                            <template if:true={isSampleOrder}>
+                                <div class="cf-divider"></div>
+                                <div class="cf-row cf-grand">
+                                    <span class="cf-label">Total Payable</span>
+                                    <span class="cf-val" style="color:#27ae60; font-size:16px; font-weight:800;">₹0.00 — Free</span>
                                 </div>
                             </template>
                         </div>
                     </div>
                 </div>
 
-                <!-- Side Summary -->
-                <div class="side-col">
-                    <div class="price-card">
-                        <div class="price-card-header"><span>📋</span><span>Order Summary</span></div>
-                        <template for:each={selectedItemsForSummary} for:item="item">
-                            <div key={item.productId} class="mini-item">
-                                <span class="mini-item-name">{item.productName}</span>
-                                <span class="mini-item-qty">×{item.quantity}</span>
-                            </div>
-                        </template>
-                        <div class="price-divider"></div>
-                        <div class="price-line"><span>Subtotal</span><span>₹{selectedItemsSubtotalDisplay}</span></div>
-                        <div class="price-line discount"><span>Discount</span><span>-₹{selectedItemsTotalDiscountDisplay}</span></div>
-                        <div class="price-divider"></div>
-                        <div class="price-total-line"><span>Grand Total</span><span>₹{computedTotalPriceDisplay}</span></div>
-                    </div>
-                </div>
+                <!-- No side col on confirm step — financials are consolidated above -->
             </div>
             </div><!-- /.step-content -->
 
@@ -687,29 +676,29 @@
                         <div class="success-order-detail">
                             <div class="success-detail-row">
                                 <span>Grand Total</span>
-                                <span>₹{orderAmt}</span>
+                                <span class="success-amount">₹{orderAmt}</span>
                             </div>
                             <div class="success-detail-row">
                                 <span>Payable Amount</span>
-                                <span>₹{payableAmountDisplay}</span>
+                                <span class="success-payable">₹{payableAmountDisplay}</span>
                             </div>
                             <div class="success-detail-row">
-                                <span>Outstanding Amount</span>
-                                <span>₹{outstandingAmount}</span>
+                                <span>Outstanding</span>
+                                <span class="success-outstanding">₹{outstandingAmount}</span>
                             </div>
                             <div class="success-detail-row">
                                 <span>Payment Mode</span>
-                                <span>{payment.mode}</span>
+                                <span class="success-badge">{payment.mode}</span>
                             </div>
                             <div class="success-detail-row">
                                 <span>Status</span>
-                                <span style="font-weight: 600; color: #0070d2;">{displayPaymentStatus}</span>
+                                <span class="success-status">{displayPaymentStatus}</span>
                             </div>
                         </div>
                     </template>
 
                     <div class="success-note" if:true={isSampleOrder}>
-                        Samples will be delivered as per the request. Thank you!
+                        🎁 Samples will be delivered as per the request. Thank you!
                     </div>
                     <div class="success-note" if:false={isSampleOrder}>
                         📧 Your order has been confirmed and is being processed. Expected delivery in 3–5 business days.

@@ -345,6 +345,18 @@ lightning-combobox::part(dropdown) {
     display: flex; flex-direction: column; gap: 10px;
 }
 
+.confirmation-item-card {
+    background: #f5f8fd;
+    border: 1px solid #e0e8f4;
+    border-radius: 10px;
+    padding: 13px 14px;
+    transition: box-shadow .15s;
+}
+
+.confirmation-item-card:hover {
+    box-shadow: 0 2px 8px rgba(36, 86, 164, 0.08);
+}
+
 .item-header {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
@@ -932,6 +944,82 @@ lightning-combobox::part(dropdown) {
 .cd-label { font-size: 11px; font-weight: 600; color: #888; min-width: 80px; }
 .cd-val   { font-size: 12px; color: #1a1a2e; }
 
+/* ===== Confirmation Step — Unified Financials Card ===== */
+.confirm-financials {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 16px 16px;
+}
+
+.cf-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+}
+
+.cf-label {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+}
+
+.cf-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a3a6b;
+}
+
+.cf-discount .cf-val { color: #27ae60; }
+
+.cf-divider {
+    height: 1px;
+    background: #eef2f7;
+    margin: 4px 0;
+}
+
+.cf-grand .cf-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a3a6b;
+}
+
+.cf-grand-val {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #0070d2 !important;
+}
+
+.cf-badge {
+    background: #e8f0fb;
+    color: #1a3a6b;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.cf-highlight-box {
+    background: #f5f8fd;
+    border: 1px solid #d8e8f8;
+    border-radius: 10px;
+    padding: 4px 12px;
+    margin-top: 4px;
+}
+
+.cf-payable {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0070d2 !important;
+}
+
+.cf-outstanding {
+    color: #d32f2f !important;
+    font-weight: 700 !important;
+}
+
 /* ===== Success Page ===== */
 .success-page {
     display: flex; align-items: center; justify-content: center;
@@ -969,6 +1057,20 @@ lightning-combobox::part(dropdown) {
 .success-detail-row:last-child { border-bottom: none; }
 .success-detail-row span:first-child { color: #888; }
 .success-detail-row span:last-child  { font-weight: 700; color: #1a3a6b; }
+
+.success-amount    { font-size: 15px; color: #0070d2 !important; }
+.success-payable   { font-size: 15px; color: #0070d2 !important; }
+.success-outstanding { color: #d32f2f !important; }
+.success-status    { color: #0070d2 !important; }
+.success-badge {
+    background: #e8f0fb;
+    color: #1a3a6b !important;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px;
+}
 
 .success-note {
     font-size: 12px; color: #777;
