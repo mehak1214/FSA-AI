@@ -16,7 +16,7 @@ import renameAttachment from '@salesforce/apex/VisitController.renameAttachment'
 import saveRatingAndFeedback from '@salesforce/apex/VisitController.saveRatingAndFeedback';
 import getVisitTasks from '@salesforce/apex/VisitTaskController.getVisitTasks';
 import updateTaskStatus from '@salesforce/apex/VisitTaskController.updateTaskStatus';
-import getOutlet360Summary from '@salesforce/apex/Outlet360Controller.getOutlet360Summary';
+import getOutlet360SummaryFresh from '@salesforce/apex/Outlet360Controller.getOutlet360SummaryFresh';
 
 export default class VisitDetail extends NavigationMixin(LightningElement) {
     _visit;
@@ -29,7 +29,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     outletPhotoUrl;
     actionInFlight = false;
     showOrderPanel = false;
-    assetRequestSuccessMessage = '';
     // UI state for photo modal
     isPhotoModalOpen = false;
     isSchemesModalOpen = false;
@@ -183,8 +182,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             return;
         }
 
-        this.assetRequestSuccessMessage = '';
-
         const modal = this.template.querySelector('c-asset-request-form');
         if (modal) {
             modal.openModal();
@@ -192,8 +189,8 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     }
 
     handleAssetRequestSubmitted(event) {
-        this.assetRequestSuccessMessage = event.detail?.message || 'Request submitted — your manager will review it shortly.';
-        this.showToast('Request submitted', this.assetRequestSuccessMessage, 'success');
+        const message = event.detail?.message || 'Request submitted — your manager will review it shortly.';
+        this.showToast('Request submitted', message, 'success');
     }
 
 
@@ -317,7 +314,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         } else {
             this.isLoadingRelated = true;
         }
-        getOutlet360Summary({ recordId: outletId, objectApiName: 'Account' })
+        getOutlet360SummaryFresh({ recordId: outletId, objectApiName: 'Account' })
             .then((result) => {
                 this.assets = (result?.assets || []).map((item, index) => ({
                     ...item,
@@ -602,10 +599,6 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
         return !this.dayStarted;
     }
 
-    get hasAssetRequestSuccessMessage() {
-        return !!this.assetRequestSuccessMessage;
-    }
-
     get showRatingFeedback() {
         const status = this.normalizedStatus;
         return this.dayStarted && (status === 'in progress' || status === 'completed');
@@ -628,10 +621,11 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
     get relatedCasesLabel() { return `Cases (${this.totalCasesCount || this.casesCount || 0})`; }
     get relatedAssetRequestsLabel() { return `Asset Requests (${this.totalAssetRequestsCount || this.assetRequestsCount || 0})`; }
     get isRelatedRefreshDisabled() { return this.isLoadingRelated || this.isRefreshingRelated; }
-    get relatedRefreshButtonClass() {
+    get relatedRefreshButtonClass() { return 'related-refresh-btn'; }
+    get relatedRefreshIconClass() {
         return this.isRefreshingRelated
-            ? 'related-refresh-btn related-refresh-btn--spinning'
-            : 'related-refresh-btn';
+            ? 'related-refresh-icon related-refresh-icon--spinning'
+            : 'related-refresh-icon';
     }
 
     get showViewAllRelatedAssets() { return (this.totalAssetsCount || 0) > 5; }

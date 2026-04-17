@@ -110,6 +110,15 @@ public with sharing class Outlet360Controller {
 
     @AuraEnabled(cacheable=true)
     public static Outlet360Response getOutlet360Summary(Id recordId, String objectApiName) {
+        return buildOutlet360Summary(recordId, objectApiName);
+    }
+
+    @AuraEnabled
+    public static Outlet360Response getOutlet360SummaryFresh(Id recordId, String objectApiName) {
+        return buildOutlet360Summary(recordId, objectApiName);
+    }
+
+    private static Outlet360Response buildOutlet360Summary(Id recordId, String objectApiName) {
         try {
             if (recordId == null) {
                 throw new AuraHandledException('recordId is required.');

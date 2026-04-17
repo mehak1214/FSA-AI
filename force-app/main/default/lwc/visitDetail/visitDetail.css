@@ -338,6 +338,7 @@
 .related-refresh-btn {
     width: 32px;
     height: 32px;
+    padding: 0;
     border-radius: 999px;
     border: 1px solid var(--panel-border);
     background: #ffffff;
@@ -345,10 +346,19 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    font-weight: 700;
     cursor: pointer;
     transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.related-refresh-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center;
+}
+
+.related-refresh-icon lightning-icon {
+    --sds-c-icon-color-foreground-default: var(--brand);
 }
 
 .related-refresh-btn:hover:not(:disabled) {
@@ -357,7 +367,7 @@
     box-shadow: 0 1px 4px rgba(10, 78, 168, 0.12);
 }
 
-.related-refresh-btn--spinning {
+.related-refresh-icon--spinning {
     animation: related-refresh-spin 0.75s linear infinite;
 }
 
@@ -581,6 +591,7 @@
     border: 1px solid #d9e4f2;
     border-radius: 12px;
     background: #ffffff;
+    -webkit-overflow-scrolling: touch;
 }
 
 .table-wrap--flush {
@@ -591,6 +602,15 @@
 .summary {
     width: 100%;
     border-collapse: collapse;
+}
+
+.summary--asset {
+    min-width: 760px;
+}
+
+.summary--asset th,
+.summary--asset td {
+    white-space: nowrap;
 }
 
 .summary th {

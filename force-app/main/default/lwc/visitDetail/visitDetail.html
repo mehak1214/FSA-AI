@@ -144,12 +144,6 @@
                             <span>Request New Asset</span>
                         </button>
 
-                        <template if:true={hasAssetRequestSuccessMessage}>
-                            <div class="asset-request-success" role="status">
-                                {assetRequestSuccessMessage}
-                            </div>
-                        </template>
-
                     </div>
                 </div>
 
@@ -272,7 +266,9 @@
                                             title="Refresh assets"
                                             aria-label="Refresh assets"
                                             disabled={isRelatedRefreshDisabled}>
-                                            &#8635;
+                                            <span class={relatedRefreshIconClass} aria-hidden="true">
+                                                <lightning-icon icon-name="utility:refresh" size="x-small" alternative-text="Refresh"></lightning-icon>
+                                            </span>
                                         </button>
                                         <template if:true={isRefreshingRelated}>
                                             <span class="related-refresh-status" role="status">Refreshing...</span>
@@ -283,8 +279,8 @@
                                     </div>
                                 </div>
                                 <template if:true={hasRelatedAssets}>
-                                    <div class="table-wrap">
-                                        <table class="summary">
+                                    <div class="table-wrap table-wrap--asset">
+                                        <table class="summary summary--asset">
                                             <thead><tr><th>Asset</th><th>Serial</th><th>Status</th><th>Last Audit</th><th>Condition</th></tr></thead>
                                             <tbody>
                                                 <template for:each={assets} for:item="item">
@@ -316,7 +312,9 @@
                                             title="Refresh orders"
                                             aria-label="Refresh orders"
                                             disabled={isRelatedRefreshDisabled}>
-                                            &#8635;
+                                            <span class={relatedRefreshIconClass} aria-hidden="true">
+                                                <lightning-icon icon-name="utility:refresh" size="x-small" alternative-text="Refresh"></lightning-icon>
+                                            </span>
                                         </button>
                                         <template if:true={isRefreshingRelated}>
                                             <span class="related-refresh-status" role="status">Refreshing...</span>
@@ -359,7 +357,9 @@
                                             title="Refresh order products"
                                             aria-label="Refresh order products"
                                             disabled={isRelatedRefreshDisabled}>
-                                            &#8635;
+                                            <span class={relatedRefreshIconClass} aria-hidden="true">
+                                                <lightning-icon icon-name="utility:refresh" size="x-small" alternative-text="Refresh"></lightning-icon>
+                                            </span>
                                         </button>
                                         <template if:true={isRefreshingRelated}>
                                             <span class="related-refresh-status" role="status">Refreshing...</span>
@@ -403,7 +403,9 @@
                                             title="Refresh cases"
                                             aria-label="Refresh cases"
                                             disabled={isRelatedRefreshDisabled}>
-                                            &#8635;
+                                            <span class={relatedRefreshIconClass} aria-hidden="true">
+                                                <lightning-icon icon-name="utility:refresh" size="x-small" alternative-text="Refresh"></lightning-icon>
+                                            </span>
                                         </button>
                                         <template if:true={isRefreshingRelated}>
                                             <span class="related-refresh-status" role="status">Refreshing...</span>
@@ -449,7 +451,9 @@
                                             title="Refresh asset requests"
                                             aria-label="Refresh asset requests"
                                             disabled={isRelatedRefreshDisabled}>
-                                            &#8635;
+                                            <span class={relatedRefreshIconClass} aria-hidden="true">
+                                                <lightning-icon icon-name="utility:refresh" size="x-small" alternative-text="Refresh"></lightning-icon>
+                                            </span>
                                         </button>
                                         <template if:true={isRefreshingRelated}>
                                             <span class="related-refresh-status" role="status">Refreshing...</span>
@@ -784,8 +788,8 @@
                 </header>
                 <div class="vd-body">
                     <template if:true={hasAllRelatedAssets}>
-                        <div class="table-wrap table-wrap--flush">
-                            <table class="summary">
+                        <div class="table-wrap table-wrap--flush table-wrap--asset">
+                            <table class="summary summary--asset">
                                 <thead><tr><th>Asset</th><th>Serial</th><th>Status</th><th>Last Audit</th><th>Condition</th></tr></thead>
                                 <tbody>
                                     <template for:each={allAssets} for:item="item">
