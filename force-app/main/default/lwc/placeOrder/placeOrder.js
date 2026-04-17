@@ -127,9 +127,9 @@ export default class PlaceOrder extends LightningElement {
             cardHolder: '', cardExpiry: '', cardType: '', upiId: ''
         };
         this.isBillingSame = false;
-        // Reset product quantities to 0 so the grid looks fresh
-        this.sampleProducts  = this.sampleProducts.map(p  => ({ ...p, quantity: 0 }));
-        this.regularProducts = this.regularProducts.map(p => ({ ...p, quantity: 0 }));
+        // Reset product quantities and isAdded flag so the grid looks fresh
+        this.sampleProducts  = this.sampleProducts.map(p  => ({ ...p, quantity: 0, isAdded: false }));
+        this.regularProducts = this.regularProducts.map(p => ({ ...p, quantity: 0, isAdded: false }));
     }
 
     get stepOne() { return this.currentStep === 1; }
@@ -201,8 +201,8 @@ export default class PlaceOrder extends LightningElement {
     selectUPI()  { this.payment = { ...this.payment, mode: 'UPI' };  }
     selectCard() { this.payment = { ...this.payment, mode: 'Card' }; }
 
-    // Whether any products are selected (for side-panel hint)
-    get hasSelectedItems() { return this.selectedItemsForSummary.length > 0; }
+    // Whether any products are selected (for side-panel hint) - only count items with quantity > 0
+    get hasSelectedItems() { return this.currentProducts.filter(p => p.quantity > 0).length > 0; }
 
     // Success screen text
     get successTitle()    { return this.isSampleOrder ? 'Sample Order Placed !' : 'Order Placed Successfully!'; }
@@ -237,6 +237,7 @@ export default class PlaceOrder extends LightningElement {
             const normalizedProducts = data.map(p => ({
                 ...p,
                 quantity: 0,
+                isAdded: false,
                 unitPrice: p.unitPrice || 0,
                 totalSampleQuantity: p.totalSampleQuantity,
             }));
@@ -341,6 +342,7 @@ export default class PlaceOrder extends LightningElement {
                 this.sampleProducts = data.map(p => ({
                     ...p,
                     quantity: 0,
+                    isAdded: false,
                     quantityOnHand: p.quantityOnHand,
                     sampleOrderLimit: p.sampleOrderLimit,
                     alreadyOrderedQty: p.alreadyOrderedQty || 0
@@ -448,8 +450,36 @@ export default class PlaceOrder extends LightningElement {
     // Unified Quantity Logic
     handleSummaryQtyChange(event) {
         const productId = event.target.dataset.id;
-        const newQty = parseInt(event.target.value, 10);
-        this.updateQtyValue(productId, isNaN(newQty) ? 0 : newQty);
+        const inputValue = event.target.value.trim();
+        
+        // Allow clearing the field - set quantity to 0
+        if (inputValue === '' || inputValue === null) {
+            this.updateQtyValue(productId, 0);
+            return;
+        }
+        
+        const newQty = parseInt(inputValue, 10);
+        
+        // If not a valid number, restore the last value
+        if (isNaN(newQty)) {
+            const product = this.currentProducts.find(p => p.productId === productId);
+            if (product) {
+                event.target.value = product.quantity;
+            }
+            return;
+        }
+        
+        // Allow 0 and any positive number
+        if (newQty < 0) {
+            this.showToast('Invalid Quantity', 'Quantity cannot be negative.', 'warning');
+            const product = this.currentProducts.find(p => p.productId === productId);
+            if (product) {
+                event.target.value = product.quantity;
+            }
+            return;
+        }
+        
+        this.updateQtyValue(productId, newQty);
     }
 
     increaseQty(event) { this.updateQtyValue(event.target.dataset.id, 'inc'); }
@@ -488,7 +518,10 @@ export default class PlaceOrder extends LightningElement {
                     }
                 }
 
-                return { ...p, quantity: qty };
+                // Mark product as added when quantity goes from 0 to > 0
+                const isAdded = p.isAdded || (qty > 0 && p.quantity === 0) || qty > 0;
+
+                return { ...p, quantity: qty, isAdded };
             }
             return p;
         });
@@ -595,12 +628,12 @@ export default class PlaceOrder extends LightningElement {
                             const currentStock = p.quantityOnHand != null ? p.quantityOnHand : 0;
                             const newStock = Math.max(0, currentStock - ordered);
                             const newAlreadyOrdered = (p.alreadyOrderedQty || 0) + ordered;
-                            return { ...p, quantity: 0, quantityOnHand: newStock, alreadyOrderedQty: newAlreadyOrdered };
+                            return { ...p, quantity: 0, isAdded: false, quantityOnHand: newStock, alreadyOrderedQty: newAlreadyOrdered };
                         }
-                        return { ...p, quantity: 0 };
+                        return { ...p, quantity: 0, isAdded: false };
                     });
                 } else {
-                    this.setCurrentProducts(this.currentProducts.map(p => ({ ...p, quantity: 0 })));
+                    this.setCurrentProducts(this.currentProducts.map(p => ({ ...p, quantity: 0, isAdded: false })));
                 }
 
                 // Guard refreshApex — _wiredProductsResult is only set when
@@ -633,7 +666,8 @@ export default class PlaceOrder extends LightningElement {
 
     get selectedItemsForSummary() {
         const isSample = this.isSampleOrder;
-        return this.currentProducts.filter(p => p.quantity > 0).map(p => {
+        // Show products that have been added to cart (isAdded=true), even if quantity is now 0
+        return this.currentProducts.filter(p => p.isAdded === true).map(p => {
             const qty = parseInt(p.quantity, 10) || 0;
             const unit = parseFloat(p.unitPrice) || 0;
             let disc = 0;
@@ -651,7 +685,8 @@ export default class PlaceOrder extends LightningElement {
                 discountedTotalDisplay: ((qty * unit) - dAmt).toFixed(2),
                 discountedTotal: (qty * unit) - dAmt,
                 lineTotal: qty * unit,
-                discountAmount: dAmt
+                discountAmount: dAmt,
+                displayQuantity: qty === 0 ? '' : qty
             };
         });
     }
