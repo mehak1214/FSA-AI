@@ -794,7 +794,7 @@ export default class VisitDetail extends NavigationMixin(LightningElement) {
             // If an order was placed and user closes via ✕, show toast now
             if (this._orderWasCreated) {
                 this._orderWasCreated = false;
-                this.showToast('Order Created', 'Order created successfully.', 'success');
+               // this.showToast('Order Created', 'Order created successfully.', 'success');
             }
         } else {
             // Reset placeOrder to step 1 before opening so a fresh form

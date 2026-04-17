@@ -775,7 +775,12 @@ System.debug('Payment creation failed: ' + ex.getMessage());
                 pay.Order__c        = order.Id;
                 pay.Amount          = grandTotal;             // Grand Total (full order value)
                 pay.Paid_Amount__c  = paidAmount;             // Paid Amount (what user is paying now)
-                pay.Date            = System.today();
+                
+                // Only save date if paid amount > 0
+                if (paidAmount > 0) {
+                    pay.Date = System.today();
+                }
+                
                 pay.Type            = 'Sale';
                 pay.ProcessingMode  = 'External';
                 pay.Status          = 'Draft';
